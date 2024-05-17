@@ -1,0 +1,15 @@
+{
+    "env": {
+        "es6": true
+    },
+    "extends": [
+        "react-app"
+    ],
+    "rules": {
+        "react/react-in-jsx-scope": "off"
+    },
+    "ignorePatterns": [
+        "node_modules/**/*",
+        "src/grammar/**/*"
+    ]
+}

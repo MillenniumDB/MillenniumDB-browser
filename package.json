@@ -1,0 +1,40 @@
+{
+  "name": "millenniumdb-interface",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run lint && vite build",
+    "grammar": "npm run grammar:sparql && npm run grammar:mql",
+    "grammar:sparql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript src/grammar/sparql/SPARQLParser.g4 src/grammar/sparql/SPARQLLexer.g4",
+    "grammar:mql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript src/grammar/mql/MQLParser.g4 src/grammar/mql/MQLLexer.g4",
+    "serve": "vite preview",
+    "lint": "eslint ./src/**/*.{js,jsx}"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@fontsource/roboto": "^5.0.13",
+    "@mui/icons-material": "^5.15.17",
+    "@mui/lab": "^5.0.0-alpha.170",
+    "@mui/material": "^5.15.17",
+    "@mui/x-data-grid": "^7.4.0",
+    "antlr4": "^4.13.1-patch-1",
+    "millenniumdb-driver": "^1.5.10",
+    "monaco-editor-core": "^0.48.0",
+    "notistack": "^3.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.1"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.57.0",
+    "eslint-config-react-app": "^7.0.1",
+    "rimraf": "^5.0.5",
+    "vite": "^5.2.11",
+    "vite-plugin-eslint": "^1.8.1"
+  }
+}
