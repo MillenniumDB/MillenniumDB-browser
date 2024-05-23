@@ -37,10 +37,10 @@ export const MUIThemeDark = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#d5971a',
+      main: '#fbbf24',
     },
     secondary: {
-      main: '#49ace9',
+      main: '#22d3ee',
     },
   },
 });
@@ -50,10 +50,10 @@ export const MUIThemeLight = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#d5971a',
+      main: '#d97706',
     },
     secondary: {
-      main: '#49ace9',
+      main: '#0891b2',
     },
   },
 });

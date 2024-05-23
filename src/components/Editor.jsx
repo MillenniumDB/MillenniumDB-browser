@@ -6,12 +6,11 @@ import {
   useImperativeHandle,
   useRef,
   useState,
-  useContext,
 } from 'react';
-import { ColorModeContext } from '../main';
+import { useThemeContext } from '../context/ThemeContext';
 
 const Editor = forwardRef(({ language, ...props }, ref) => {
-  const colorModeContext = useContext(ColorModeContext);
+  const themeContext = useThemeContext();
 
   const monacoEl = useRef(null);
   const [editor, setEditor] = useState(null);
@@ -26,23 +25,28 @@ const Editor = forwardRef(({ language, ...props }, ref) => {
 
   useEffect(() => {
     monaco.editor.setTheme(
-      colorModeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light'
+      themeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light'
     );
-  }, [colorModeContext.darkMode]);
+  }, [themeContext.darkMode]);
 
   useEffect(() => {
     const model = editor?.getModel();
     if (model) {
       monaco.editor.setModelLanguage(model, language);
+      if (language === 'mql') {
+        model.setValue(
+          'MATCH (?from)-[?edge :?type]->(?to)\nRETURN *\nLIMIT 100\n'
+        );
+      } else if (language === 'sparql') {
+        model.setValue('SELECT *\nWHERE { ?s ?p ?o . }\nLIMIT 100\n');
+      }
     }
   }, [editor, language]);
 
   useEffect(() => {
     setEditor(
       monaco.editor.create(monacoEl.current, {
-        theme: colorModeContext.darkMode
-          ? 'millenniumdb-dark'
-          : 'millenniumdb-light',
+        theme: themeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light',
         language: 'plaintext',
         automaticLayout: true,
         minimap: { enabled: false },

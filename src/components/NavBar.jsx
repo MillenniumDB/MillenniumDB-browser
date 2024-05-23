@@ -1,21 +1,20 @@
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { AppBar, IconButton, Link, Toolbar, Typography } from '@mui/material';
-import { useContext } from 'react';
-import { ColorModeContext } from '../main';
+import { useThemeContext } from '../context/ThemeContext';
 
 export default function Navbar() {
-  const colorModeContext = useContext(ColorModeContext);
+  const themeContext = useThemeContext();
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       variant="outlined"
       elevation={0}
       color="transparent"
       sx={{
         backdropFilter: 'blur(8px)',
-        backgroundColor: colorModeContext.darkMode ? '#00000080' : '#ffffff80',
+        backgroundColor: themeContext.darkMode ? '#00000080' : '#ffffff80',
       }}
     >
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -28,9 +27,9 @@ export default function Navbar() {
         <IconButton
           size="large"
           edge="end"
-          onClick={colorModeContext.toggleDarkMode}
+          onClick={themeContext.toggleDarkMode}
         >
-          {colorModeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+          {themeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
         </IconButton>
       </Toolbar>
     </AppBar>

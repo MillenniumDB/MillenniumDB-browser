@@ -1,23 +1,24 @@
 import { Box, Container, Stack } from '@mui/material';
-import MillenniumDB from 'millenniumdb-driver';
-import { useEffect, useRef, useState } from 'react';
-import Actions from './components/Actions';
-import Editor from './components/Editor';
-import Results from './components/Results';
 import { enqueueSnackbar } from 'notistack';
+import { useRef, useState } from 'react';
+import Actions from '../components/Actions';
+import Editor from '../components/Editor';
+import Results from '../components/Results';
+import { useDriverContext } from '../context/DriverContext';
+import { useThemeContext } from '../context/ThemeContext';
 
 // TODO: WebWorker for queries could improve interface?
-const DRIVER_FETCH_SIZE = 2500;
-
 export default function Home() {
+  const driverContext = useDriverContext();
+  const themeContext = useThemeContext();
+
   const [running, setRunning] = useState(false);
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
-  const rowsBuffer = useRef([]);
 
+  const rowsBuffer = useRef([]);
   const numRecords = useRef(0);
   const editorRef = useRef(null);
-  const driverRef = useRef(null);
   const sessionRef = useRef(null);
 
   const handleRun = () => {
@@ -40,7 +41,7 @@ export default function Home() {
     numRecords.current = 0;
 
     const query = editorRef.current.getEditor().getValue();
-    const session = driverRef.current.session({ fetchSize: DRIVER_FETCH_SIZE });
+    const session = driverContext.getSession();
     sessionRef.current = session;
     const result = session.run(query);
 
@@ -57,7 +58,7 @@ export default function Home() {
           id: numRecords.current++,
           ...record.toObject(),
         };
-        if (rowsBuffer.current.length < DRIVER_FETCH_SIZE) {
+        if (rowsBuffer.current.length < driverContext.fetchSize) {
           rowsBuffer.current.push(row);
         } else {
           setRows((rows) => [...rows, ...rowsBuffer.current]);
@@ -96,9 +97,18 @@ export default function Home() {
     setRunning(false);
   };
 
-  useEffect(() => {
-    driverRef.current = MillenniumDB.driver(import.meta.env.VITE_SERVER_URL);
-  }, []);
+  const handleNamedNodeClick = (named_node) => {
+    describe(named_node);
+  };
+
+  const describe = async (named_node) => {
+    const session = driverContext.getSession();
+    const result = session.run(`DESCRIBE ${named_node}`);
+
+    const records = await result.records();
+    const record = records[0];
+    console.log(record.toObject());
+  };
 
   return (
     <Container maxWidth="xl" disableGutters>
@@ -110,7 +120,9 @@ export default function Home() {
             width: '100%',
             minHeight: '400px',
             border: 1,
-            borderColor: 'action.focus',
+            borderColor: themeContext.darkMode
+              ? 'rgba(81,81,81,1)'
+              : 'rgba(224,224,224,1)',
           }}
           language="mql"
         />
@@ -120,7 +132,12 @@ export default function Home() {
           running={running}
         />
         <Box sx={{ height: '90vh' }}>
-          <Results columns={columns} rows={rows} running={running} />
+          <Results
+            columns={columns}
+            rows={rows}
+            running={running}
+            handleNamedNodeClick={handleNamedNodeClick}
+          />
         </Box>
       </Stack>
     </Container>

@@ -3,27 +3,21 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider } from '@mui/material/styles';
-import { createContext, useEffect, useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import NavBar from './components/NavBar';
-import Home from './Home';
-import { setupLanguages } from './monaco/setup';
-import { MUIThemeDark, MUIThemeLight } from './MUIThemes';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { styled } from '@mui/material/styles';
-import { BorderAllRounded } from '@mui/icons-material';
+import { MaterialDesignContent, SnackbarProvider } from 'notistack';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import NavBar from './components/NavBar';
+import DriverProvider, { useDriverContext } from './context/DriverContext';
+import ThemeProvider from './context/ThemeContext';
+import { setupLanguages } from './monaco/setup';
+import Home from './pages/Home';
+import Node from './pages/Node';
 
 setupLanguages();
 
 const rootElement = document.getElementById('root');
 const root = createRoot(rootElement);
-
-export const ColorModeContext = createContext({
-  darkMode: false,
-  toggleDarkMode: () => {},
-});
 
 const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
   '&.notistack-MuiContent': {
@@ -32,53 +26,34 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
 }));
 
 function Main() {
-  const [darkMode, setDarkMode] = useState(
-    window.localStorage.getItem('darkMode') === 'true'
-  );
-
-  const colorMode = useMemo(
-    () => ({
-      darkMode,
-      toggleDarkMode: () => {
-        setDarkMode((prevMode) => !prevMode);
-      },
-    }),
-    [darkMode]
-  );
-
-  useEffect(() => {
-    window.localStorage.setItem('darkMode', darkMode);
-  }, [darkMode]);
-
-  const theme = useMemo(
-    () => (darkMode ? MUIThemeDark : MUIThemeLight),
-    [darkMode]
-  );
+  const driverContext = useDriverContext();
 
   return (
-    <ColorModeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <SnackbarProvider
-          Components={{
-            default: StyledMaterialDesignContent,
-            error: StyledMaterialDesignContent,
-            info: StyledMaterialDesignContent,
-            success: StyledMaterialDesignContent,
-            warning: StyledMaterialDesignContent,
-          }}
-          maxSnack={3}
-          autoHideDuration={3500}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        />
+    <ThemeProvider>
+      <CssBaseline />
+      <SnackbarProvider
+        Components={{
+          default: StyledMaterialDesignContent,
+          error: StyledMaterialDesignContent,
+          info: StyledMaterialDesignContent,
+          success: StyledMaterialDesignContent,
+          warning: StyledMaterialDesignContent,
+        }}
+        maxSnack={3}
+        autoHideDuration={3500}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
+      <DriverProvider>
         <BrowserRouter>
           <NavBar />
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route exact path="/" element={<Home />} />
+            <Route path="/node/:namedNode" element={<Node />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
-      </ThemeProvider>
-    </ColorModeContext.Provider>
+      </DriverProvider>
+    </ThemeProvider>
   );
 }
 
