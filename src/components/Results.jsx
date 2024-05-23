@@ -4,6 +4,7 @@ import CustomMUIDatagridRenderCell from './CustomMUIDatagridRenderCell';
 import CustomMUIDatagridToolbar from './CustomMUIDatagridToolbar';
 import CustomMUIDatagridValueFormatter from './CustomMUIDatagridValueFormatter';
 import CustomMUIPagination from './CustomMUIPagination';
+import { gridClasses } from '@mui/x-data-grid';
 
 export default function Results({ columns, rows, running }) {
   return (
@@ -23,10 +24,10 @@ export default function Results({ columns, rows, running }) {
       }}
       sx={{
         borderRadius: 0,
-        '& .MuiDataGrid-virtualScroller': {
+        [`& .${gridClasses.virtualScroller}`]: {
           borderRadius: '0 !important',
         },
-        '& .MuiDataGrid-columnHeader--sortable': {
+        [`& .${gridClasses['columnHeader--sortable']}`]: {
           cursor: 'default !important',
         },
       }}
@@ -36,6 +37,7 @@ export default function Results({ columns, rows, running }) {
         renderCell: (params) => CustomMUIDatagridRenderCell(params),
         valueFormatter: (value) => CustomMUIDatagridValueFormatter(value),
         flex: 1,
+        minWidth: 100,
       }))}
     />
   );

@@ -1,14 +1,15 @@
 import { Box, Container, Stack, Typography } from '@mui/material';
+import LinearProgress from '@mui/material/LinearProgress';
 import { DataGrid } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
-import { useDriverContext } from '../context/DriverContext';
 import CustomMUIDatagridNoRowsOverlay from '../components/CustomMUIDatagridNoRowsOverlay';
 import CustomMUIDatagridRenderCell from '../components/CustomMUIDatagridRenderCell';
 import CustomMUIDatagridToolbar from '../components/CustomMUIDatagridToolbar';
 import CustomMUIDatagridValueFormatter from '../components/CustomMUIDatagridValueFormatter';
 import CustomMUIPagination from '../components/CustomMUIPagination';
-import LinearProgress from '@mui/material/LinearProgress';
+import { useDriverContext } from '../context/DriverContext';
 
 // HeaderHeight + FooterHeight + (NumRows * RowHeight)
 const TABLE_HEIGHT_PX = 78 + 52 + 8 * 36;
@@ -40,6 +41,7 @@ function CustomTable({ columns, rows, sortColumn, loading }) {
           valueFormatter: (value) => CustomMUIDatagridValueFormatter(value),
           noRowsOverlay: CustomMUIDatagridNoRowsOverlay,
           flex: 1,
+          minWidth: 100,
         }))}
         rows={rows || []}
         sx={{
@@ -81,32 +83,30 @@ export default function Node() {
       const result = session.run(`DESCRIBE ${namedNode}`);
       const records = await result.records();
       const record = records[0].toObject();
-      setTimeout(() => {
-        setDescription({
-          labels: record.labels.map((label, labelIdx) => ({
-            id: labelIdx,
-            label,
-          })),
-          properties: Object.entries(record.properties).map(
-            ([key, value], propertyIdx) => ({
-              id: propertyIdx,
-              key,
-              value,
-            })
-          ),
-          outgoing: record.outgoing.map(({ to, type }, outgoingIdx) => ({
-            id: outgoingIdx,
-            to,
-            type,
-          })),
-          incoming: record.incoming.map(({ from, type }, incomingIdx) => ({
-            id: incomingIdx,
-            from,
-            type,
-          })),
-        });
-        setLoading(false);
-      }, 2000);
+      setDescription({
+        labels: record.labels.map((label, labelIdx) => ({
+          id: labelIdx,
+          label,
+        })),
+        properties: Object.entries(record.properties).map(
+          ([key, value], propertyIdx) => ({
+            id: propertyIdx,
+            key,
+            value,
+          })
+        ),
+        outgoing: record.outgoing.map(({ to, type }, outgoingIdx) => ({
+          id: outgoingIdx,
+          to,
+          type,
+        })),
+        incoming: record.incoming.map(({ from, type }, incomingIdx) => ({
+          id: incomingIdx,
+          from,
+          type,
+        })),
+      });
+      setLoading(false);
     };
 
     describe(namedNode);
@@ -114,57 +114,61 @@ export default function Node() {
   }, [namedNode]);
 
   return (
-    <Container maxWidth="lg" disableGutters>
-      <Stack sx={{ py: 4 }} spacing={4}>
-        <Typography variant="h3">{namedNode}</Typography>
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            Labels
-          </Typography>
-          <CustomTable
-            loading={loading}
-            columns={['label']}
-            rows={description?.labels}
-            sortColumn="label"
-          />
-        </Box>
+    <>
+      <Helmet title={`Node "${namedNode}" | MillenniumDB`} />
 
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            Properties
-          </Typography>
-          <CustomTable
-            loading={loading}
-            columns={['key', 'value']}
-            rows={description?.properties}
-            sortColumn="key"
-          />
-        </Box>
+      <Container maxWidth="lg" disableGutters>
+        <Stack sx={{ py: 4 }} spacing={4}>
+          <Typography variant="h3">{namedNode}</Typography>
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              Labels
+            </Typography>
+            <CustomTable
+              loading={loading}
+              columns={['label']}
+              rows={description?.labels}
+              sortColumn="label"
+            />
+          </Box>
 
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            Outgoing connections
-          </Typography>
-          <CustomTable
-            loading={loading}
-            columns={['type', 'to']}
-            rows={description?.outgoing}
-            sortColumn="type"
-          />
-        </Box>
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              Properties
+            </Typography>
+            <CustomTable
+              loading={loading}
+              columns={['key', 'value']}
+              rows={description?.properties}
+              sortColumn="key"
+            />
+          </Box>
 
-        <Box>
-          <Typography variant="h5" gutterBottom>
-            Incoming connections
-          </Typography>
-          <CustomTable
-            loading={loading}
-            columns={['type', 'from']}
-            rows={description?.incoming}
-            sortColumn="type"
-          />
-        </Box>
-      </Stack>
-    </Container>
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              Outgoing connections
+            </Typography>
+            <CustomTable
+              loading={loading}
+              columns={['type', 'to']}
+              rows={description?.outgoing}
+              sortColumn="type"
+            />
+          </Box>
+
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              Incoming connections
+            </Typography>
+            <CustomTable
+              loading={loading}
+              columns={['type', 'from']}
+              rows={description?.incoming}
+              sortColumn="type"
+            />
+          </Box>
+        </Stack>
+      </Container>
+    </>
   );
 }

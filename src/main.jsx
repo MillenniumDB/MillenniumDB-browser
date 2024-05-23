@@ -8,11 +8,12 @@ import { MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import NavBar from './components/NavBar';
-import DriverProvider, { useDriverContext } from './context/DriverContext';
+import DriverProvider from './context/DriverContext';
 import ThemeProvider from './context/ThemeContext';
 import { setupLanguages } from './monaco/setup';
 import Home from './pages/Home';
 import Node from './pages/Node';
+import { Helmet } from 'react-helmet';
 
 setupLanguages();
 
@@ -26,34 +27,44 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
 }));
 
 function Main() {
-  const driverContext = useDriverContext();
-
   return (
-    <ThemeProvider>
-      <CssBaseline />
-      <SnackbarProvider
-        Components={{
-          default: StyledMaterialDesignContent,
-          error: StyledMaterialDesignContent,
-          info: StyledMaterialDesignContent,
-          success: StyledMaterialDesignContent,
-          warning: StyledMaterialDesignContent,
+    <>
+      <Helmet
+        title="MillenniumDB"
+        htmlAttributes={{
+          lang: 'en',
         }}
-        maxSnack={3}
-        autoHideDuration={3500}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        meta={[
+          { name: 'description', content: 'MillenniumDB browser interface' },
+          { charSet: 'utf-8' },
+        ]}
       />
-      <DriverProvider>
-        <BrowserRouter>
-          <NavBar />
-          <Routes>
-            <Route exact path="/" element={<Home />} />
-            <Route path="/node/:namedNode" element={<Node />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </DriverProvider>
-    </ThemeProvider>
+      <ThemeProvider>
+        <CssBaseline />
+        <SnackbarProvider
+          Components={{
+            default: StyledMaterialDesignContent,
+            error: StyledMaterialDesignContent,
+            info: StyledMaterialDesignContent,
+            success: StyledMaterialDesignContent,
+            warning: StyledMaterialDesignContent,
+          }}
+          maxSnack={3}
+          autoHideDuration={3500}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
+        <DriverProvider>
+          <BrowserRouter>
+            <NavBar />
+            <Routes>
+              <Route exact path="/" element={<Home />} />
+              <Route path="/node/:namedNode" element={<Node />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </DriverProvider>
+      </ThemeProvider>
+    </>
   );
 }
 

@@ -20,7 +20,9 @@ function CustomActions({ page, onPageChange, className }) {
       className={className}
       page={page + 1}
       count={pageCount}
-      onChange={(event, newPage) => onPageChange(event, newPage - 1)}
+      onChange={(event, newPage) => {
+        onPageChange(event, newPage - 1);
+      }}
     />
   );
 }

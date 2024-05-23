@@ -1,6 +1,7 @@
 import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 import { useRef, useState } from 'react';
+import { Helmet } from 'react-helmet';
 import Actions from '../components/Actions';
 import Editor from '../components/Editor';
 import Results from '../components/Results';
@@ -111,35 +112,38 @@ export default function Home() {
   };
 
   return (
-    <Container maxWidth="xl" disableGutters>
-      <Stack sx={{ p: 2 }}>
-        <Editor
-          ref={editorRef}
-          sx={{
-            overflow: 'hidden',
-            width: '100%',
-            minHeight: '400px',
-            border: 1,
-            borderColor: themeContext.darkMode
-              ? 'rgba(81,81,81,1)'
-              : 'rgba(224,224,224,1)',
-          }}
-          language="mql"
-        />
-        <Actions
-          handleRun={handleRun}
-          handleStop={handleStop}
-          running={running}
-        />
-        <Box sx={{ height: '90vh' }}>
-          <Results
-            columns={columns}
-            rows={rows}
-            running={running}
-            handleNamedNodeClick={handleNamedNodeClick}
+    <>
+      <Helmet title="Query | MillenniumDB" />
+      <Container maxWidth="xl" disableGutters>
+        <Stack sx={{ p: 2 }}>
+          <Editor
+            ref={editorRef}
+            sx={{
+              overflow: 'hidden',
+              width: '100%',
+              minHeight: '400px',
+              border: 1,
+              borderColor: themeContext.darkMode
+                ? 'rgba(81,81,81,1)'
+                : 'rgba(224,224,224,1)',
+            }}
+            language="mql"
           />
-        </Box>
-      </Stack>
-    </Container>
+          <Actions
+            handleRun={handleRun}
+            handleStop={handleStop}
+            running={running}
+          />
+          <Box sx={{ height: '90vh' }}>
+            <Results
+              columns={columns}
+              rows={rows}
+              running={running}
+              handleNamedNodeClick={handleNamedNodeClick}
+            />
+          </Box>
+        </Stack>
+      </Container>
+    </>
   );
 }
