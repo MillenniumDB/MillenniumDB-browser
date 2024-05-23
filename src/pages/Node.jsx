@@ -147,16 +147,7 @@ export default function Node() {
   const { namedNode } = useParams();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'smooth',
-    });
     const describe = async (namedNode) => {
-      setDescription(null);
-      setError(null);
-      setLoading(true);
-
       try {
         const session = driverContext.getSession();
         const result = session.run(`DESCRIBE ${namedNode}`);
@@ -193,6 +184,9 @@ export default function Node() {
       setLoading(false);
     };
 
+    setDescription(null);
+    setError(null);
+    setLoading(true);
     describe(namedNode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [namedNode]);
@@ -210,9 +204,23 @@ export default function Node() {
 
       <Container maxWidth="md" disableGutters>
         <Stack sx={{ p: 4 }} spacing={4}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
             <Typography variant="h3">{namedNode}</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                flexWrap: 'wrap',
+              }}
+            >
               {description?.labels.map((label, labelIdx) => (
                 <Grow key={labelIdx} in>
                   <Chip size="small" color="secondary" label={label} />
