@@ -1,4 +1,15 @@
-import { Box, Container, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  AlertTitle,
+  Backdrop,
+  Box,
+  Chip,
+  CircularProgress,
+  Container,
+  Grow,
+  Stack,
+  Typography,
+} from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import { DataGrid } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
@@ -10,17 +21,76 @@ import CustomMUIDatagridToolbar from '../components/CustomMUIDatagridToolbar';
 import CustomMUIDatagridValueFormatter from '../components/CustomMUIDatagridValueFormatter';
 import CustomMUIPagination from '../components/CustomMUIPagination';
 import { useDriverContext } from '../context/DriverContext';
+import { useThemeContext } from '../context/ThemeContext';
 
 // HeaderHeight + FooterHeight + (NumRows * RowHeight)
 const TABLE_HEIGHT_PX = 78 + 52 + 8 * 36;
 
-function CustomTable({ columns, rows, sortColumn, loading }) {
+function PropertiesTable({ rows, loading }) {
+  const themeContext = useThemeContext();
+
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
       <DataGrid
         loading={loading}
         slots={{
           toolbar: () => CustomMUIDatagridToolbar({ loading }),
+          pagination: CustomMUIPagination,
+          noRowsOverlay: CustomMUIDatagridNoRowsOverlay,
+          loadingOverlay: LinearProgress,
+        }}
+        autoPageSize
+        density="compact"
+        disableColumnSorting
+        disableRowSelectionOnClick
+        disableColumnMenu
+        initialState={{
+          sorting: {
+            sortModel: [{ field: 'key', sort: 'asc' }],
+          },
+        }}
+        columns={[
+          {
+            field: 'key',
+            cellClassName: 'properties-table-key',
+            valueFormatter: (value) =>
+              CustomMUIDatagridValueFormatter(value, false),
+            flex: 1,
+            minWidth: 100,
+          },
+          {
+            field: 'value',
+            renderCell: (params) => CustomMUIDatagridRenderCell(params),
+            valueFormatter: (value) =>
+              CustomMUIDatagridValueFormatter(value, false),
+            flex: 3,
+            minWidth: 100,
+          },
+        ]}
+        rows={rows || []}
+        sx={{
+          borderRadius: 0,
+          '& .MuiDataGrid-virtualScroller': {
+            borderRadius: '0 !important',
+          },
+          '& .MuiDataGrid-columnHeader--sortable': {
+            cursor: 'default !important',
+          },
+          '& .properties-table-key': {
+            backgroundColor: themeContext.darkMode ? '#21212180' : '#ededed80',
+          },
+        }}
+      />
+    </Box>
+  );
+}
+
+function ConnectionsTable({ columns, rows, sortColumn }) {
+  return (
+    <Box sx={{ height: TABLE_HEIGHT_PX }}>
+      <DataGrid
+        slots={{
+          toolbar: () => CustomMUIDatagridToolbar({ loading: false }),
           pagination: CustomMUIPagination,
           noRowsOverlay: CustomMUIDatagridNoRowsOverlay,
           loadingOverlay: LinearProgress,
@@ -39,7 +109,6 @@ function CustomTable({ columns, rows, sortColumn, loading }) {
           field: column,
           renderCell: (params) => CustomMUIDatagridRenderCell(params, false),
           valueFormatter: (value) => CustomMUIDatagridValueFormatter(value),
-          noRowsOverlay: CustomMUIDatagridNoRowsOverlay,
           flex: 1,
           minWidth: 100,
         }))}
@@ -58,15 +127,22 @@ function CustomTable({ columns, rows, sortColumn, loading }) {
   );
 }
 
+function NonExistingNodeAlert({ error }) {
+  return (
+    <Grow in>
+      <Alert severity="error" variant="standard" sx={{ borderRadius: 0 }}>
+        <AlertTitle>Error</AlertTitle>
+        {error}
+      </Alert>
+    </Grow>
+  );
+}
+
 export default function Node() {
   const [loading, setLoading] = useState(true);
   const driverContext = useDriverContext();
-  const [description, setDescription] = useState({
-    labels: [],
-    properties: [],
-    outgoing: [],
-    incoming: [],
-  });
+  const [description, setDescription] = useState(null);
+  const [error, setError] = useState(null);
 
   const { namedNode } = useParams();
 
@@ -78,34 +154,42 @@ export default function Node() {
     });
     const describe = async (namedNode) => {
       setDescription(null);
+      setError(null);
       setLoading(true);
-      const session = driverContext.getSession();
-      const result = session.run(`DESCRIBE ${namedNode}`);
-      const records = await result.records();
-      const record = records[0].toObject();
-      setDescription({
-        labels: record.labels.map((label, labelIdx) => ({
-          id: labelIdx,
-          label,
-        })),
-        properties: Object.entries(record.properties).map(
-          ([key, value], propertyIdx) => ({
-            id: propertyIdx,
-            key,
-            value,
-          })
-        ),
-        outgoing: record.outgoing.map(({ to, type }, outgoingIdx) => ({
-          id: outgoingIdx,
-          to,
-          type,
-        })),
-        incoming: record.incoming.map(({ from, type }, incomingIdx) => ({
-          id: incomingIdx,
-          from,
-          type,
-        })),
-      });
+
+      try {
+        const session = driverContext.getSession();
+        const result = session.run(`DESCRIBE ${namedNode}`);
+
+        const records = await result.records();
+        if (records.length > 0) {
+          const record = records[0].toObject();
+          setDescription({
+            labels: record.labels,
+            properties: Object.entries(record.properties).map(
+              ([key, value], propertyIdx) => ({
+                id: propertyIdx,
+                key,
+                value,
+              })
+            ),
+            outgoing: record.outgoing.map(({ to, type }, outgoingIdx) => ({
+              id: outgoingIdx,
+              to,
+              type,
+            })),
+            incoming: record.incoming.map(({ from, type }, incomingIdx) => ({
+              id: incomingIdx,
+              from,
+              type,
+            })),
+          });
+        } else {
+          setError(`The node "${namedNode}" does not exist in the database.`);
+        }
+      } catch (error) {
+        setError(error.toString());
+      }
       setLoading(false);
     };
 
@@ -117,56 +201,66 @@ export default function Node() {
     <>
       <Helmet title={`Node "${namedNode}" | MillenniumDB`} />
 
-      <Container maxWidth="lg" disableGutters>
-        <Stack sx={{ py: 4 }} spacing={4}>
-          <Typography variant="h3">{namedNode}</Typography>
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Labels
-            </Typography>
-            <CustomTable
-              loading={loading}
-              columns={['label']}
-              rows={description?.labels}
-              sortColumn="label"
-            />
+      <Backdrop
+        open={loading}
+        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      >
+        <CircularProgress color="primary" />
+      </Backdrop>
+
+      <Container maxWidth="md" disableGutters>
+        <Stack sx={{ p: 4 }} spacing={4}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Typography variant="h3">{namedNode}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+              {description?.labels.map((label, labelIdx) => (
+                <Grow key={labelIdx} in>
+                  <Chip size="small" color="secondary" label={label} />
+                </Grow>
+              ))}
+            </Box>
           </Box>
 
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Properties
-            </Typography>
-            <CustomTable
-              loading={loading}
-              columns={['key', 'value']}
-              rows={description?.properties}
-              sortColumn="key"
-            />
-          </Box>
+          {!loading &&
+            (error ? (
+              <NonExistingNodeAlert error={error} />
+            ) : (
+              <>
+                <Grow in>
+                  <Box>
+                    <Typography variant="h5" gutterBottom>
+                      Properties
+                    </Typography>
+                    <PropertiesTable rows={description?.properties} />
+                  </Box>
+                </Grow>
+                <Grow in>
+                  <Box>
+                    <Typography variant="h5" gutterBottom>
+                      Outgoing connections
+                    </Typography>
+                    <ConnectionsTable
+                      columns={['type', 'to']}
+                      rows={description?.outgoing}
+                      sortColumn="type"
+                    />
+                  </Box>
+                </Grow>
 
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Outgoing connections
-            </Typography>
-            <CustomTable
-              loading={loading}
-              columns={['type', 'to']}
-              rows={description?.outgoing}
-              sortColumn="type"
-            />
-          </Box>
-
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Incoming connections
-            </Typography>
-            <CustomTable
-              loading={loading}
-              columns={['type', 'from']}
-              rows={description?.incoming}
-              sortColumn="type"
-            />
-          </Box>
+                <Grow in>
+                  <Box>
+                    <Typography variant="h5" gutterBottom>
+                      Incoming connections
+                    </Typography>
+                    <ConnectionsTable
+                      columns={['type', 'from']}
+                      rows={description?.incoming}
+                      sortColumn="type"
+                    />
+                  </Box>
+                </Grow>
+              </>
+            ))}
         </Stack>
       </Container>
     </>

@@ -31,6 +31,7 @@ export default function CustomMUIDatagridRenderCell(
     case 'string': {
       return <span>{`"${value}"`}</span>;
     }
+    // TODO: fix path
     case 'object': {
       switch (value.constructor) {
         case types.Node: {
