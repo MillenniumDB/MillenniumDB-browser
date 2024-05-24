@@ -143,7 +143,7 @@ export default function Node() {
       })),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [namedNode]);
 
   return (
     <>

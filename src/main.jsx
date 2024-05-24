@@ -7,7 +7,13 @@ import { styled } from '@mui/material/styles';
 import { MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { createRoot } from 'react-dom/client';
 import { Helmet } from 'react-helmet';
-import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Outlet,
+  RouterProvider,
+  Navigate,
+  ScrollRestoration,
+} from 'react-router-dom';
 import NavBar from './components/NavBar';
 import DriverProvider, { useDriverContext } from './context/DriverContext';
 import ThemeProvider from './context/ThemeContext';
@@ -32,9 +38,14 @@ function App() {
 
   const router = createBrowserRouter([
     {
+      path: '*',
+      element: <Navigate to="/" />,
+    },
+    {
       path: '/',
       element: (
         <>
+          <ScrollRestoration />
           <NavBar />
           <Outlet />
         </>
@@ -50,18 +61,23 @@ function App() {
           errorElement: <Error />,
           loader: async ({ params }) => {
             const { namedNode } = params;
+            let res = new Response(`Node "${namedNode}" not found`, {
+              status: 404,
+            });
+
+            const session = driverContext.getSession();
             try {
-              const session = driverContext.getSession();
               const result = session.run(`DESCRIBE ${namedNode}`);
               const records = await result.records();
               if (records.length > 0) {
-                return records[0].toObject();
+                res = records[0].toObject();
               }
             } catch (error) {
-              throw new Response(error.toString(), { status: 500 });
+              res = Response(error.toString(), { status: 500 });
             }
 
-            throw new Response(`Node "${namedNode}" not found`, { status: 404 });
+            session.close();
+            return res;
           },
         },
       ],
