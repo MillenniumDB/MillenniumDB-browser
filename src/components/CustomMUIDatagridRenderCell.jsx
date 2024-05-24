@@ -3,12 +3,19 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import { Box, Chip, Link } from '@mui/material';
 import { types } from 'millenniumdb-driver';
-import Fragment from 'react';
+import { Fragment } from 'react';
 
 function JSONStringifyObject(obj) {
   return JSON.stringify(
     obj,
     (key, value) => (typeof value === 'bigint' ? value.toString() : value) // return everything else unchanged
+  );
+}
+function PathNode({ color, name, targetBlank }) {
+  return (
+    <Link href={`/node/${name}`} target={targetBlank ? '_blank' : undefined}>
+      <Chip color={color} size="small" label={name} />
+    </Link>
   );
 }
 
@@ -58,46 +65,37 @@ export default function CustomMUIDatagridRenderCell(
                 alignItems: 'center',
               }}
             >
-              <Link
-                href={`/node/${value.start.name}`}
-                target={targetBlank ? '_blank' : undefined}
-              >
-                <Chip color="primary" size="small" label={value.start.name} />
-              </Link>
-              {value.segments.map((segment, segmentIdx) => (
-                <Fragment key={segmentIdx}>
-                  {segment.reverse ? (
-                    <ArrowBackIcon fontSize="small" />
-                  ) : (
-                    <HorizontalRuleIcon fontSize="small" />
-                  )}
-                  <Link
-                    href={`/node/${segment.type.name}`}
-                    target={targetBlank ? '_blank' : undefined}
-                  >
-                    <Chip
+              <PathNode
+                targetBlank={targetBlank}
+                color="primary"
+                name={value.start.name}
+              />
+              {value.segments.map((segment, segmentIdx) => {
+                return (
+                  <Fragment key={segmentIdx}>
+                    {segment.reverse ? (
+                      <ArrowBackIcon fontSize="small" />
+                    ) : (
+                      <HorizontalRuleIcon fontSize="small" />
+                    )}
+                    <PathNode
+                      targetBlank={targetBlank}
                       color="secondary"
-                      size="small"
-                      label={segment.type.name}
+                      name={segment.type.name}
                     />
-                  </Link>
-                  {segment.reverse ? (
-                    <HorizontalRuleIcon fontSize="small" />
-                  ) : (
-                    <ArrowForwardIcon fontSize="small" />
-                  )}
-                  <Link
-                    href={`/node/${segment.to.name}`}
-                    target={targetBlank ? '_blank' : undefined}
-                  >
-                    <Chip
+                    {segment.reverse ? (
+                      <HorizontalRuleIcon fontSize="small" />
+                    ) : (
+                      <ArrowForwardIcon fontSize="small" />
+                    )}
+                    <PathNode
+                      targetBlank={targetBlank}
                       color="primary"
-                      size="small"
-                      label={segment.to.name}
+                      name={segment.to.name}
                     />
-                  </Link>
-                </Fragment>
-              ))}
+                  </Fragment>
+                );
+              })}
             </Box>
           );
         }

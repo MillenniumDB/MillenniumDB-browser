@@ -2,7 +2,7 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { styled } from '@mui/material/styles';
 import { MaterialDesignContent, SnackbarProvider } from 'notistack';
@@ -21,7 +21,6 @@ import { setupLanguages } from './monaco/setup';
 import Home from './pages/Home';
 import Node from './pages/Node';
 import { Helmet } from 'react-helmet';
-import { ScrollRestoration } from 'react-router-dom';
 
 setupLanguages();
 
