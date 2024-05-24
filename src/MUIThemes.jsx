@@ -9,6 +9,13 @@ const LinkBehavior = forwardRef((props, ref) => {
 
 const common = {
   components: {
+    MuiAlert:{
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
     MuiChip: {
       styleOverrides: {
         root: {

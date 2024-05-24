@@ -1,27 +1,14 @@
-import {
-  Alert,
-  AlertTitle,
-  Backdrop,
-  Box,
-  Chip,
-  CircularProgress,
-  Container,
-  Grow,
-  Skeleton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Chip, Container, Stack, Typography } from '@mui/material';
 import LinearProgress from '@mui/material/LinearProgress';
 import { DataGrid } from '@mui/x-data-grid';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useLoaderData, useParams } from 'react-router-dom';
 import CustomMUIDatagridNoRowsOverlay from '../components/CustomMUIDatagridNoRowsOverlay';
 import CustomMUIDatagridRenderCell from '../components/CustomMUIDatagridRenderCell';
 import CustomMUIDatagridToolbar from '../components/CustomMUIDatagridToolbar';
 import CustomMUIDatagridValueFormatter from '../components/CustomMUIDatagridValueFormatter';
 import CustomMUIPagination from '../components/CustomMUIPagination';
-import { useDriverContext } from '../context/DriverContext';
 import { useThemeContext } from '../context/ThemeContext';
 
 // HeaderHeight + FooterHeight + (NumRows * RowHeight)
@@ -128,72 +115,35 @@ function ConnectionsTable({ columns, rows }) {
   );
 }
 
-function ErrorAlert({ error }) {
-  return (
-    <Alert severity="error" variant="standard" sx={{ borderRadius: 0 }}>
-      <AlertTitle>Error</AlertTitle>
-      {error}
-    </Alert>
-  );
-}
-
 export default function Node() {
-  const [loading, setLoading] = useState(true);
-  const driverContext = useDriverContext();
   const [description, setDescription] = useState(null);
-  const [error, setError] = useState(null);
 
+  const data = useLoaderData();
   const { namedNode } = useParams();
 
-  const describe = async (namedNode) => {
-    try {
-      const session = driverContext.getSession();
-      const result = session.run(`DESCRIBE ${namedNode}`);
-
-      const records = await result.records();
-      if (records.length > 0) {
-        const record = records[0].toObject();
-        setDescription({
-          labels: record.labels,
-          properties: Object.entries(record.properties).map(
-            ([key, value], propertyIdx) => ({
-              id: propertyIdx,
-              key,
-              value,
-            })
-          ),
-          outgoing: record.outgoing.map(({ to, type }, outgoingIdx) => ({
-            id: outgoingIdx,
-            to,
-            type,
-          })),
-          incoming: record.incoming.map(({ from, type }, incomingIdx) => ({
-            id: incomingIdx,
-            from,
-            type,
-          })),
-        });
-      } else {
-        setError(`The node "${namedNode}" does not exist in the database.`);
-      }
-    } catch (error) {
-      setError(error.toString());
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    setDescription(null);
-    setError(null);
-    setLoading(true);
-  }, [namedNode]);
-
-  useEffect(() => {
-    if (loading) {
-      describe(namedNode);
-    }
+    setDescription({
+      labels: data.labels,
+      properties: Object.entries(data.properties).map(
+        ([key, value], propertyIdx) => ({
+          id: propertyIdx,
+          key,
+          value,
+        })
+      ),
+      outgoing: data.outgoing.map(({ to, type }, outgoingIdx) => ({
+        id: outgoingIdx,
+        to,
+        type,
+      })),
+      incoming: data.incoming.map(({ from, type }, incomingIdx) => ({
+        id: incomingIdx,
+        from,
+        type,
+      })),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+  }, []);
 
   return (
     <>
@@ -201,81 +151,45 @@ export default function Node() {
 
       <Container maxWidth="md" disableGutters>
         <Stack sx={{ p: 4 }}>
-          {error ? (
-            <ErrorAlert error={error} />
-          ) : (
-            <>
-              <Grow in>
-                <Typography variant="h3">
-                  {loading ? <Skeleton /> : namedNode}
-                </Typography>
-              </Grow>
+          <Typography variant="h3">{namedNode}</Typography>
 
-              <Grow in>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, py: 1 }}>
-                  {loading
-                    ? [...Array(3)].map((_, idx) => (
-                        <Skeleton key={idx} width={64}>
-                          <Chip />
-                        </Skeleton>
-                      ))
-                    : description?.labels.map((label, labelIdx) => (
-                        <Chip
-                          key={labelIdx}
-                          size="small"
-                          color="secondary"
-                          label={label}
-                        />
-                      ))}
-                </Box>
-              </Grow>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, py: 1 }}>
+            {description?.labels.map((label, labelIdx) => (
+              <Chip
+                key={labelIdx}
+                size="small"
+                color="secondary"
+                label={label}
+              />
+            ))}
+          </Box>
 
-              <Grow in>
-                <Box sx={{ py: 2 }}>
-                  <Typography variant="h5" gutterBottom>
-                    {loading ? <Skeleton /> : 'Properties'}
-                  </Typography>
-                  {loading ? (
-                    <Skeleton variant="rectangular" height={TABLE_HEIGHT_PX} />
-                  ) : (
-                    <PropertiesTable rows={description?.properties} />
-                  )}
-                </Box>
-              </Grow>
+          <Box sx={{ py: 2 }}>
+            <Typography variant="h5" gutterBottom>
+              {'Properties'}
+            </Typography>
+            <PropertiesTable rows={description?.properties} />
+          </Box>
 
-              <Grow in>
-                <Box sx={{ py: 2 }}>
-                  <Typography variant="h5" gutterBottom>
-                    {loading ? <Skeleton /> : 'Outgoing Connections'}
-                  </Typography>
-                  {loading ? (
-                    <Skeleton variant="rectangular" height={TABLE_HEIGHT_PX} />
-                  ) : (
-                    <ConnectionsTable
-                      columns={['type', 'to']}
-                      rows={description?.outgoing}
-                    />
-                  )}
-                </Box>
-              </Grow>
+          <Box sx={{ py: 2 }}>
+            <Typography variant="h5" gutterBottom>
+              {'Outgoing Connections'}
+            </Typography>
+            <ConnectionsTable
+              columns={['type', 'to']}
+              rows={description?.outgoing}
+            />
+          </Box>
 
-              <Grow in>
-                <Box sx={{ py: 2 }}>
-                  <Typography variant="h5" gutterBottom>
-                    {loading ? <Skeleton /> : 'Incoming Connections'}
-                  </Typography>
-                  {loading ? (
-                    <Skeleton variant="rectangular" height={TABLE_HEIGHT_PX} />
-                  ) : (
-                    <ConnectionsTable
-                      columns={['type', 'from']}
-                      rows={description?.incoming}
-                    />
-                  )}
-                </Box>
-              </Grow>
-            </>
-          )}
+          <Box sx={{ py: 2 }}>
+            <Typography variant="h5" gutterBottom>
+              {'Incoming Connections'}
+            </Typography>
+            <ConnectionsTable
+              columns={['type', 'from']}
+              rows={description?.incoming}
+            />
+          </Box>
         </Stack>
       </Container>
     </>

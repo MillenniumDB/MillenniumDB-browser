@@ -2,25 +2,19 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-import { useEffect } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { styled } from '@mui/material/styles';
 import { MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { createRoot } from 'react-dom/client';
-import {
-  BrowserRouter,
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-} from 'react-router-dom';
+import { Helmet } from 'react-helmet';
+import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
 import NavBar from './components/NavBar';
-import DriverProvider from './context/DriverContext';
+import DriverProvider, { useDriverContext } from './context/DriverContext';
 import ThemeProvider from './context/ThemeContext';
 import { setupLanguages } from './monaco/setup';
+import Error from './pages/Error';
 import Home from './pages/Home';
 import Node from './pages/Node';
-import { Helmet } from 'react-helmet';
 
 setupLanguages();
 
@@ -33,14 +27,53 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
   },
 }));
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
+function App() {
+  const driverContext = useDriverContext();
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+  const router = createBrowserRouter([
+    {
+      path: '/',
+      element: (
+        <>
+          <NavBar />
+          <Outlet />
+        </>
+      ),
+      children: [
+        {
+          path: '/',
+          element: <Home />,
+        },
+        {
+          path: '/node/:namedNode',
+          element: <Node />,
+          errorElement: <Error />,
+          loader: async ({ params }) => {
+            const { namedNode } = params;
+            try {
+              const session = driverContext.getSession();
+              const result = session.run(`DESCRIBE ${namedNode}`);
+              const records = await result.records();
+              if (records.length > 0) {
+                return records[0].toObject();
+              }
+            } catch (error) {
+              throw new Response(error.toString(), { status: 500 });
+            }
 
-  return null;
+            throw new Response(`Node "${namedNode}" not found`, { status: 404 });
+          },
+        },
+      ],
+    },
+  ]);
+
+  return (
+    <RouterProvider router={router}>
+      <NavBar />
+      <Outlet />
+    </RouterProvider>
+  );
 }
 
 function Main() {
@@ -71,15 +104,7 @@ function Main() {
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         />
         <DriverProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <NavBar />
-            <Routes>
-              <Route exact path="/" element={<Home />} />
-              <Route path="/node/:namedNode" element={<Node />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
+          <App />
         </DriverProvider>
       </ThemeProvider>
     </>
