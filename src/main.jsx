@@ -61,23 +61,23 @@ function App() {
           errorElement: <Error />,
           loader: async ({ params }) => {
             const { namedNode } = params;
-            let res = new Response(`Node "${namedNode}" not found`, {
-              status: 404,
-            });
 
             const session = driverContext.getSession();
             try {
               const result = session.run(`DESCRIBE ${namedNode}`);
               const records = await result.records();
               if (records.length > 0) {
-                res = records[0].toObject();
+                return records[0].toObject();
               }
             } catch (error) {
-              res = Response(error.toString(), { status: 500 });
+              throw new Response(error.toString(), { status: 500 });
+            } finally {
+              session.close();
             }
 
-            session.close();
-            return res;
+            throw new Response(`Node "${namedNode}" not found`, {
+              status: 404,
+            });
           },
         },
       ],
