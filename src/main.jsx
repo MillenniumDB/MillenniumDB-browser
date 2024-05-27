@@ -8,11 +8,11 @@ import { MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { createRoot } from 'react-dom/client';
 import { Helmet } from 'react-helmet';
 import {
-  createBrowserRouter,
   Outlet,
   RouterProvider,
   Navigate,
   ScrollRestoration,
+  createHashRouter,
 } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import DriverProvider, { useDriverContext } from './context/DriverContext';
@@ -36,7 +36,7 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
 function App() {
   const driverContext = useDriverContext();
 
-  const router = createBrowserRouter([
+  const router = createHashRouter([
     {
       path: '*',
       element: <Navigate to="/" />,
