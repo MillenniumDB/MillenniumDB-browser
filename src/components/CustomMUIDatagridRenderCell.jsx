@@ -60,9 +60,11 @@ export default function CustomMUIDatagridRenderCell(
           return (
             <Box
               sx={{
+                display: 'inline',
                 height: '100%',
-                display: 'flex',
-                alignItems: 'center',
+                '& > *': {
+                  verticalAlign: 'middle',
+                },
               }}
             >
               <PathNode
@@ -74,9 +76,12 @@ export default function CustomMUIDatagridRenderCell(
                 return (
                   <Fragment key={segmentIdx}>
                     {segment.reverse ? (
-                      <ArrowBackIcon fontSize="small" />
+                      <ArrowBackIcon fontSize="small" sx={{ margin: 'auto' }} />
                     ) : (
-                      <HorizontalRuleIcon fontSize="small" />
+                      <HorizontalRuleIcon
+                        fontSize="small"
+                        sx={{ margin: 'auto' }}
+                      />
                     )}
                     <PathNode
                       targetBlank={targetBlank}

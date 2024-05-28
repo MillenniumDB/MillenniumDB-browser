@@ -10,6 +10,7 @@ import CustomMUIDatagridToolbar from '../components/CustomMUIDatagridToolbar';
 import CustomMUIDatagridValueFormatter from '../components/CustomMUIDatagridValueFormatter';
 import CustomMUIPagination from '../components/CustomMUIPagination';
 import { useThemeContext } from '../context/ThemeContext';
+import { gridClasses } from '@mui/x-data-grid';
 
 // HeaderHeight + FooterHeight + (NumRows * RowHeight)
 const TABLE_HEIGHT_PX = 78 + 52 + 8 * 36;
@@ -20,6 +21,13 @@ function PropertiesTable({ rows, loading }) {
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
       <DataGrid
+        autosizeOptions={{
+          includeHeaders: true,
+          includeOutliers: true,
+          expand: true,
+        }}
+        showCellVerticalBorder
+        showColumnVerticalBorder
         loading={loading}
         slots={{
           toolbar: () => CustomMUIDatagridToolbar({ loading }),
@@ -74,9 +82,16 @@ function PropertiesTable({ rows, loading }) {
 }
 
 function ConnectionsTable({ columns, rows }) {
+  const themeContext = useThemeContext();
+
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
       <DataGrid
+        autosizeOptions={{
+          includeHeaders: true,
+          includeOutliers: true,
+          expand: true,
+        }}
         slots={{
           toolbar: () => CustomMUIDatagridToolbar({ loading: false }),
           pagination: CustomMUIPagination,
@@ -86,6 +101,8 @@ function ConnectionsTable({ columns, rows }) {
         autoPageSize
         density="compact"
         disableColumnSorting
+        showCellVerticalBorder
+        showColumnVerticalBorder
         disableRowSelectionOnClick
         disableColumnMenu
         initialState={{
@@ -108,6 +125,9 @@ function ConnectionsTable({ columns, rows }) {
           },
           '& .MuiDataGrid-columnHeader--sortable': {
             cursor: 'default !important',
+          },
+          '& .properties-table-key': {
+            backgroundColor: themeContext.darkMode ? '#21212180' : '#ededed80',
           },
         }}
       />

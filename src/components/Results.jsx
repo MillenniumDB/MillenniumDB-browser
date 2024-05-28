@@ -9,6 +9,13 @@ import { gridClasses } from '@mui/x-data-grid';
 export default function Results({ columns, rows, running }) {
   return (
     <DataGrid
+      autosizeOptions={{
+        includeHeaders: true,
+        includeOutliers: true,
+        expand: true,
+      }}
+      showCellVerticalBorder
+      showColumnVerticalBorder
       disableColumnMenu
       disableColumnSorting
       disableRowSelectionOnClick
@@ -27,7 +34,7 @@ export default function Results({ columns, rows, running }) {
         [`& .${gridClasses.virtualScroller}`]: {
           borderRadius: '0 !important',
         },
-        [`& .${gridClasses['columnHeader--sortable']}`]: {
+        [`& .${gridClasses.columnHeader}`]: {
           cursor: 'default !important',
         },
       }}
@@ -36,8 +43,8 @@ export default function Results({ columns, rows, running }) {
         ...column,
         renderCell: (params) => CustomMUIDatagridRenderCell(params),
         valueFormatter: (value) => CustomMUIDatagridValueFormatter(value),
-        flex: 1,
         minWidth: 100,
+        width: 200,
       }))}
     />
   );

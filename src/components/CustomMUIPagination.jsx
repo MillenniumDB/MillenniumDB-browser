@@ -16,7 +16,6 @@ function CustomActions({ page, onPageChange, className }) {
       }}
       color="primary"
       shape="rounded"
-      // variant="outlined"
       className={className}
       page={page + 1}
       count={pageCount}
