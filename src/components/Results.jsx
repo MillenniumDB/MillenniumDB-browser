@@ -19,6 +19,7 @@ export default function Results({ columns, rows, running }) {
       disableColumnMenu
       disableColumnSorting
       disableRowSelectionOnClick
+      disableMultipleRowSelection
       disableColumnFilter
       autoPageSize
       slots={{

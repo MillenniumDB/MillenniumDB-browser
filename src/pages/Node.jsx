@@ -39,6 +39,7 @@ function PropertiesTable({ rows, loading }) {
         density="compact"
         disableColumnSorting
         disableRowSelectionOnClick
+        disableMultipleRowSelection
         disableColumnMenu
         initialState={{
           sorting: {
@@ -104,6 +105,7 @@ function ConnectionsTable({ columns, rows }) {
         showCellVerticalBorder
         showColumnVerticalBorder
         disableRowSelectionOnClick
+        disableMultipleRowSelection
         disableColumnMenu
         initialState={{
           sorting: {
