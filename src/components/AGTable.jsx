@@ -6,7 +6,10 @@ import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { useThemeContext } from '../context/ThemeContext';
 import CustomCellRenderer from './CustomCellRenderer';
 
-export default forwardRef(function AGTable({ columns, rows }, ref) {
+export default forwardRef(function AGTable(
+  { columns, rows, targetBlank },
+  ref
+) {
   const themeContext = useThemeContext();
   useImperativeHandle(ref, () => ({ setColumns, addRow, clearRows, addRows }));
 
@@ -20,7 +23,7 @@ export default forwardRef(function AGTable({ columns, rows }, ref) {
         field: col,
         minWidth: 200,
         flex: 1,
-        cellRenderer: CustomCellRenderer,
+        cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
         sortable: false,
       }))
     );
@@ -67,7 +70,7 @@ export default forwardRef(function AGTable({ columns, rows }, ref) {
                 field: col,
                 minWidth: 100,
                 flex: 1,
-                cellRenderer: CustomCellRenderer,
+                cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
                 sortable: false,
               }))
             : undefined

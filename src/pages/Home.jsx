@@ -97,7 +97,7 @@ export default function Home() {
             running={running}
           />
           <Box sx={{ height: '90vh' }}>
-            <AGTable ref={agTableRef} />
+            <AGTable ref={agTableRef} targetBlank={true}/>
           </Box>
         </Stack>
       </Container>

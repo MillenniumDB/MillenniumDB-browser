@@ -11,15 +11,15 @@ function JSONStringifyObject(obj) {
     (key, value) => (typeof value === 'bigint' ? value.toString() : value) // return everything else unchanged
   );
 }
-function PathNode({ color, name }) {
+function PathNode({ color, name, targetBlank }) {
   return (
-    <Link href={`/node/${name}`} target="_blank">
+    <Link href={`/node/${name}`} target={targetBlank ? '_blank' : undefined}>
       <Chip color={color} size="small" label={name} />
     </Link>
   );
 }
 
-export default function CustomCellRenderer(props) {
+export default function CustomCellRenderer(props, targetBlank = true) {
   const { value } = props;
 
   if (value === null || value === undefined) {
@@ -39,7 +39,10 @@ export default function CustomCellRenderer(props) {
       switch (value.constructor) {
         case types.Node: {
           return (
-            <Link href={`/node/${value.name}`} target="_blank">
+            <Link
+              href={`/node/${value.name}`}
+              target={targetBlank ? '_blank' : undefined}
+            >
               {value.name}
             </Link>
           );
@@ -61,7 +64,11 @@ export default function CustomCellRenderer(props) {
                 },
               }}
             >
-              <PathNode color="primary" name={value.start.name} />
+              <PathNode
+                color="primary"
+                name={value.start.name}
+                targetBlank={targetBlank}
+              />
               {value.segments.map((segment, segmentIdx) => {
                 return (
                   <Fragment key={segmentIdx}>
@@ -73,13 +80,21 @@ export default function CustomCellRenderer(props) {
                         sx={{ margin: 'auto' }}
                       />
                     )}
-                    <PathNode color="secondary" name={segment.type.name} />
+                    <PathNode
+                      color="secondary"
+                      name={segment.type.name}
+                      targetBlank={targetBlank}
+                    />
                     {segment.reverse ? (
                       <HorizontalRuleIcon fontSize="small" />
                     ) : (
                       <ArrowForwardIcon fontSize="small" />
                     )}
-                    <PathNode color="primary" name={segment.to.name} />
+                    <PathNode
+                      color="primary"
+                      name={segment.to.name}
+                      targetBlank={targetBlank}
+                    />
                   </Fragment>
                 );
               })}

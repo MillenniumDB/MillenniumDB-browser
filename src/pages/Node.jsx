@@ -10,7 +10,7 @@ const TABLE_HEIGHT_PX = 500;
 function PropertiesTable({ rows }) {
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
-      <AGTable columns={['key', 'value']} rows={rows} />
+      <AGTable columns={['key', 'value']} rows={rows} targetBlank={false} />
     </Box>
   );
 }
@@ -18,7 +18,7 @@ function PropertiesTable({ rows }) {
 function ConnectionsTable({ columns, rows }) {
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
-      <AGTable columns={columns} rows={rows} />
+      <AGTable columns={columns} rows={rows} targetBlank={false} />
     </Box>
   );
 }
