@@ -1,138 +1,24 @@
 import { Box, Chip, Container, Stack, Typography } from '@mui/material';
-import LinearProgress from '@mui/material/LinearProgress';
-import { DataGrid } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLoaderData, useParams } from 'react-router-dom';
-import CustomMUIDatagridNoRowsOverlay from '../components/CustomMUIDatagridNoRowsOverlay';
-import CustomMUIDatagridRenderCell from '../components/CustomMUIDatagridRenderCell';
-import CustomMUIDatagridToolbar from '../components/CustomMUIDatagridToolbar';
-import CustomMUIDatagridValueFormatter from '../components/CustomMUIDatagridValueFormatter';
-import CustomMUIPagination from '../components/CustomMUIPagination';
-import { useThemeContext } from '../context/ThemeContext';
-import { gridClasses } from '@mui/x-data-grid';
 
-// HeaderHeight + FooterHeight + (NumRows * RowHeight)
-const TABLE_HEIGHT_PX = 78 + 52 + 8 * 36;
+import AGTable from '../components/AGTable';
 
-function PropertiesTable({ rows, loading }) {
-  const themeContext = useThemeContext();
+const TABLE_HEIGHT_PX = 500;
 
+function PropertiesTable({ rows }) {
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
-      <DataGrid
-        autosizeOptions={{
-          includeHeaders: true,
-          includeOutliers: true,
-          expand: true,
-        }}
-        showCellVerticalBorder
-        showColumnVerticalBorder
-        loading={loading}
-        slots={{
-          toolbar: () => CustomMUIDatagridToolbar({ loading }),
-          pagination: CustomMUIPagination,
-          noRowsOverlay: CustomMUIDatagridNoRowsOverlay,
-          loadingOverlay: LinearProgress,
-        }}
-        autoPageSize
-        density="compact"
-        disableColumnSorting
-        disableRowSelectionOnClick
-        disableMultipleRowSelection
-        disableColumnMenu
-        initialState={{
-          sorting: {
-            sortModel: [{ field: 'key', sort: 'asc' }],
-          },
-        }}
-        columns={[
-          {
-            field: 'key',
-            cellClassName: 'properties-table-key',
-            valueFormatter: (value) =>
-              CustomMUIDatagridValueFormatter(value, false),
-            flex: 1,
-            minWidth: 100,
-          },
-          {
-            field: 'value',
-            renderCell: (params) => CustomMUIDatagridRenderCell(params),
-            valueFormatter: (value) =>
-              CustomMUIDatagridValueFormatter(value, false),
-            flex: 3,
-            minWidth: 100,
-          },
-        ]}
-        rows={rows || []}
-        sx={{
-          borderRadius: 0,
-          '& .MuiDataGrid-virtualScroller': {
-            borderRadius: '0 !important',
-          },
-          '& .MuiDataGrid-columnHeader--sortable': {
-            cursor: 'default !important',
-          },
-          '& .properties-table-key': {
-            backgroundColor: themeContext.darkMode ? '#21212180' : '#ededed80',
-          },
-        }}
-      />
+      <AGTable columns={['key', 'value']} rows={rows} />
     </Box>
   );
 }
 
 function ConnectionsTable({ columns, rows }) {
-  const themeContext = useThemeContext();
-
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
-      <DataGrid
-        autosizeOptions={{
-          includeHeaders: true,
-          includeOutliers: true,
-          expand: true,
-        }}
-        slots={{
-          toolbar: () => CustomMUIDatagridToolbar({ loading: false }),
-          pagination: CustomMUIPagination,
-          noRowsOverlay: CustomMUIDatagridNoRowsOverlay,
-          loadingOverlay: LinearProgress,
-        }}
-        autoPageSize
-        density="compact"
-        disableColumnSorting
-        showCellVerticalBorder
-        showColumnVerticalBorder
-        disableRowSelectionOnClick
-        disableMultipleRowSelection
-        disableColumnMenu
-        initialState={{
-          sorting: {
-            sortModel: [{ field: 'type', sort: 'asc' }],
-          },
-        }}
-        columns={columns.map((column) => ({
-          field: column,
-          renderCell: (params) => CustomMUIDatagridRenderCell(params, false),
-          valueFormatter: (value) => CustomMUIDatagridValueFormatter(value),
-          flex: 1,
-          minWidth: 100,
-        }))}
-        rows={rows || []}
-        sx={{
-          borderRadius: 0,
-          '& .MuiDataGrid-virtualScroller': {
-            borderRadius: '0 !important',
-          },
-          '& .MuiDataGrid-columnHeader--sortable': {
-            cursor: 'default !important',
-          },
-          '& .properties-table-key': {
-            backgroundColor: themeContext.darkMode ? '#21212180' : '#ededed80',
-          },
-        }}
-      />
+      <AGTable columns={columns} rows={rows} />
     </Box>
   );
 }

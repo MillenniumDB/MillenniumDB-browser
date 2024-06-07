@@ -4,9 +4,9 @@ import { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import Actions from '../components/Actions';
 import Editor from '../components/Editor';
-import Results from '../components/Results';
 import { useDriverContext } from '../context/DriverContext';
 import { useThemeContext } from '../context/ThemeContext';
+import AGTable from '../components/AGTable';
 
 // TODO: WebWorker for queries could improve interface?
 export default function Home() {
@@ -14,11 +14,8 @@ export default function Home() {
   const themeContext = useThemeContext();
 
   const [running, setRunning] = useState(false);
-  const [columns, setColumns] = useState([]);
-  const [rows, setRows] = useState([]);
 
-  const rowsBuffer = useRef([]);
-  const numRecords = useRef(0);
+  const agTableRef = useRef(null);
   const editorRef = useRef(null);
   const sessionRef = useRef(null);
 
@@ -36,10 +33,7 @@ export default function Home() {
 
   const runQuery = () => {
     setRunning(true);
-    setColumns([]);
-    setRows([]);
-    rowsBuffer.current = [];
-    numRecords.current = 0;
+    agTableRef.current.clearRows();
 
     const query = editorRef.current.getEditor().getValue();
     const session = driverContext.getSession();
@@ -48,23 +42,10 @@ export default function Home() {
 
     result.subscribe({
       onKeys: (keys) => {
-        setColumns(
-          keys.map((key) => ({
-            field: key,
-          }))
-        );
+        agTableRef.current.setColumns(keys);
       },
       onRecord: (record) => {
-        const row = {
-          id: numRecords.current++,
-          ...record.toObject(),
-        };
-        if (rowsBuffer.current.length < driverContext.fetchSize) {
-          rowsBuffer.current.push(row);
-        } else {
-          setRows((rows) => [...rows, ...rowsBuffer.current]);
-          rowsBuffer.current = [];
-        }
+        agTableRef.current.addRow(record.toObject());
       },
       onSuccess: (summary) => {
         stopQuery();
@@ -74,7 +55,6 @@ export default function Home() {
         });
       },
       onError: (error) => {
-        console.log('onerror');
         stopQuery();
         enqueueSnackbar({
           message: error.message,
@@ -85,30 +65,12 @@ export default function Home() {
   };
 
   const stopQuery = async () => {
-    if (rowsBuffer.current.length > 0) {
-      setRows((rows) => [...rows, ...rowsBuffer.current]);
-      rowsBuffer.current = [];
-    }
-
     if (sessionRef.current) {
       sessionRef.current.close();
       sessionRef.current = null;
     }
 
     setRunning(false);
-  };
-
-  const handleNamedNodeClick = (named_node) => {
-    describe(named_node);
-  };
-
-  const describe = async (named_node) => {
-    const session = driverContext.getSession();
-    const result = session.run(`DESCRIBE ${named_node}`);
-
-    const records = await result.records();
-    const record = records[0];
-    console.log(record.toObject());
   };
 
   return (
@@ -135,12 +97,7 @@ export default function Home() {
             running={running}
           />
           <Box sx={{ height: '90vh' }}>
-            <Results
-              columns={columns}
-              rows={rows}
-              running={running}
-              handleNamedNodeClick={handleNamedNodeClick}
-            />
+            <AGTable ref={agTableRef} />
           </Box>
         </Stack>
       </Container>

@@ -11,50 +11,44 @@ function JSONStringifyObject(obj) {
     (key, value) => (typeof value === 'bigint' ? value.toString() : value) // return everything else unchanged
   );
 }
-function PathNode({ color, name, targetBlank }) {
+function PathNode({ color, name }) {
   return (
-    <Link href={`/node/${name}`} target={targetBlank ? '_blank' : undefined}>
+    <Link href={`/node/${name}`} target="_blank">
       <Chip color={color} size="small" label={name} />
     </Link>
   );
 }
 
-export default function CustomMUIDatagridRenderCell(
-  params,
-  targetBlank = true
-) {
-  const { value } = params;
+export default function CustomCellRenderer(props) {
+  const { value } = props;
 
-  if (value === null) {
-    return <span>null</span>;
+  if (value === null || value === undefined) {
+    return <>null</>;
   }
 
   switch (typeof value) {
     case 'number':
     case 'bigint':
     case 'boolean': {
-      return <span>{value.toString()}</span>;
+      return <>{value.toString()}</>;
     }
     case 'string': {
-      return <span>{`"${value}"`}</span>;
+      return <>{`"${value}"`}</>;
     }
     case 'object': {
       switch (value.constructor) {
         case types.Node: {
           return (
-            <Link
-              href={`/node/${value.name}`}
-              target={targetBlank ? '_blank' : undefined}
-            >
+            <Link href={`/node/${value.name}`} target="_blank">
               {value.name}
             </Link>
           );
         }
         case types.Edge: {
-          return <span>{value.name}</span>;
+          return <>{value.name}</>;
         }
         case types.DateTime: {
-          return <span>{value.toString()}</span>;
+          return <>{value.toString()}</>;
         }
         case types.Path: {
           return (
@@ -67,11 +61,7 @@ export default function CustomMUIDatagridRenderCell(
                 },
               }}
             >
-              <PathNode
-                targetBlank={targetBlank}
-                color="primary"
-                name={value.start.name}
-              />
+              <PathNode color="primary" name={value.start.name} />
               {value.segments.map((segment, segmentIdx) => {
                 return (
                   <Fragment key={segmentIdx}>
@@ -83,21 +73,13 @@ export default function CustomMUIDatagridRenderCell(
                         sx={{ margin: 'auto' }}
                       />
                     )}
-                    <PathNode
-                      targetBlank={targetBlank}
-                      color="secondary"
-                      name={segment.type.name}
-                    />
+                    <PathNode color="secondary" name={segment.type.name} />
                     {segment.reverse ? (
                       <HorizontalRuleIcon fontSize="small" />
                     ) : (
                       <ArrowForwardIcon fontSize="small" />
                     )}
-                    <PathNode
-                      targetBlank={targetBlank}
-                      color="primary"
-                      name={segment.to.name}
-                    />
+                    <PathNode color="primary" name={segment.to.name} />
                   </Fragment>
                 );
               })}
@@ -105,12 +87,12 @@ export default function CustomMUIDatagridRenderCell(
           );
         }
         default: {
-          return <span>{JSONStringifyObject(value)}</span>;
+          return <>{JSONStringifyObject(value)}</>;
         }
       }
     }
     default: {
-      return <span>{'unknown'}</span>;
+      return <>{'unknown'}</>;
     }
   }
 }

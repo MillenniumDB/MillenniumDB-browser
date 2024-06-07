@@ -1,0 +1,14 @@
+.ag-theme-material,
+.ag-theme-material-dark {
+  --ag-borders: 1px solid;
+  --ag-cell-border: 1px solid;
+  --ag-header-column-separator-display: block;
+}
+
+.ag-theme-material {
+  --ag-cell-horizontal-border: solid #e2e2e2;
+}
+
+.ag-theme-material-dark {
+  --ag-cell-horizontal-border: solid #383838;
+}

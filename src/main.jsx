@@ -21,6 +21,7 @@ import { setupLanguages } from './monaco/setup';
 import Error from './pages/Error';
 import Home from './pages/Home';
 import Node from './pages/Node';
+import './styles/ag-grid.css';
 
 setupLanguages();
 
