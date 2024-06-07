@@ -81,6 +81,7 @@ export default forwardRef(function AGTable(
         pagination={true}
         paginationAutoPageSize={true}
         rowHeight={40}
+        suppressFieldDotNotation
       />
     </Box>
   );
