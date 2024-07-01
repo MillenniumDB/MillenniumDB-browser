@@ -8,9 +8,9 @@ import { MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { createRoot } from 'react-dom/client';
 import { Helmet } from 'react-helmet';
 import {
+  Navigate,
   Outlet,
   RouterProvider,
-  Navigate,
   ScrollRestoration,
   createHashRouter,
 } from 'react-router-dom';
@@ -18,9 +18,10 @@ import NavBar from './components/NavBar';
 import DriverProvider, { useDriverContext } from './context/DriverContext';
 import ThemeProvider from './context/ThemeContext';
 import { setupLanguages } from './monaco/setup';
-import Error from './pages/Error';
-import Query from './pages/Query';
+import CatalogError from './pages/CatalogError';
 import Node from './pages/Node';
+import NodeError from './pages/NodeError';
+import Query from './pages/Query';
 import './styles/ag-grid.css';
 
 setupLanguages();
@@ -43,6 +44,18 @@ function App() {
       element: <Navigate to="/" />,
     },
     {
+      loader: async () => {
+        try {
+          const catalog = await driverContext.getCatalog();
+          console.log(
+            `Catalog loaded successfully! (${catalog.getModelString()}.v${catalog.getVersion()})`
+          );
+          return true;
+        } catch (error) {
+          throw new Response(error.toString(), { status: 500 });
+        }
+      },
+      errorElement: <CatalogError />,
       path: '/',
       element: (
         <>
@@ -59,7 +72,7 @@ function App() {
         {
           path: '/node/:namedNode',
           element: <Node />,
-          errorElement: <Error />,
+          errorElement: <NodeError />,
           loader: async ({ params }) => {
             const { namedNode } = params;
 
