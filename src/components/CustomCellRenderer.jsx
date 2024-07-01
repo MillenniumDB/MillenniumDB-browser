@@ -11,12 +11,61 @@ function JSONStringifyObject(obj) {
     (key, value) => (typeof value === 'bigint' ? value.toString() : value) // return everything else unchanged
   );
 }
-function PathNode({ color, name, targetBlank }) {
-  return (
-    <Link href={`/node/${name}`} target={targetBlank ? '_blank' : undefined}>
-      <Chip color={color} size="small" label={name} />
-    </Link>
-  );
+
+function PathNode({ value, color, targetBlank }) {
+  if (value === null || value === undefined) {
+    return <Chip size="small" label="null" />;
+  }
+
+  switch (typeof value) {
+    case 'number':
+    case 'bigint':
+    case 'boolean': {
+      return <Chip size="small" label={value.toString()} />;
+    }
+    case 'string': {
+      return <Chip size="small" label={value} />;
+    }
+    case 'object': {
+      switch (value.constructor) {
+        case types.DateTime:
+        case types.Decimal:
+        case types.GraphAnon:
+        case types.GraphEdge:
+        case types.SimpleDate:
+        case types.StringLang:
+        case types.StringDatatype:
+        case types.Time: {
+          return <Chip size="small" label={value.toString()} />;
+        }
+        case types.GraphNode: {
+          const nodeId = value.toString();
+          return (
+            <Link
+              href={`/node/${nodeId}`}
+              target={targetBlank ? '_blank' : undefined}
+            >
+              <Chip color={color} size="small" label={nodeId} />
+            </Link>
+          );
+        }
+        case types.IRI: {
+          const iriStr = value.toString();
+          return (
+            <Link href={iriStr} target={targetBlank ? '_blank' : undefined}>
+              <Chip color={color} size="small" label={iriStr} />
+            </Link>
+          );
+        }
+        default: {
+          return <Chip size="small" label={JSONStringifyObject(value)} />;
+        }
+      }
+    }
+    default: {
+      return <Chip size="small" label="unknown" />;
+    }
+  }
 }
 
 export default function CustomCellRenderer(props, targetBlank = true) {
@@ -37,16 +86,13 @@ export default function CustomCellRenderer(props, targetBlank = true) {
     }
     case 'object': {
       switch (value.constructor) {
-        case types.DateTime: {
-          return <>{value.toString()}</>;
-        }
-        case types.Decimal: {
-          return <>{value.toString()}</>;
-        }
-        case types.GraphAnon: {
-          return <>{value.toString()}</>
-        }
-        case types.GraphEdge: {
+        case types.DateTime:
+        case types.Decimal:
+        case types.GraphAnon:
+        case types.GraphEdge:
+        case types.SimpleDate:
+        case types.StringLang:
+        case types.Time: {
           return <>{value.toString()}</>;
         }
         case types.GraphNode: {
@@ -74,7 +120,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
             >
               <PathNode
                 color="primary"
-                name={value.start.toString()}
+                value={value.start}
                 targetBlank={targetBlank}
               />
               {value.segments.map((segment, segmentIdx) => {
@@ -90,7 +136,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     )}
                     <PathNode
                       color="secondary"
-                      name={segment.type.toString()}
+                      value={segment.type}
                       targetBlank={targetBlank}
                     />
                     {segment.reverse ? (
@@ -100,7 +146,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     )}
                     <PathNode
                       color="primary"
-                      name={segment.to.toString()}
+                      value={segment.to}
                       targetBlank={targetBlank}
                     />
                   </Fragment>
@@ -110,15 +156,12 @@ export default function CustomCellRenderer(props, targetBlank = true) {
           );
         }
         case types.IRI: {
-          const iri = value.toString();
+          const iriStr = value.toString();
           return (
-            <Link href={iri} target="_blank">
-              {`<${iri}>`}
+            <Link href={iriStr} target="_blank">
+              {`<${iriStr}>`}
             </Link>
           );
-        }
-        case types.SimpleDate: {
-          return <>{value.toString()}</>;
         }
         case types.StringDatatype: {
           return (
@@ -129,12 +172,6 @@ export default function CustomCellRenderer(props, targetBlank = true) {
               </Link>
             </>
           );
-        }
-        case types.StringLang: {
-          return <>{value.toString()}</>;
-        }
-        case types.Time: {
-          return <>{value.toString()}</>;
         }
         default: {
           return <>{JSONStringifyObject(value)}</>;

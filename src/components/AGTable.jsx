@@ -30,7 +30,7 @@ function CustomPagination({
       }}
     >
       <Pagination
-        size="large"
+        size="medium"
         color="primary"
         page={agGridPage + 1}
         count={agGridPageCount}
