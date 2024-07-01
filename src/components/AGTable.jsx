@@ -1,10 +1,44 @@
-import { Box } from '@mui/material';
+import { Box, Pagination } from '@mui/material';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { AgGridReact } from 'ag-grid-react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { useThemeContext } from '../context/ThemeContext';
+import { useState } from 'react';
 import CustomCellRenderer from './CustomCellRenderer';
+
+function CustomPagination({
+  agGridPageCount,
+  agGridPage,
+  agGridHandlePageChange,
+}) {
+  const themeContext = useThemeContext();
+
+  return (
+    <Box
+      sx={{
+        userSelect: 'none',
+        py: 1,
+        border: 1,
+        borderTop: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderColor: themeContext.darkMode
+          ? 'rgba(255, 255, 255, 0.12)'
+          : 'rgba(0, 0, 0, 0.12)',
+      }}
+    >
+      <Pagination
+        size="medium"
+        color="primary"
+        page={agGridPage + 1}
+        count={agGridPageCount}
+        onChange={(_event, value) => agGridHandlePageChange(value - 1)}
+      />
+    </Box>
+  );
+}
 
 export default forwardRef(function AGTable(
   { columns, rows, targetBlank },
@@ -12,6 +46,9 @@ export default forwardRef(function AGTable(
 ) {
   const themeContext = useThemeContext();
   useImperativeHandle(ref, () => ({ setColumns, addRow, clearRows, addRows }));
+
+  const [pageCount, setPageCount] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const gridRef = useRef(null);
 
@@ -51,6 +88,15 @@ export default forwardRef(function AGTable(
     });
   }, []);
 
+  const handleOnPaginationChanged = () => {
+    setPageCount(gridRef.current.api.paginationGetTotalPages());
+    setCurrentPage(gridRef.current.api.paginationGetCurrentPage());
+  };
+
+  const handlePageChange = (pageNumber) => {
+    gridRef.current.api.paginationGoToPage(pageNumber);
+  };
+
   return (
     <Box
       className={
@@ -59,6 +105,8 @@ export default forwardRef(function AGTable(
       sx={{
         flex: 1,
         height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <AgGridReact
@@ -81,7 +129,16 @@ export default forwardRef(function AGTable(
         pagination={true}
         paginationAutoPageSize={true}
         rowHeight={40}
+        enableCellTextSelection
         suppressFieldDotNotation
+        columnHoverHighlight
+        suppressPaginationPanel
+        onPaginationChanged={handleOnPaginationChanged}
+      />
+      <CustomPagination
+        agGridPageCount={pageCount}
+        agGridPage={currentPage}
+        agGridHandlePageChange={handlePageChange}
       />
     </Box>
   );

@@ -1,7 +1,7 @@
 import { useRouteError } from 'react-router-dom';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
-export default function Error() {
+export default function NodeError() {
   const response = useRouteError();
   return (
     <Container maxWidth="sm" sx={{ pt: 8, pb: 4 }}>

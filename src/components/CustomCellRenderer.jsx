@@ -11,12 +11,61 @@ function JSONStringifyObject(obj) {
     (key, value) => (typeof value === 'bigint' ? value.toString() : value) // return everything else unchanged
   );
 }
-function PathNode({ color, name, targetBlank }) {
-  return (
-    <Link href={`/node/${name}`} target={targetBlank ? '_blank' : undefined}>
-      <Chip color={color} size="small" label={name} />
-    </Link>
-  );
+
+function PathNode({ value, color, targetBlank }) {
+  if (value === null || value === undefined) {
+    return <Chip size="small" label="null" />;
+  }
+
+  switch (typeof value) {
+    case 'number':
+    case 'bigint':
+    case 'boolean': {
+      return <Chip size="small" label={value.toString()} />;
+    }
+    case 'string': {
+      return <Chip size="small" label={value} />;
+    }
+    case 'object': {
+      switch (value.constructor) {
+        case types.DateTime:
+        case types.Decimal:
+        case types.GraphAnon:
+        case types.GraphEdge:
+        case types.SimpleDate:
+        case types.StringLang:
+        case types.StringDatatype:
+        case types.Time: {
+          return <Chip size="small" label={value.toString()} />;
+        }
+        case types.GraphNode: {
+          const nodeId = value.toString();
+          return (
+            <Link
+              href={`/node/${nodeId}`}
+              target={targetBlank ? '_blank' : undefined}
+            >
+              <Chip color={color} size="small" label={nodeId} />
+            </Link>
+          );
+        }
+        case types.IRI: {
+          const iriStr = value.toString();
+          return (
+            <Link href={iriStr} target={targetBlank ? '_blank' : undefined}>
+              <Chip color={color} size="small" label={iriStr} />
+            </Link>
+          );
+        }
+        default: {
+          return <Chip size="small" label={JSONStringifyObject(value)} />;
+        }
+      }
+    }
+    default: {
+      return <Chip size="small" label="unknown" />;
+    }
+  }
 }
 
 export default function CustomCellRenderer(props, targetBlank = true) {
@@ -37,23 +86,28 @@ export default function CustomCellRenderer(props, targetBlank = true) {
     }
     case 'object': {
       switch (value.constructor) {
-        case types.Node: {
+        case types.DateTime:
+        case types.Decimal:
+        case types.GraphAnon:
+        case types.GraphEdge:
+        case types.SimpleDate:
+        case types.StringLang:
+        case types.Time: {
+          return <>{value.toString()}</>;
+        }
+        case types.GraphNode: {
+          const nodeId = value.toString();
           return (
             <Link
-              href={`/node/${value.name}`}
+              href={`/node/${nodeId}`}
               target={targetBlank ? '_blank' : undefined}
             >
-              {value.name}
+              {nodeId}
             </Link>
           );
         }
-        case types.Edge: {
-          return <>{value.name}</>;
-        }
-        case types.DateTime: {
-          return <>{value.toString()}</>;
-        }
-        case types.Path: {
+        case types.GraphPath: {
+          // TODO: Fix this
           return (
             <Box
               sx={{
@@ -66,7 +120,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
             >
               <PathNode
                 color="primary"
-                name={value.start.name}
+                value={value.start}
                 targetBlank={targetBlank}
               />
               {value.segments.map((segment, segmentIdx) => {
@@ -82,7 +136,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     )}
                     <PathNode
                       color="secondary"
-                      name={segment.type.name}
+                      value={segment.type}
                       targetBlank={targetBlank}
                     />
                     {segment.reverse ? (
@@ -92,13 +146,31 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     )}
                     <PathNode
                       color="primary"
-                      name={segment.to.name}
+                      value={segment.to}
                       targetBlank={targetBlank}
                     />
                   </Fragment>
                 );
               })}
             </Box>
+          );
+        }
+        case types.IRI: {
+          const iriStr = value.toString();
+          return (
+            <Link href={iriStr} target="_blank">
+              {`<${iriStr}>`}
+            </Link>
+          );
+        }
+        case types.StringDatatype: {
+          return (
+            <>
+              {`"${value.str}"^^`}
+              <Link href={value.datatype.toString()} target="_blank">
+                {`<${value.datatype.toString()}>`}
+              </Link>
+            </>
           );
         }
         default: {
