@@ -19,7 +19,7 @@ import DriverProvider, { useDriverContext } from './context/DriverContext';
 import ThemeProvider from './context/ThemeContext';
 import { setupLanguages } from './monaco/setup';
 import Error from './pages/Error';
-import Home from './pages/Home';
+import Query from './pages/Query';
 import Node from './pages/Node';
 import './styles/ag-grid.css';
 
@@ -54,7 +54,7 @@ function App() {
       children: [
         {
           path: '/',
-          element: <Home />,
+          element: <Query />,
         },
         {
           path: '/node/:namedNode',

@@ -9,6 +9,15 @@ const LinkBehavior = forwardRef((props, ref) => {
 
 const common = {
   components: {
+    MuiPagination: {
+      styleOverrides: {
+        root: {
+          button: {
+            borderRadius:0,
+          }
+        },
+      }
+    },
     MuiAlert: {
       styleOverrides: {
         root: {

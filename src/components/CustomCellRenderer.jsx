@@ -37,23 +37,31 @@ export default function CustomCellRenderer(props, targetBlank = true) {
     }
     case 'object': {
       switch (value.constructor) {
-        case types.Node: {
-          return (
-            <Link
-              href={`/node/${value.name}`}
-              target={targetBlank ? '_blank' : undefined}
-            >
-              {value.name}
-            </Link>
-          );
-        }
-        case types.Edge: {
-          return <>{value.name}</>;
-        }
         case types.DateTime: {
           return <>{value.toString()}</>;
         }
-        case types.Path: {
+        case types.Decimal: {
+          return <>{value.toString()}</>;
+        }
+        case types.GraphAnon: {
+          return <>{value.toString()}</>
+        }
+        case types.GraphEdge: {
+          return <>{value.toString()}</>;
+        }
+        case types.GraphNode: {
+          const nodeId = value.toString();
+          return (
+            <Link
+              href={`/node/${nodeId}`}
+              target={targetBlank ? '_blank' : undefined}
+            >
+              {nodeId}
+            </Link>
+          );
+        }
+        case types.GraphPath: {
+          // TODO: Fix this
           return (
             <Box
               sx={{
@@ -66,7 +74,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
             >
               <PathNode
                 color="primary"
-                name={value.start.name}
+                name={value.start.toString()}
                 targetBlank={targetBlank}
               />
               {value.segments.map((segment, segmentIdx) => {
@@ -82,7 +90,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     )}
                     <PathNode
                       color="secondary"
-                      name={segment.type.name}
+                      name={segment.type.toString()}
                       targetBlank={targetBlank}
                     />
                     {segment.reverse ? (
@@ -92,7 +100,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     )}
                     <PathNode
                       color="primary"
-                      name={segment.to.name}
+                      name={segment.to.toString()}
                       targetBlank={targetBlank}
                     />
                   </Fragment>
@@ -100,6 +108,33 @@ export default function CustomCellRenderer(props, targetBlank = true) {
               })}
             </Box>
           );
+        }
+        case types.IRI: {
+          const iri = value.toString();
+          return (
+            <Link href={iri} target="_blank">
+              {`<${iri}>`}
+            </Link>
+          );
+        }
+        case types.SimpleDate: {
+          return <>{value.toString()}</>;
+        }
+        case types.StringDatatype: {
+          return (
+            <>
+              {`"${value.str}"^^`}
+              <Link href={value.datatype.toString()} target="_blank">
+                {`<${value.datatype.toString()}>`}
+              </Link>
+            </>
+          );
+        }
+        case types.StringLang: {
+          return <>{value.toString()}</>;
+        }
+        case types.Time: {
+          return <>{value.toString()}</>;
         }
         default: {
           return <>{JSONStringifyObject(value)}</>;

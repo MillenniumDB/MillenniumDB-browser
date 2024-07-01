@@ -1,6 +1,6 @@
 import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import Actions from '../components/Actions';
 import Editor from '../components/Editor';
@@ -9,11 +9,12 @@ import { useThemeContext } from '../context/ThemeContext';
 import AGTable from '../components/AGTable';
 
 // TODO: WebWorker for queries could improve interface?
-export default function Home() {
+export default function Query() {
   const driverContext = useDriverContext();
   const themeContext = useThemeContext();
 
   const [running, setRunning] = useState(false);
+  const [language, setLanguage] = useState('');
 
   const agTableRef = useRef(null);
   const editorRef = useRef(null);
@@ -73,6 +74,33 @@ export default function Home() {
     setRunning(false);
   };
 
+  const fetchAndSetModel = async () => {
+    // TODO: Handle errors here!
+    const catalog = await driverContext.getCatalog();
+    switch (catalog.getModelString()) {
+      case 'quad': {
+        setLanguage('mql');
+        break;
+      }
+      case 'rdf': {
+        setLanguage('sparql');
+        break;
+      }
+      default:
+        setLanguage('plaintext');
+        break;
+    }
+  };
+
+  useEffect(() => {
+    fetchAndSetModel();
+
+    return () => {
+      stopQuery();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <>
       <Helmet title="Query | MillenniumDB" />
@@ -86,10 +114,10 @@ export default function Home() {
               minHeight: '400px',
               border: 1,
               borderColor: themeContext.darkMode
-                ? 'rgba(81,81,81,1)'
-                : 'rgba(224,224,224,1)',
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.12)',
             }}
-            language="mql"
+            language={language}
           />
           <Actions
             handleRun={handleRun}
@@ -97,7 +125,7 @@ export default function Home() {
             running={running}
           />
           <Box sx={{ height: '90vh' }}>
-            <AGTable ref={agTableRef} targetBlank={true}/>
+            <AGTable ref={agTableRef} targetBlank={true} />
           </Box>
         </Stack>
       </Container>
