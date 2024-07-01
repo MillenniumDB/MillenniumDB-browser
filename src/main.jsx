@@ -13,6 +13,7 @@ import {
   RouterProvider,
   ScrollRestoration,
   createHashRouter,
+  redirect,
 } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import DriverProvider, { useDriverContext } from './context/DriverContext';
@@ -74,6 +75,11 @@ function App() {
           element: <Node />,
           errorElement: <NodeError />,
           loader: async ({ params }) => {
+            const catalog = await driverContext.getCatalog();
+            if (catalog.getModelString() !== 'quad') {
+              return redirect('/');
+            }
+
             const { namedNode } = params;
 
             const session = driverContext.getSession();
