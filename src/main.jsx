@@ -67,7 +67,7 @@ function App() {
       ),
       children: [
         {
-          path: '/',
+          path: '/:query?',
           element: <Query />,
         },
         {

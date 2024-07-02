@@ -2,16 +2,18 @@ import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { useParams } from 'react-router-dom';
 import Actions from '../components/Actions';
+import AGTable from '../components/AGTable';
 import Editor from '../components/Editor';
 import { useDriverContext } from '../context/DriverContext';
 import { useThemeContext } from '../context/ThemeContext';
-import AGTable from '../components/AGTable';
 
 // TODO: WebWorker for queries could improve interface?
 export default function Query() {
   const driverContext = useDriverContext();
   const themeContext = useThemeContext();
+  const { query } = useParams();
 
   const [running, setRunning] = useState(false);
   const [language, setLanguage] = useState('');
@@ -74,8 +76,7 @@ export default function Query() {
     setRunning(false);
   };
 
-  const fetchAndSetModel = async () => {
-    // TODO: Handle errors here!
+  const fetchAndSetLanguage = async () => {
     const catalog = await driverContext.getCatalog();
     switch (catalog.getModelString()) {
       case 'quad': {
@@ -92,8 +93,21 @@ export default function Query() {
     }
   };
 
+  const getDefaultQuery = () => {
+    switch (language) {
+      case 'mql': {
+        return 'MATCH (?from)-[?edge :?type]->(?to)\nRETURN *\n';
+      }
+      case 'sparql': {
+        return 'SELECT *\nWHERE { ?s ?p ?o . }\nLIMIT 100\n';
+      }
+      default:
+        return '';
+    }
+  };
+
   useEffect(() => {
-    fetchAndSetModel();
+    fetchAndSetLanguage();
 
     return () => {
       stopQuery();
@@ -108,6 +122,7 @@ export default function Query() {
         <Stack sx={{ p: 2 }}>
           <Editor
             ref={editorRef}
+            query={query || getDefaultQuery()}
             sx={{
               overflow: 'hidden',
               width: '100%',
