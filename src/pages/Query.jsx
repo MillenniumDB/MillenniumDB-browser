@@ -60,9 +60,25 @@ export default function Query() {
         agTableRef.current.addRow(record.toObject());
       },
       onSuccess: (summary) => {
+        const {
+          resultCount,
+          optimizerDurationMs,
+          parserDurationMs,
+          executionDurationMs,
+        } = summary;
         stopQuery();
+        const totalDurationMs =
+          Number(optimizerDurationMs) +
+          Number(parserDurationMs) +
+          Number(executionDurationMs);
+        let durationString;
+        if (totalDurationMs > 1_000) {
+          durationString = `${(totalDurationMs / 1_000).toFixed(2)} s`;
+        } else {
+          durationString = `${totalDurationMs} ms`;
+        }
         enqueueSnackbar({
-          message: `Query executed successfully`,
+          message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
           variant: 'success',
         });
       },

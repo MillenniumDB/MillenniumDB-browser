@@ -137,7 +137,7 @@ function Main() {
             warning: StyledMaterialDesignContent,
           }}
           maxSnack={3}
-          autoHideDuration={3500}
+          autoHideDuration={5000}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         />
         <DriverProvider>
