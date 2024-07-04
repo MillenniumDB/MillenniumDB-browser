@@ -13,7 +13,7 @@ export const DriverContext = createContext({
 
 export default function DriverProvider({ children }) {
   const providerValue = {
-    _driver: MillenniumDB.driver(import.meta.env.VITE_SERVER_URL),
+    _driver: MillenniumDB.driver(import.meta.env.VITE_MDB_SERVER_URL),
     _catalog: null,
     fetchSize: DEFAULT_DRIVER_FETCH_SIZE,
     getSession: () =>

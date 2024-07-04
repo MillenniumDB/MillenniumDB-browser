@@ -1,10 +1,27 @@
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import { Box, Button } from '@mui/material';
+import examples from '../data/examples';
 
-export default function Actions({ handleRun, handleStop, running }) {
+export default function Actions({
+  handleRun,
+  handleStop,
+  handleExamples,
+  running,
+}) {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, py: 1 }}>
+      {examples.length > 0 && (
+        <Button
+          size="large"
+          variant="contained"
+          color="primary"
+          onClick={handleExamples}
+          disabled={running}
+        >
+          {'Examples'}
+        </Button>
+      )}
       <Button
         size="large"
         variant="contained"

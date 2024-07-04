@@ -2,19 +2,25 @@ import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { useSearchParams } from 'react-router-dom';
 import Actions from '../components/Actions';
+import AGTable from '../components/AGTable';
 import Editor from '../components/Editor';
+import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
 import { useThemeContext } from '../context/ThemeContext';
-import AGTable from '../components/AGTable';
+import examples from '../data/examples';
 
 // TODO: WebWorker for queries could improve interface?
 export default function Query() {
   const driverContext = useDriverContext();
   const themeContext = useThemeContext();
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get('query') || '';
 
   const [running, setRunning] = useState(false);
   const [language, setLanguage] = useState('');
+  const [examplesOpen, setExamplesOpen] = useState(false);
 
   const agTableRef = useRef(null);
   const editorRef = useRef(null);
@@ -30,6 +36,11 @@ export default function Query() {
       message: `Query stopped`,
       variant: 'info',
     });
+  };
+
+  const handleExample = (example) => {
+    editorRef.current.getEditor().setValue(example.query);
+    setExamplesOpen(false);
   };
 
   const runQuery = () => {
@@ -74,8 +85,7 @@ export default function Query() {
     setRunning(false);
   };
 
-  const fetchAndSetModel = async () => {
-    // TODO: Handle errors here!
+  const fetchAndSetLanguage = async () => {
     const catalog = await driverContext.getCatalog();
     switch (catalog.getModelString()) {
       case 'quad': {
@@ -92,8 +102,21 @@ export default function Query() {
     }
   };
 
+  const getDefaultQuery = () => {
+    switch (language) {
+      case 'mql': {
+        return 'MATCH (?from)-[?edge :?type]->(?to)\nRETURN *\nLIMIT 100\n';
+      }
+      case 'sparql': {
+        return 'SELECT *\nWHERE { ?s ?p ?o . }\nLIMIT 100\n';
+      }
+      default:
+        return '';
+    }
+  };
+
   useEffect(() => {
-    fetchAndSetModel();
+    fetchAndSetLanguage();
 
     return () => {
       stopQuery();
@@ -104,6 +127,13 @@ export default function Query() {
   return (
     <>
       <Helmet title="Query | MillenniumDB" />
+      {examples.length > 0 && (
+        <ExamplesDialog
+          open={examplesOpen}
+          setOpen={setExamplesOpen}
+          handleExample={handleExample}
+        />
+      )}
       <Container maxWidth="xl" disableGutters>
         <Stack sx={{ p: 2 }}>
           <Editor
@@ -117,11 +147,13 @@ export default function Query() {
                 ? 'rgba(255, 255, 255, 0.12)'
                 : 'rgba(0, 0, 0, 0.12)',
             }}
+            query={query || getDefaultQuery()}
             language={language}
           />
           <Actions
             handleRun={handleRun}
             handleStop={handleStop}
+            handleExamples={() => setExamplesOpen(true)}
             running={running}
           />
           <Box sx={{ height: '90vh' }}>

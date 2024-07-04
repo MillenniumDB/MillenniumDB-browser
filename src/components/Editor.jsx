@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useThemeContext } from '../context/ThemeContext';
 
-const Editor = forwardRef(({ language, ...props }, ref) => {
+const Editor = forwardRef(({ language, query, ...props }, ref) => {
   const themeContext = useThemeContext();
 
   const monacoEl = useRef(null);
@@ -30,23 +30,25 @@ const Editor = forwardRef(({ language, ...props }, ref) => {
   }, [themeContext.darkMode]);
 
   useEffect(() => {
-    const model = editor?.getModel();
-    if (model) {
+    if (editor && query) {
+      const model = editor.getModel();
+      model.setValue(query);
+    }
+  }, [editor, query]);
+
+  useEffect(() => {
+    if (editor && language) {
+      const model = editor.getModel();
       monaco.editor.setModelLanguage(model, language);
-      if (language === 'mql') {
-        model.setValue(
-          'MATCH (?from)-[?edge :?type]->(?to)\nRETURN *\nLIMIT 100\n'
-        );
-      } else if (language === 'sparql') {
-        model.setValue('SELECT *\nWHERE { ?s ?p ?o . }\nLIMIT 100\n');
-      }
     }
   }, [editor, language]);
 
   useEffect(() => {
     setEditor(
       monaco.editor.create(monacoEl.current, {
-        theme: themeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light',
+        theme: themeContext.darkMode
+          ? 'millenniumdb-dark'
+          : 'millenniumdb-light',
         language: 'plaintext',
         automaticLayout: true,
         minimap: { enabled: false },

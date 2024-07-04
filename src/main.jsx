@@ -45,6 +45,7 @@ function App() {
       element: <Navigate to="/" />,
     },
     {
+      path: '/',
       loader: async () => {
         try {
           const catalog = await driverContext.getCatalog();
@@ -56,8 +57,8 @@ function App() {
           throw new Response(error.toString(), { status: 500 });
         }
       },
+      shouldRevalidate: () => false,
       errorElement: <CatalogError />,
-      path: '/',
       element: (
         <>
           <ScrollRestoration />

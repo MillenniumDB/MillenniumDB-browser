@@ -12,7 +12,7 @@ export default function CatalogError() {
         </Typography>
         <Typography variant="body1" textAlign="justify">
           {`Could not fetch the remote MillenniumDB's catalog. Please check the connection to the server at "${
-            import.meta.env.VITE_SERVER_URL
+            import.meta.env.VITE_MDB_SERVER_URL
           }" and try again.`}
         </Typography>
 
