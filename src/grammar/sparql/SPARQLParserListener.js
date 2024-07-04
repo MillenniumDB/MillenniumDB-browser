@@ -644,6 +644,51 @@ export default class SPARQLParserListener extends antlr4.tree.ParseTreeListener 
 	}
 
 
+	// Enter a parse tree produced by SPARQLParser#pathQuantity.
+	enterPathQuantity(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#pathQuantity.
+	exitPathQuantity(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#pathQuantityExact.
+	enterPathQuantityExact(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#pathQuantityExact.
+	exitPathQuantityExact(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#pathQuantityRange.
+	enterPathQuantityRange(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#pathQuantityRange.
+	exitPathQuantityRange(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#pathQuantityMin.
+	enterPathQuantityMin(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#pathQuantityMin.
+	exitPathQuantityMin(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#pathQuantityMax.
+	enterPathQuantityMax(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#pathQuantityMax.
+	exitPathQuantityMax(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SPARQLParser#pathPrimary.
 	enterPathPrimary(ctx) {
 	}

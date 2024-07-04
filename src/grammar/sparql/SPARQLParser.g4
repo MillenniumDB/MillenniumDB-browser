@@ -415,8 +415,18 @@ pathEltOrInverse
     ;
 
 pathMod
-    : op=('?'| '*' | '+')
+    : '?'| '*' | '+' |  ('{' pathQuantity '}' )
     ;
+
+pathQuantity: pathQuantityExact | pathQuantityRange | pathQuantityMin | pathQuantityMax;
+
+pathQuantityExact: INTEGER;
+
+pathQuantityRange: min=INTEGER ',' max=INTEGER;
+
+pathQuantityMin: min=INTEGER ',';
+
+pathQuantityMax: ',' max=INTEGER;
 
 pathPrimary
     : iri | A | '!' pathNegatedPropertySet | '(' path ')'
