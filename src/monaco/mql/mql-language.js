@@ -1,3 +1,4 @@
+import MQLCompletionProvider from './mql-completion-provider';
 import MQLTokensProvider from './mql-tokens-provider';
 
 export const id = 'mql';
@@ -22,3 +23,5 @@ export const configuration = {
 };
 
 export const tokensProvider = new MQLTokensProvider();
+
+export const completionProvider = MQLCompletionProvider;

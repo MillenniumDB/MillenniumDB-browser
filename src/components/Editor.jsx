@@ -53,7 +53,7 @@ const Editor = forwardRef(({ language, query, ...props }, ref) => {
         automaticLayout: true,
         minimap: { enabled: false },
         renderWhitespace: 'all',
-        tabSize: 4,
+        tabSize: 2,
         fontSize: 20,
         scrollbar: {
           alwaysConsumeMouseWheel: false,

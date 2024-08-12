@@ -1,3 +1,4 @@
+import SPARQLCompletionProvider from './sparql-completion-provider';
 import SPARQLTokensProvider from './sparql-tokens-provider';
 
 export const id = 'sparql';
@@ -23,3 +24,5 @@ export const configuration = {
 };
 
 export const tokensProvider = new SPARQLTokensProvider();
+
+export const completionProvider = SPARQLCompletionProvider;

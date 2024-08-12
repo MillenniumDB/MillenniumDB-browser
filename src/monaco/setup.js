@@ -34,11 +34,19 @@ export function setupLanguages() {
   monaco.languages.onLanguage(MQL.id, () => {
     monaco.languages.setLanguageConfiguration(MQL.id, MQL.configuration);
     monaco.languages.setTokensProvider(MQL.id, MQL.tokensProvider);
+    monaco.languages.registerCompletionItemProvider(
+      MQL.id,
+      MQL.completionProvider
+    );
   });
 
   monaco.languages.register({ id: SPARQL.id });
   monaco.languages.onLanguage(SPARQL.id, () => {
     monaco.languages.setLanguageConfiguration(SPARQL.id, SPARQL.configuration);
     monaco.languages.setTokensProvider(SPARQL.id, SPARQL.tokensProvider);
+    monaco.languages.registerCompletionItemProvider(
+      SPARQL.id,
+      SPARQL.completionProvider
+    );
   });
 }
