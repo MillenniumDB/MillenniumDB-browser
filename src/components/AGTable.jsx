@@ -64,7 +64,7 @@ export default forwardRef(function AGTable(
         sortable: false,
       }))
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addRows = useCallback((newRows) => {

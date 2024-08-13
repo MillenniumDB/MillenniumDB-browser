@@ -20,6 +20,7 @@ import DriverProvider, { useDriverContext } from './context/DriverContext';
 import ThemeProvider from './context/ThemeContext';
 import { setupLanguages } from './monaco/setup';
 import CatalogError from './pages/CatalogError';
+import GraphView from './pages/GraphView';
 import Node from './pages/Node';
 import NodeError from './pages/NodeError';
 import Query from './pages/Query';
@@ -70,6 +71,10 @@ function App() {
         {
           path: '/',
           element: <Query />,
+        },
+        {
+          path: '/graph',
+          element: <GraphView />,
         },
         {
           path: '/node/:namedNode',

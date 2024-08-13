@@ -21,41 +21,43 @@ export default function Navbar() {
   }, [navigation.state]);
 
   return (
-    <AppBar
-      position="sticky"
-      variant="outlined"
-      elevation={0}
-      color="transparent"
-      sx={{
-        backdropFilter: 'blur(8px)',
-        backgroundColor: themeContext.darkMode ? '#00000080' : '#ffffff80',
-      }}
-    >
-      {loading && (
-        <LinearProgress
-          sx={{
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            right: 0,
-          }}
-        />
-      )}
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Typography variant="h6" noWrap component="div">
-          <Link href="/" sx={{ textDecoration: 'none', color: 'inherit' }}>
-            MDB
-          </Link>
-        </Typography>
+    <>
+      <AppBar
+        position="fixed"
+        variant="outlined"
+        elevation={0}
+        color="transparent"
+        sx={{
+          backgroundColor: themeContext.darkMode ? '#000000f0' : '#fffffff0',
+        }}
+      >
+        {loading && (
+          <LinearProgress
+            sx={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              right: 0,
+            }}
+          />
+        )}
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="h6" noWrap component="div">
+            <Link href="/" sx={{ textDecoration: 'none', color: 'inherit' }}>
+              MDB
+            </Link>
+          </Typography>
 
-        <IconButton
-          size="large"
-          edge="end"
-          onClick={themeContext.toggleDarkMode}
-        >
-          {themeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-        </IconButton>
-      </Toolbar>
-    </AppBar>
+          <IconButton
+            size="large"
+            edge="end"
+            onClick={themeContext.toggleDarkMode}
+          >
+            {themeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+      <Toolbar />
+    </>
   );
 }
