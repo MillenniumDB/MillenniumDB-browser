@@ -13,10 +13,10 @@ const common = {
       styleOverrides: {
         root: {
           button: {
-            borderRadius:0,
-          }
+            borderRadius: 0,
+          },
         },
-      }
+      },
     },
     MuiAlert: {
       styleOverrides: {
@@ -36,6 +36,27 @@ const common = {
       defaultProps: {
         disableElevation: true,
       },
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiOutlinedInput: {
       styleOverrides: {
         root: {
           borderRadius: 0,
