@@ -1,12 +1,9 @@
-import FullscreenIcon from '@mui/icons-material/Fullscreen';
-import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import {
   Autocomplete,
   Box,
   Grid,
   Paper,
   TextField,
-  ToggleButton,
   Typography,
 } from '@mui/material';
 import { debounce } from '@mui/material/utils';
@@ -15,7 +12,6 @@ import match from 'autosuggest-highlight/match';
 import * as d3Force from 'd3-force';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { FullScreen, useFullScreenHandle } from 'react-full-screen';
 import { useResizeDetector } from 'react-resize-detector';
 import { useThemeContext } from '../context/ThemeContext';
 
@@ -149,29 +145,6 @@ const SearchBar = () => {
   );
 };
 
-const FullScreenButton = ({ handle }) => {
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        position: 'absolute',
-        bottom: 16,
-        right: 16,
-        zIndex: 'fab',
-      }}
-    >
-      <ToggleButton
-        value="fullscreen"
-        size="small"
-        selected={handle.active}
-        onChange={handle.active ? handle.exit : handle.enter}
-      >
-        {handle.active ? <FullscreenExitIcon /> : <FullscreenIcon />}
-      </ToggleButton>
-    </Paper>
-  );
-};
-
 export default function GraphView() {
   const [graphData, setGraphData] = useState({
     nodes: [...Array(100).keys()].map((i) => ({ id: i })),
@@ -184,8 +157,6 @@ export default function GraphView() {
   });
 
   const { width, height, ref } = useResizeDetector();
-
-  const fullScreenHandle = useFullScreenHandle();
 
   const themeContext = useThemeContext();
 
@@ -208,40 +179,37 @@ export default function GraphView() {
   }, [graphRef]);
 
   return (
-    <FullScreen handle={fullScreenHandle}>
-      <Box
-        ref={ref}
-        sx={(theme) => ({
-          height: fullScreenHandle.active ? '100vh' : 'calc(100vh - 56px)',
-          [`${theme.breakpoints.up('sm')}`]: {
-            height: fullScreenHandle.active ? '100vh' : 'calc(100vh - 64px)',
+    <Box
+      ref={ref}
+      sx={(theme) => ({
+        height: 'calc(100vh - 56px)',
+        [`${theme.breakpoints.up('sm')}`]: {
+          height: 'calc(100vh - 64px)',
+        },
+        [`${theme.breakpoints.up('xs')}`]: {
+          '@media (orientation: landscape)': {
+            height: 'calc(100vh - 48px)',
           },
-          [`${theme.breakpoints.up('xs')}`]: {
-            '@media (orientation: landscape)': {
-              height: fullScreenHandle ? '100vh' : 'calc(100vh - 48px)',
-            },
-          },
-          width: '100vw',
-          position: 'relative',
-        })}
-      >
-        <SearchBar />
-        <FullScreenButton handle={fullScreenHandle} />
-        <ForceGraph2D
-          ref={graphRef}
-          graphData={graphData}
-          width={width}
-          height={height}
-          backgroundColor={themeContext.darkMode ? '#242424' : '#dedede'}
-          // Nodes
-          // Links
-          // Events
-          onNodeClick={handleNodeClick}
-          // Performance
-          warmupTicks={100}
-          cooldownTicks={100}
-        />
-      </Box>
-    </FullScreen>
+        },
+        width: '100vw',
+        position: 'relative',
+      })}
+    >
+      <SearchBar />
+      <ForceGraph2D
+        ref={graphRef}
+        graphData={graphData}
+        width={width}
+        height={height}
+        backgroundColor={themeContext.darkMode ? '#242424' : '#dedede'}
+        // Nodes
+        // Links
+        // Events
+        onNodeClick={handleNodeClick}
+        // Performance
+        warmupTicks={100}
+        cooldownTicks={100}
+      />
+    </Box>
   );
 }
