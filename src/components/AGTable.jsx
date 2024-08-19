@@ -3,7 +3,7 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { AgGridReact } from 'ag-grid-react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
-import { useThemeContext } from '../context/ThemeContext';
+import { useDarkModeContext } from '../context/DarkModeContext';
 import { useState } from 'react';
 import CustomCellRenderer from './CustomCellRenderer';
 
@@ -12,7 +12,7 @@ function CustomPagination({
   agGridPage,
   agGridHandlePageChange,
 }) {
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
 
   return (
     <Box
@@ -24,7 +24,7 @@ function CustomPagination({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        borderColor: themeContext.darkMode
+        borderColor: darkModeContext.darkMode
           ? 'rgba(255, 255, 255, 0.12)'
           : 'rgba(0, 0, 0, 0.12)',
       }}
@@ -44,7 +44,7 @@ export default forwardRef(function AGTable(
   { columns, rows, targetBlank },
   ref
 ) {
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
   useImperativeHandle(ref, () => ({ setColumns, addRow, clearRows, addRows }));
 
   const [pageCount, setPageCount] = useState(1);
@@ -101,7 +101,9 @@ export default forwardRef(function AGTable(
   return (
     <Box
       className={
-        themeContext.darkMode ? 'ag-theme-material-dark' : 'ag-theme-material'
+        darkModeContext.darkMode
+          ? 'ag-theme-material-dark'
+          : 'ag-theme-material'
       }
       sx={{
         flex: 1,

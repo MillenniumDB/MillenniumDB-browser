@@ -10,10 +10,11 @@ import { debounce } from '@mui/material/utils';
 import parse from 'autosuggest-highlight/parse';
 import match from 'autosuggest-highlight/match';
 import * as d3Force from 'd3-force';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeDetector } from 'react-resize-detector';
-import { useThemeContext } from '../context/ThemeContext';
+import { useDarkModeContext } from '../context/DarkModeContext';
+import { useTheme } from '@emotion/react';
 
 // Node size
 const NODE_VAL = 2; // Value of nodes
@@ -23,54 +24,6 @@ const LINK_COLOR = 'orange';
 const TEXT_COLOR = '#fff';
 const TEXT_BG_COLOR = '#000';
 const FONT_SIZE = 14;
-
-const NodeCanvasObject = (node, ctx, globalScale) => {
-  const { x, y } = node;
-  if (node.isEdge) {
-    const sideOut = NODE_VAL * NODE_REL_SIZE;
-    const sideIn = sideOut / 1.25;
-
-    // Border
-    ctx.fillStyle = LINK_COLOR;
-    ctx.fillRect(x - sideOut / 2, y - sideOut / 2, sideOut, sideOut);
-
-    // Fill
-    ctx.fillStyle = ctx.canvas.style.backgroundColor;
-    ctx.fillRect(x - sideIn / 2, y - sideIn / 2, sideIn, sideIn);
-  } else {
-    const radiusOut = Math.sqrt(NODE_VAL) * NODE_REL_SIZE;
-    const radiusIn = radiusOut / 1.25;
-
-    // Border
-    ctx.fillStyle = NODE_COLOR;
-    ctx.beginPath();
-    ctx.arc(x, y, radiusOut, 0, 2 * Math.PI);
-    ctx.fill();
-
-    // Fill
-    ctx.beginPath();
-    ctx.arc(x, y, radiusIn, 0, 2 * Math.PI);
-    ctx.fillStyle = ctx.canvas.style.backgroundColor;
-    ctx.fill();
-  }
-
-  // Text
-  const fontSize = Math.max(FONT_SIZE / globalScale, 1);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.font = `${fontSize}px "Courier New", monospace`;
-
-  const textWidth = ctx.measureText(node.label).width;
-  ctx.fillStyle = TEXT_BG_COLOR;
-  ctx.fillRect(
-    x - textWidth / 2 - 1,
-    y + Math.sqrt(NODE_VAL) * NODE_REL_SIZE * 1.2 - 1,
-    textWidth + 2,
-    fontSize + 2
-  );
-  ctx.fillStyle = TEXT_COLOR;
-  ctx.fillText(node.label, x, y + Math.sqrt(NODE_VAL) * NODE_REL_SIZE * 1.2);
-};
 
 const SearchBar = () => {
   const [value, setValue] = useState(null);
@@ -203,34 +156,203 @@ const SearchBar = () => {
 };
 
 export default function GraphView() {
-  const [graphData, setGraphData] = useState({
-    nodes: [
-      { id: '1', label: 'Juan', isEdge: false },
-      { id: '2', label: 'Pablo', isEdge: false },
-      { id: '3', label: 'Diego', isEdge: false },
-      { id: '1->2', label: 'xsd:knows', isEdge: true },
-      { id: '1->3', label: 'xsd:knows', isEdge: true },
-      { id: '2->3', label: 'xsd:knows', isEdge: true },
-    ],
-    links: [
-      { source: '1', target: '1->2' },
-      { source: '1->2', target: '2' },
-      { source: '1', target: '1->3' },
-      { source: '1->3', target: '3' },
-      { source: '2', target: '2->3' },
-      { source: '2->3', target: '3' },
-    ],
-  });
+  const graphData = useMemo(() => {
+    const graph = {
+      nodes: [
+        { id: '1', label: 'Juan', isEdge: false },
+        { id: '2', label: 'Pablo', isEdge: false },
+        { id: '3', label: 'Diego', isEdge: false },
+
+        { id: '4', label: 'Chile', isEdge: false },
+        { id: '5', label: 'Argentina', isEdge: false },
+        { id: '6', label: 'Brasil', isEdge: false },
+
+        { id: '7', label: 'Gatos', isEdge: false },
+
+        { id: '1->2', label: 'xsd:knows', isEdge: true },
+        { id: '1->3', label: 'xsd:knows', isEdge: true },
+        { id: '2->3', label: 'xsd:knows', isEdge: true },
+
+        { id: '1->4', label: 'xsd:livesAt', isEdge: true },
+        { id: '2->5', label: 'xsd:livesAt', isEdge: true },
+        { id: '3->6', label: 'xsd:livesAt', isEdge: true },
+
+        { id: '2->7', label: 'xsd:loves', isEdge: true },
+      ],
+      links: [
+        { source: '1', target: '1->2', id: 1 },
+        { source: '1->2', target: '2', id: 2 },
+        { source: '1', target: '1->3', id: 3 },
+        { source: '1->3', target: '3', id: 4 },
+        { source: '2', target: '2->3', id: 5 },
+        { source: '2->3', target: '3', id: 6 },
+
+        { source: '1', target: '1->4', id: 7 },
+        { source: '1->4', target: '4', id: 8 },
+        { source: '2', target: '2->5', id: 9 },
+        { source: '2->5', target: '5', id: 10 },
+        { source: '3', target: '3->6', id: 11 },
+        { source: '3->6', target: '6', id: 12 },
+
+        { source: '2', target: '2->7', id: 13 },
+        { source: '2->7', target: '7', id: 14 },
+      ],
+    };
+
+    // This structure should be updated together with the graph data
+    const node2neighbors = new Map();
+
+    for (const node of graph.nodes) {
+      node2neighbors.set(node.id, new Set());
+    }
+
+    for (const link of graph.links) {
+      node2neighbors.get(link.source).add([link.id, link.target]);
+      node2neighbors.get(link.target).add([link.id, link.source]);
+    }
+
+    graph.node2neighbors = node2neighbors;
+
+    return graph;
+  }, []);
+
+  const theme = useTheme();
 
   const { width, height, ref } = useResizeDetector();
 
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
 
   const graphRef = useRef(null);
 
-  const handleNodeClick = (node) => {
+  const [hoveredNodeId, setHoveredNodeId] = useState(null);
+  const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
+  const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
+
+  const handleNodeClick = useCallback((node) => {
     console.log('handleNodeClick', node);
-  };
+  }, []);
+
+  const handleNodeHover = useCallback(
+    (node) => {
+      if (!node) {
+        setHoveredNodeId(null);
+        setHighlightNodeIds(new Set());
+        setHighlightLinkIds(new Set());
+        return;
+      }
+
+      const newHighlightNodeIds = new Set();
+      const newHighlightLinkIds = new Set();
+
+      for (const [firstEdgeId, firstNodeId] of graphData.node2neighbors.get(
+        node.id
+      )) {
+        newHighlightNodeIds.add(firstNodeId);
+        newHighlightLinkIds.add(firstEdgeId);
+
+        for (const [secondEdgeId, secondNodeId] of graphData.node2neighbors.get(
+          firstNodeId
+        )) {
+          newHighlightNodeIds.add(secondNodeId);
+          newHighlightLinkIds.add(secondEdgeId);
+        }
+      }
+
+      setHoveredNodeId(node.id);
+      setHighlightNodeIds(newHighlightNodeIds);
+      setHighlightLinkIds(newHighlightLinkIds);
+    },
+    [graphData]
+  );
+
+  const NodeCanvasObject = useCallback(
+    (node, ctx, globalScale) => {
+      const { x, y } = node;
+      if (node.isEdge) {
+        const sideOut = NODE_VAL * NODE_REL_SIZE;
+        const sideIn = sideOut / 1.25;
+
+        // Border
+        if (hoveredNodeId) {
+          if (hoveredNodeId === node.id) {
+            ctx.fillStyle = 'red';
+          } else if (highlightNodeIds.has(node.id)) {
+            ctx.fillStyle = 'blue';
+          } else {
+            ctx.fillStyle = 'grey';
+          }
+        } else {
+          ctx.fillStyle = theme.palette.secondary.main;
+        }
+        ctx.fillRect(x - sideOut / 2, y - sideOut / 2, sideOut, sideOut);
+
+        // Fill
+        ctx.fillStyle = ctx.canvas.style.backgroundColor;
+        ctx.fillRect(x - sideIn / 2, y - sideIn / 2, sideIn, sideIn);
+      } else {
+        const radiusOut = Math.sqrt(NODE_VAL) * NODE_REL_SIZE;
+        const radiusIn = radiusOut / 1.25;
+
+        // Border
+        if (hoveredNodeId) {
+          if (hoveredNodeId === node.id) {
+            ctx.fillStyle = 'red';
+          } else if (highlightNodeIds.has(node.id)) {
+            ctx.fillStyle = 'blue';
+          } else {
+            ctx.fillStyle = 'grey';
+          }
+        } else {
+          ctx.fillStyle = theme.palette.primary.main;
+        }
+        ctx.beginPath();
+        ctx.arc(x, y, radiusOut, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Fill
+        ctx.beginPath();
+        ctx.arc(x, y, radiusIn, 0, 2 * Math.PI);
+        ctx.fillStyle = ctx.canvas.style.backgroundColor;
+        ctx.fill();
+      }
+
+      // Text
+      const fontSize = Math.max(FONT_SIZE / globalScale, 1);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.font = `${fontSize}px "Courier New", monospace`;
+
+      const textWidth = ctx.measureText(node.label).width;
+      ctx.fillStyle = TEXT_BG_COLOR;
+      ctx.fillRect(
+        x - textWidth / 2 - 1,
+        y + Math.sqrt(NODE_VAL) * NODE_REL_SIZE * 1.2 - 1,
+        textWidth + 2,
+        fontSize + 2
+      );
+      ctx.fillStyle = TEXT_COLOR;
+      ctx.fillText(
+        node.label,
+        x,
+        y + Math.sqrt(NODE_VAL) * NODE_REL_SIZE * 1.2
+      );
+    },
+    [hoveredNodeId, theme]
+  );
+
+  const handleLinkColor = useCallback(
+    (link) => {
+      if (hoveredNodeId) {
+        if (highlightLinkIds.has(link.id)) {
+          return 'red';
+        } else {
+          return 'grey';
+        }
+      }
+      return theme.palette.secondary.main;
+    },
+    [theme, highlightLinkIds]
+  );
 
   useEffect(() => {
     const graph = graphRef.current;
@@ -267,7 +389,7 @@ export default function GraphView() {
         graphData={graphData}
         width={width}
         height={height}
-        backgroundColor={themeContext.darkMode ? '#242424' : '#dedede'}
+        backgroundColor={darkModeContext.darkMode ? '#242424' : '#dedede'}
         // Nodes
         nodeRelSize={NODE_REL_SIZE}
         nodeVal={NODE_VAL} // click/drag radius
@@ -278,13 +400,14 @@ export default function GraphView() {
         // Links
         linkDirectionalArrowLength={(link) => (link.source.isEdge ? 4 : 0)}
         linkDirectionalArrowRelPos={1}
-        linkColor={() => LINK_COLOR}
+        linkColor={handleLinkColor}
         linkWidth={1}
         // Events
         onNodeClick={handleNodeClick}
+        onNodeHover={handleNodeHover}
         // Performance
         warmupTicks={100}
-        cooldownTicks={100}
+        cooldownTicks={Infinity}
       />
     </Box>
   );

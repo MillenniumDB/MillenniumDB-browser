@@ -10,11 +10,11 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 import { useNavigation } from 'react-router-dom';
-import { useThemeContext } from '../context/ThemeContext';
+import { useDarkModeContext } from '../context/DarkModeContext';
 
 export default function Navbar() {
   const navigation = useNavigation();
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
 
   const loading = useMemo(() => {
     return navigation.state === 'loading';
@@ -28,7 +28,7 @@ export default function Navbar() {
         elevation={0}
         color="transparent"
         sx={{
-          backgroundColor: themeContext.darkMode ? '#000000f0' : '#fffffff0',
+          backgroundColor: darkModeContext.darkMode ? '#000000f0' : '#fffffff0',
         }}
       >
         {loading && (
@@ -51,9 +51,9 @@ export default function Navbar() {
           <IconButton
             size="large"
             edge="end"
-            onClick={themeContext.toggleDarkMode}
+            onClick={darkModeContext.toggleDarkMode}
           >
-            {themeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            {darkModeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
         </Toolbar>
       </AppBar>

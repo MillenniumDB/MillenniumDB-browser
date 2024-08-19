@@ -17,7 +17,7 @@ import {
 } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import DriverProvider, { useDriverContext } from './context/DriverContext';
-import ThemeProvider from './context/ThemeContext';
+import DarkModeProvider from './context/DarkModeContext';
 import { setupLanguages } from './monaco/setup';
 import CatalogError from './pages/CatalogError';
 import GraphView from './pages/GraphView';
@@ -131,7 +131,7 @@ function Main() {
           { charSet: 'utf-8' },
         ]}
       />
-      <ThemeProvider>
+      <DarkModeProvider>
         <CssBaseline />
         <SnackbarProvider
           Components={{
@@ -148,7 +148,7 @@ function Main() {
         <DriverProvider>
           <App />
         </DriverProvider>
-      </ThemeProvider>
+      </DarkModeProvider>
     </>
   );
 }

@@ -8,12 +8,12 @@ import {
   Box,
   Typography,
 } from '@mui/material';
-import { useThemeContext } from '../context/ThemeContext';
+import { useDarkModeContext } from '../context/DarkModeContext';
 import examples from '../data/examples';
 import { Fragment } from 'react';
 
 function ExampleItem({ example, handleExample }) {
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
 
   return (
     <Box display="flex" alignItems="center" gap={2} sx={{ py: 1 }}>
@@ -26,7 +26,7 @@ function ExampleItem({ example, handleExample }) {
             whiteSpace: 'preserve',
             my: 1,
             p: 2,
-            backgroundColor: themeContext.darkMode ? '#212121' : '#ededed',
+            backgroundColor: darkModeContext.darkMode ? '#212121' : '#ededed',
             fontFamily: 'monospace',
           }}
         >

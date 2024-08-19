@@ -7,10 +7,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useThemeContext } from '../context/ThemeContext';
+import { useDarkModeContext } from '../context/DarkModeContext';
 
 const Editor = forwardRef(({ language, query, ...props }, ref) => {
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
 
   const monacoEl = useRef(null);
   const [editor, setEditor] = useState(null);
@@ -25,9 +25,9 @@ const Editor = forwardRef(({ language, query, ...props }, ref) => {
 
   useEffect(() => {
     monaco.editor.setTheme(
-      themeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light'
+      darkModeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light'
     );
-  }, [themeContext.darkMode]);
+  }, [darkModeContext.darkMode]);
 
   useEffect(() => {
     if (editor && query) {
@@ -46,7 +46,7 @@ const Editor = forwardRef(({ language, query, ...props }, ref) => {
   useEffect(() => {
     setEditor(
       monaco.editor.create(monacoEl.current, {
-        theme: themeContext.darkMode
+        theme: darkModeContext.darkMode
           ? 'millenniumdb-dark'
           : 'millenniumdb-light',
         language: 'plaintext',

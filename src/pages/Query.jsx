@@ -8,13 +8,13 @@ import AGTable from '../components/AGTable';
 import Editor from '../components/Editor';
 import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
-import { useThemeContext } from '../context/ThemeContext';
+import { useDarkModeContext } from '../context/DarkModeContext';
 import examples from '../data/examples';
 
 // TODO: WebWorker for queries could improve interface?
 export default function Query() {
   const driverContext = useDriverContext();
-  const themeContext = useThemeContext();
+  const darkModeContext = useDarkModeContext();
   const [searchParams] = useSearchParams();
   const query = searchParams.get('query') || '';
 
@@ -159,7 +159,7 @@ export default function Query() {
               width: '100%',
               minHeight: '400px',
               border: 1,
-              borderColor: themeContext.darkMode
+              borderColor: darkModeContext.darkMode
                 ? 'rgba(255, 255, 255, 0.12)'
                 : 'rgba(0, 0, 0, 0.12)',
             }}
