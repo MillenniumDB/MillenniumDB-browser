@@ -16,15 +16,6 @@ import { useResizeDetector } from 'react-resize-detector';
 import { useDarkModeContext } from '../context/DarkModeContext';
 import { useTheme } from '@emotion/react';
 
-// Node size
-const NODE_VAL = 2; // Value of nodes
-const NODE_REL_SIZE = 4; // Ratio of node circle area per value unit
-const NODE_COLOR = 'cyan';
-const LINK_COLOR = 'orange';
-const TEXT_COLOR = '#fff';
-const TEXT_BG_COLOR = '#000';
-const FONT_SIZE = 14;
-
 const SearchBar = () => {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
@@ -167,7 +158,12 @@ export default function GraphView() {
         { id: '5', label: 'Argentina', isEdge: false },
         { id: '6', label: 'Brasil', isEdge: false },
 
-        { id: '7', label: 'Gatos', isEdge: false },
+        {
+          id: '7',
+          label:
+            'Gatos Perros Conejos Texto Muy Largo Gatos Perros Conejos Texto Muy Largo Gatos Perros Conejos Texto Muy Largo',
+          isEdge: false,
+        },
 
         { id: '1->2', label: 'xsd:knows', isEdge: true },
         { id: '1->3', label: 'xsd:knows', isEdge: true },
@@ -228,6 +224,28 @@ export default function GraphView() {
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
 
+  // Cache this values as they are used multiple times
+  const graphConstants = useMemo(() => {
+    const config = {
+      backgroundColor: darkModeContext.darkMode ? '#151515' : '#ffffff',
+      nodeVal: 2,
+      nodeRelSize: 10,
+      nodeColor: darkModeContext.darkMode ? '#aaaaaa' : '#5c5c5c',
+      linkColor: darkModeContext.darkMode ? '#3f3f3f' : '#d5d5d5',
+      nodeHighlightColor: theme.palette.primary.main,
+      linkHighlightColor: theme.palette.secondary.main,
+      nodeHoverColor: theme.palette.primary.dark,
+      linkHoverColor: theme.palette.secondary.dark,
+      textSize: 16,
+    };
+
+    config.edgeSide = config.nodeVal * config.nodeRelSize;
+    config.nodeRadius = Math.sqrt(config.nodeVal) * config.nodeRelSize;
+    config.textColor = config.nodeColor;
+
+    return config;
+  }, [theme, darkModeContext.darkMode]);
+
   const handleNodeClick = useCallback((node) => {
     console.log('handleNodeClick', node);
   }, []);
@@ -244,17 +262,25 @@ export default function GraphView() {
       const newHighlightNodeIds = new Set();
       const newHighlightLinkIds = new Set();
 
-      for (const [firstEdgeId, firstNodeId] of graphData.node2neighbors.get(
-        node.id
-      )) {
-        newHighlightNodeIds.add(firstNodeId);
-        newHighlightLinkIds.add(firstEdgeId);
-
-        for (const [secondEdgeId, secondNodeId] of graphData.node2neighbors.get(
-          firstNodeId
+      if (node.isEdge) {
+        graphData.node2neighbors.get(node.id).forEach(([edgeId, nodeId]) => {
+          newHighlightNodeIds.add(nodeId);
+          newHighlightLinkIds.add(edgeId);
+        });
+      } else {
+        for (const [firstEdgeId, firstNodeId] of graphData.node2neighbors.get(
+          node.id
         )) {
-          newHighlightNodeIds.add(secondNodeId);
-          newHighlightLinkIds.add(secondEdgeId);
+          newHighlightNodeIds.add(firstNodeId);
+          newHighlightLinkIds.add(firstEdgeId);
+
+          for (const [
+            secondEdgeId,
+            secondNodeId,
+          ] of graphData.node2neighbors.get(firstNodeId)) {
+            newHighlightNodeIds.add(secondNodeId);
+            newHighlightLinkIds.add(secondEdgeId);
+          }
         }
       }
 
@@ -267,101 +293,84 @@ export default function GraphView() {
 
   const NodeCanvasObject = useCallback(
     (node, ctx, globalScale) => {
+      // TODO: Cache constants
       const { x, y } = node;
+
+      const isHovered = hoveredNodeId === node.id;
+
       if (node.isEdge) {
-        const sideOut = NODE_VAL * NODE_REL_SIZE;
-        const sideIn = sideOut / 1.25;
-
-        // Border
+        ctx.fillStyle = graphConstants.linkColor;
         if (hoveredNodeId) {
-          if (hoveredNodeId === node.id) {
-            ctx.fillStyle = 'red';
+          if (isHovered) {
+            const outerSide = graphConstants.edgeSide + 2;
+            ctx.fillStyle = graphConstants.linkHoverColor;
+            ctx.fillRect(
+              x - outerSide / 2,
+              y - outerSide / 2,
+              outerSide,
+              outerSide
+            );
+            ctx.fillStyle = graphConstants.linkHighlightColor;
           } else if (highlightNodeIds.has(node.id)) {
-            ctx.fillStyle = 'blue';
-          } else {
-            ctx.fillStyle = 'grey';
+            ctx.fillStyle = graphConstants.linkHighlightColor;
           }
-        } else {
-          ctx.fillStyle = theme.palette.secondary.main;
         }
-        ctx.fillRect(x - sideOut / 2, y - sideOut / 2, sideOut, sideOut);
-
-        // Fill
-        ctx.fillStyle = ctx.canvas.style.backgroundColor;
-        ctx.fillRect(x - sideIn / 2, y - sideIn / 2, sideIn, sideIn);
+        ctx.fillRect(
+          x - graphConstants.edgeSide / 2,
+          y - graphConstants.edgeSide / 2,
+          graphConstants.edgeSide,
+          graphConstants.edgeSide
+        );
       } else {
-        const radiusOut = Math.sqrt(NODE_VAL) * NODE_REL_SIZE;
-        const radiusIn = radiusOut / 1.25;
-
-        // Border
+        ctx.fillStyle = graphConstants.nodeColor;
         if (hoveredNodeId) {
-          if (hoveredNodeId === node.id) {
-            ctx.fillStyle = 'red';
+          if (isHovered) {
+            const outerRadius = graphConstants.nodeRadius + 1;
+            ctx.fillStyle = graphConstants.nodeHoverColor;
+            ctx.beginPath();
+            ctx.arc(x, y, outerRadius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = graphConstants.nodeHighlightColor;
           } else if (highlightNodeIds.has(node.id)) {
-            ctx.fillStyle = 'blue';
-          } else {
-            ctx.fillStyle = 'grey';
+            ctx.fillStyle = graphConstants.nodeHighlightColor;
           }
-        } else {
-          ctx.fillStyle = theme.palette.primary.main;
         }
         ctx.beginPath();
-        ctx.arc(x, y, radiusOut, 0, 2 * Math.PI);
-        ctx.fill();
-
-        // Fill
-        ctx.beginPath();
-        ctx.arc(x, y, radiusIn, 0, 2 * Math.PI);
-        ctx.fillStyle = ctx.canvas.style.backgroundColor;
+        ctx.arc(x, y, graphConstants.nodeRadius, 0, 2 * Math.PI);
         ctx.fill();
       }
 
       // Text
-      const fontSize = Math.max(FONT_SIZE / globalScale, 1);
+      const fontSize = Math.max(graphConstants.textSize / globalScale, 1);
+      // const opacity = globalScale - 1;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.font = `${fontSize}px "Courier New", monospace`;
-
-      const textWidth = ctx.measureText(node.label).width;
-      ctx.fillStyle = TEXT_BG_COLOR;
-      ctx.fillRect(
-        x - textWidth / 2 - 1,
-        y + Math.sqrt(NODE_VAL) * NODE_REL_SIZE * 1.2 - 1,
-        textWidth + 2,
-        fontSize + 2
-      );
-      ctx.fillStyle = TEXT_COLOR;
-      ctx.fillText(
-        node.label,
-        x,
-        y + Math.sqrt(NODE_VAL) * NODE_REL_SIZE * 1.2
-      );
+      // ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+      ctx.fillStyle = graphConstants.textColor;
+      ctx.fillText(node.label, x, y + graphConstants.nodeRadius * 1.2);
     },
-    [hoveredNodeId, theme]
+    [hoveredNodeId, highlightNodeIds, graphConstants]
   );
 
   const handleLinkColor = useCallback(
     (link) => {
-      if (hoveredNodeId) {
-        if (highlightLinkIds.has(link.id)) {
-          return 'red';
-        } else {
-          return 'grey';
-        }
+      if (hoveredNodeId && highlightLinkIds.has(link.id)) {
+        return graphConstants.linkHighlightColor;
       }
-      return theme.palette.secondary.main;
+      return graphConstants.linkColor;
     },
-    [theme, highlightLinkIds]
+    [hoveredNodeId, highlightLinkIds, graphConstants]
   );
 
   useEffect(() => {
     const graph = graphRef.current;
     if (graph) {
-      graph.d3Force('link', d3Force.forceLink().distance(30));
+      graph.d3Force('link', d3Force.forceLink().distance(200));
       graph.d3Force('center', d3Force.forceCenter().strength(0.05));
       graph.d3Force(
         'charge',
-        d3Force.forceManyBody().strength(-30).distanceMin(1).distanceMax(150)
+        d3Force.forceManyBody().strength(-500).distanceMin(1).distanceMax(500)
       );
     }
   }, [graphRef]);
@@ -389,16 +398,16 @@ export default function GraphView() {
         graphData={graphData}
         width={width}
         height={height}
-        backgroundColor={darkModeContext.darkMode ? '#242424' : '#dedede'}
+        backgroundColor={graphConstants.backgroundColor}
         // Nodes
-        nodeRelSize={NODE_REL_SIZE}
-        nodeVal={NODE_VAL} // click/drag radius
+        nodeRelSize={graphConstants.nodeRelSize}
+        nodeVal={graphConstants.nodeVal}
         nodeColor={null}
         nodeLabel={null}
         nodeCanvasObject={NodeCanvasObject}
         nodeCanvasObjectMode={() => 'replace'}
         // Links
-        linkDirectionalArrowLength={(link) => (link.source.isEdge ? 4 : 0)}
+        linkDirectionalArrowLength={(link) => (link.source.isEdge ? 6 : 0)}
         linkDirectionalArrowRelPos={1}
         linkColor={handleLinkColor}
         linkWidth={1}
@@ -408,6 +417,7 @@ export default function GraphView() {
         // Performance
         warmupTicks={100}
         cooldownTicks={Infinity}
+        autoPauseRedraw={false}
       />
     </Box>
   );
