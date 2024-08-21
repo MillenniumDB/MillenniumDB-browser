@@ -220,36 +220,55 @@ export default function GraphView() {
 
   const graphRef = useRef(null);
 
+  const [textOpacityAtScale, setTextOpacityAtScale] = useState(0);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
 
   // Cache this values as they are used multiple times
-  const graphConstants = useMemo(() => {
-    const config = {
+  const graphSettings = useMemo(() => {
+    const settings = {
       backgroundColor: darkModeContext.darkMode ? '#151515' : '#ffffff',
-      nodeVal: 2,
-      nodeRelSize: 10,
       nodeColor: darkModeContext.darkMode ? '#aaaaaa' : '#5c5c5c',
       linkColor: darkModeContext.darkMode ? '#3f3f3f' : '#c4c4c4',
       nodeHighlightColor: theme.palette.primary.main,
       linkHighlightColor: theme.palette.secondary.main,
-      nodeHoverColor: theme.palette.primary.dark,
-      linkHoverColor: theme.palette.secondary.dark,
-      fontSize: 20,
-      fontSizeLarge: 40,
+      nodeHoverColor: theme.palette.primary.light,
+      linkHoverColor: theme.palette.secondary.light,
+      nodeVal: 2,
+      nodeRelSize: 10,
+      fontSize: 24,
+      // When the text is completely transparent
+      maxTextFadeAtGlobalScale: 0.45,
+      // When the text is completely visible
+      minTextFadeAtGlobalScale: 0.6,
+      nonHoveredOpacity: 0.1,
+      hoverlineWidth: 2,
     };
 
-    config.edgeSide = config.nodeVal * config.nodeRelSize;
-    config.nodeRadius = Math.sqrt(config.nodeVal) * config.nodeRelSize;
-    config.textColor = config.nodeColor;
-    config.arrowSize = config.nodeVal * config.nodeRelSize;
+    settings.edgeSide = settings.nodeVal * settings.nodeRelSize;
+    settings.nodeRadius = Math.sqrt(settings.nodeVal) * settings.nodeRelSize;
+    settings.textColor = settings.nodeColor;
+    settings.arrowSize = settings.nodeVal * settings.nodeRelSize;
 
-    const lowOpacityHex = Math.round(0.2 * 255).toString(16);
-    config.nodeColorLowOpacity = config.nodeColor + lowOpacityHex;
-    config.linkColorLowOpacity = config.linkColor + lowOpacityHex;
+    const nonHoveredOpacityHex = Math.round(255 * settings.nonHoveredOpacity)
+      .toString(16)
+      .padStart(2, '0');
+    settings.nodeNonHoveredColor = settings.nodeColor + nonHoveredOpacityHex;
+    settings.linkNonHoveredColor = settings.linkColor + nonHoveredOpacityHex;
 
-    return config;
+    // Get opacity of globalScale, interpolating from [textFadeThreshold, 1] to [0, 1]
+    settings.getTextOpacityAtGlobalScale = (globalScale) =>
+      Math.min(
+        1.0,
+        Math.max(
+          0.0,
+          (globalScale - settings.maxTextFadeAtGlobalScale) /
+            (settings.minTextFadeAtGlobalScale -
+              settings.maxTextFadeAtGlobalScale)
+        )
+      );
+    return settings;
   }, [theme, darkModeContext.darkMode]);
 
   const handleNodeClick = useCallback((node) => {
@@ -297,109 +316,135 @@ export default function GraphView() {
     [graphData]
   );
 
+  const handleRenderFramePre = (ctx, globalScale) => {
+    setTextOpacityAtScale(
+      Math.min(
+        1.0,
+        Math.max(
+          0.0,
+          (globalScale - graphSettings.maxTextFadeAtGlobalScale) /
+            (graphSettings.minTextFadeAtGlobalScale -
+              graphSettings.maxTextFadeAtGlobalScale)
+        )
+      )
+    );
+  };
+
   const NodeCanvasObject = useCallback(
     (node, ctx, globalScale) => {
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
 
+      // Draw the shape of the node
       if (node.isEdge) {
         if (hoveredNodeId) {
           if (isHovered) {
-            const outerSide = graphConstants.edgeSide + 2;
-            ctx.fillStyle = graphConstants.linkHoverColor;
-            ctx.fillRect(
-              x - outerSide / 2,
-              y - outerSide / 2,
-              outerSide,
-              outerSide
+            ctx.strokeStyle = graphSettings.linkHoverColor;
+            ctx.lineWidth = graphSettings.hoverlineWidth;
+            ctx.strokeRect(
+              x - graphSettings.edgeSide / 2,
+              y - graphSettings.edgeSide / 2,
+              graphSettings.edgeSide,
+              graphSettings.edgeSide
             );
-            ctx.fillStyle = graphConstants.linkHighlightColor;
+            ctx.fillStyle = graphSettings.linkHighlightColor;
           } else if (highlightNodeIds.has(node.id)) {
-            ctx.fillStyle = graphConstants.linkHighlightColor;
+            ctx.fillStyle = graphSettings.linkHighlightColor;
           } else {
-            ctx.fillStyle = graphConstants.linkColorLowOpacity;
+            ctx.fillStyle = graphSettings.linkNonHoveredColor;
           }
         } else {
-          ctx.fillStyle = graphConstants.linkColor;
+          ctx.fillStyle = graphSettings.linkColor;
         }
 
         ctx.fillRect(
-          x - graphConstants.edgeSide / 2,
-          y - graphConstants.edgeSide / 2,
-          graphConstants.edgeSide,
-          graphConstants.edgeSide
+          x - graphSettings.edgeSide / 2,
+          y - graphSettings.edgeSide / 2,
+          graphSettings.edgeSide,
+          graphSettings.edgeSide
         );
       } else {
         if (hoveredNodeId) {
           if (isHovered) {
-            const outerRadius = graphConstants.nodeRadius + 1;
-            ctx.fillStyle = graphConstants.nodeHoverColor;
+            ctx.strokeStyle = graphSettings.nodeHoverColor;
+            ctx.lineWidth = graphSettings.hoverlineWidth;
             ctx.beginPath();
-            ctx.arc(x, y, outerRadius, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.fillStyle = graphConstants.nodeHighlightColor;
+            ctx.arc(x, y, graphSettings.nodeRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = graphSettings.nodeHighlightColor;
           } else if (highlightNodeIds.has(node.id)) {
-            ctx.fillStyle = graphConstants.nodeHighlightColor;
+            ctx.fillStyle = graphSettings.nodeHighlightColor;
           } else {
-            ctx.fillStyle = graphConstants.nodeColorLowOpacity;
+            ctx.fillStyle = graphSettings.linkNonHoveredColor;
           }
         } else {
-          ctx.fillStyle = graphConstants.nodeColor;
+          ctx.fillStyle = graphSettings.nodeColor;
         }
 
         ctx.beginPath();
-        ctx.arc(x, y, graphConstants.nodeRadius, 0, 2 * Math.PI);
+        ctx.arc(x, y, graphSettings.nodeRadius, 0, 2 * Math.PI);
         ctx.fill();
       }
 
       // Label
       let fontSize = Math.min(
-        graphConstants.fontSize,
-        graphConstants.fontSize * globalScale
+        graphSettings.fontSize,
+        graphSettings.fontSize * globalScale
       );
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       if (hoveredNodeId) {
         if (isHovered) {
-          ctx.fillStyle = graphConstants.textColor;
-          fontSize = Math.min(
-            graphConstants.fontSizeLarge,
-            graphConstants.fontSizeLarge / globalScale
+          ctx.fillStyle = graphSettings.textColor;
+          fontSize = Math.max(
+            graphSettings.fontSize,
+            graphSettings.fontSize / globalScale
           );
-        } else if (highlightNodeIds.has(node.id)) {
-          ctx.fillStyle = graphConstants.textColor;
         } else {
-          ctx.fillStyle = graphConstants.nodeColorLowOpacity;
+          // Prevent drawing text when opacity is zero
+          if (!textOpacityAtScale) return;
+
+          if (highlightNodeIds.has(node.id)) {
+            // Calculate color at scale in hex
+            const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
+              .toString(16)
+              .padStart(2, '0');
+            ctx.fillStyle = graphSettings.textColor + textOpacityAtScaleHex;
+          } else {
+            ctx.fillStyle = graphSettings.textNonHoveredColor;
+          }
         }
       } else {
-        // Change the opacity depending on the zoom level by interpolating [0.5, 0.8] to [0, 1]
-        const opacity = Math.min(1.0, Math.max(0.0, (globalScale - 0.5) / 0.3));
-        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        // Prevent drawing text when opacity is zero
+        if (!textOpacityAtScale) return;
+
+        // Calculate color at scale in hex
+        const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
+          .toString(16)
+          .padStart(2, '0');
+        ctx.fillStyle = graphSettings.textColor + textOpacityAtScaleHex;
       }
 
       ctx.font = `${fontSize}px "Roboto"`;
-      ctx.fillText(
-        node.label,
-        x,
-        y + graphConstants.nodeRadius + 1.5 * fontSize
-      );
+      const yOffset = graphSettings.nodeRadius + fontSize * 1.75;
+      ctx.fillText(node.label, x, y + yOffset);
     },
-    [hoveredNodeId, highlightNodeIds, graphConstants]
+    [hoveredNodeId, highlightNodeIds, graphSettings, textOpacityAtScale]
   );
 
   const handleLinkColor = useCallback(
     (link) => {
       if (hoveredNodeId) {
         if (highlightLinkIds.has(link.id)) {
-          return graphConstants.linkHighlightColor;
+          return graphSettings.linkHighlightColor;
         } else {
-          return graphConstants.linkColorLowOpacity;
+          return graphSettings.linkNonHoveredColor;
         }
       }
-      return graphConstants.linkColor;
+      return graphSettings.linkColor;
     },
-    [hoveredNodeId, highlightLinkIds, graphConstants]
+    [hoveredNodeId, highlightLinkIds, graphSettings]
   );
 
   useEffect(() => {
@@ -437,17 +482,17 @@ export default function GraphView() {
         graphData={graphData}
         width={width}
         height={height}
-        backgroundColor={graphConstants.backgroundColor}
+        backgroundColor={graphSettings.backgroundColor}
         // Nodes
-        nodeRelSize={graphConstants.nodeRelSize}
-        nodeVal={graphConstants.nodeVal}
+        nodeRelSize={graphSettings.nodeRelSize}
+        nodeVal={graphSettings.nodeVal}
         nodeColor={null}
         nodeLabel={null}
         nodeCanvasObject={NodeCanvasObject}
         nodeCanvasObjectMode={() => 'replace'}
         // Links
         linkDirectionalArrowLength={(link) =>
-          link.source.isEdge ? graphConstants.arrowSize : 0
+          link.source.isEdge ? graphSettings.arrowSize : 0
         }
         linkDirectionalArrowRelPos={1}
         linkColor={handleLinkColor}
@@ -455,10 +500,11 @@ export default function GraphView() {
         // Events
         onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
+        onRenderFramePre={handleRenderFramePre}
         // Performance
         warmupTicks={100}
-        cooldownTicks={Infinity}
-        autoPauseRedraw={false}
+        cooldownTicks={100}
+        autoPauseRedraw={true}
       />
     </Box>
   );
