@@ -15,6 +15,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeDetector } from 'react-resize-detector';
 import { useDarkModeContext } from '../context/DarkModeContext';
 import { useTheme } from '@emotion/react';
+import { useDriverContext } from '../context/DriverContext';
 
 const SearchBar = () => {
   const [value, setValue] = useState(null);
@@ -34,11 +35,6 @@ const SearchBar = () => {
     () =>
       debounce((text, callback) => {
         // TODO: MDB text search
-        // const results = [
-        //   { id: 1 + text, label: text + 'A' },
-        //   { id: 2 + text, label: text + 'B' },
-        //   { id: 3 + text, label: text + 'C' },
-        // ];
         // callback(results);
       }, 400),
     []
@@ -147,76 +143,19 @@ const SearchBar = () => {
 };
 
 export default function GraphView() {
-  const graphData = useMemo(() => {
-    const graph = {
-      nodes: [
-        { id: '1', label: 'Juan', isEdge: false },
-        { id: '2', label: 'Pablo', isEdge: false },
-        { id: '3', label: 'Diego', isEdge: false },
-
-        { id: '4', label: 'Chile', isEdge: false },
-        { id: '5', label: 'Argentina', isEdge: false },
-        { id: '6', label: 'Brasil', isEdge: false },
-
-        {
-          id: '7',
-          label:
-            'Gatos Perros Conejos Texto Muy Largo Gatos Perros Conejos Texto Muy Largo Gatos Perros Conejos Texto Muy Largo',
-          isEdge: false,
-        },
-
-        { id: '1->2', label: 'xsd:knows', isEdge: true },
-        { id: '1->3', label: 'xsd:knows', isEdge: true },
-        { id: '2->3', label: 'xsd:knows', isEdge: true },
-
-        { id: '1->4', label: 'xsd:livesAt', isEdge: true },
-        { id: '2->5', label: 'xsd:livesAt', isEdge: true },
-        { id: '3->6', label: 'xsd:livesAt', isEdge: true },
-
-        { id: '2->7', label: 'xsd:loves', isEdge: true },
-      ],
-      links: [
-        { source: '1', target: '1->2', id: 1 },
-        { source: '1->2', target: '2', id: 2 },
-        { source: '1', target: '1->3', id: 3 },
-        { source: '1->3', target: '3', id: 4 },
-        { source: '2', target: '2->3', id: 5 },
-        { source: '2->3', target: '3', id: 6 },
-
-        { source: '1', target: '1->4', id: 7 },
-        { source: '1->4', target: '4', id: 8 },
-        { source: '2', target: '2->5', id: 9 },
-        { source: '2->5', target: '5', id: 10 },
-        { source: '3', target: '3->6', id: 11 },
-        { source: '3->6', target: '6', id: 12 },
-
-        { source: '2', target: '2->7', id: 13 },
-        { source: '2->7', target: '7', id: 14 },
-      ],
-    };
-
-    // This structure should be updated together with the graph data
-    const node2neighbors = new Map();
-
-    for (const node of graph.nodes) {
-      node2neighbors.set(node.id, new Set());
-    }
-
-    for (const link of graph.links) {
-      node2neighbors.get(link.source).add([link.id, link.target]);
-      node2neighbors.get(link.target).add([link.id, link.source]);
-    }
-
-    graph.node2neighbors = node2neighbors;
-
-    return graph;
-  }, []);
+  const [graphData, setGraphData] = useState({
+    nodes: [],
+    links: [],
+    node2neighbors: new Map(),
+  });
 
   const theme = useTheme();
 
   const { width, height, ref } = useResizeDetector();
 
   const darkModeContext = useDarkModeContext();
+
+  const driverContext = useDriverContext();
 
   const graphRef = useRef(null);
 
@@ -458,6 +397,72 @@ export default function GraphView() {
       );
     }
   }, [graphRef]);
+
+  useEffect(() => {
+    const fetchGraph = async () => {
+      // TODO: Just for testing
+      const query =
+        'MATCH (?source)-[?edge :?type]->(?target) RETURN * LIMIT 100';
+
+      const session = driverContext.getSession();
+      const result = session.run(query);
+      return await result.records();
+    };
+
+    // TODO: try catch
+    fetchGraph().then((records) => {
+      const seenNodeIds = new Set();
+      const newNodes = [];
+      const newLinks = [];
+      const newNode2Neighbors = new Map();
+
+      for (const record of records) {
+        const { source, edge, type, target } = record.toObject();
+
+        if (!seenNodeIds.has(source.id)) {
+          seenNodeIds.add(source.id);
+          newNodes.push({ id: source.id, label: source.id });
+        }
+
+        if (!seenNodeIds.has(target.id)) {
+          seenNodeIds.add(target.id);
+          newNodes.push({ id: target.id, label: target.id });
+        }
+
+        newNodes.push({
+          id: edge.id,
+          label: type.id,
+          isEdge: true,
+        });
+
+        newLinks.push({
+          id: `${source.id}->${edge.id}`,
+          source: source.id,
+          target: edge.id,
+        });
+        newLinks.push({
+          id: `${edge.id}->${target.id}`,
+          source: edge.id,
+          target: target.id,
+        });
+      }
+
+      for (const node of newNodes) {
+        newNode2Neighbors.set(node.id, new Set());
+      }
+
+      for (const link of newLinks) {
+        newNode2Neighbors.get(link.source).add([link.id, link.target]);
+        newNode2Neighbors.get(link.target).add([link.id, link.source]);
+      }
+
+      setGraphData({
+        nodes: newNodes,
+        links: newLinks,
+        node2neighbors: newNode2Neighbors,
+      });
+    });
+  }, [driverContext]);
 
   return (
     <Box
