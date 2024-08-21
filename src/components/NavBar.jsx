@@ -6,6 +6,7 @@ import {
   LinearProgress,
   Link,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
@@ -28,7 +29,8 @@ export default function Navbar() {
         elevation={0}
         color="transparent"
         sx={{
-          backgroundColor: darkModeContext.darkMode ? '#000000f0' : '#fffffff0',
+          backgroundColor: darkModeContext.darkMode ? '#000000' : '#ffffff',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
         {loading && (
@@ -47,14 +49,15 @@ export default function Navbar() {
               MDB
             </Link>
           </Typography>
-
-          <IconButton
-            size="large"
-            edge="end"
-            onClick={darkModeContext.toggleDarkMode}
-          >
-            {darkModeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
+          <Tooltip title="Toggle Dark Mode" placement="left">
+            <IconButton
+              size="large"
+              edge="end"
+              onClick={darkModeContext.toggleDarkMode}
+            >
+              {darkModeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Toolbar />

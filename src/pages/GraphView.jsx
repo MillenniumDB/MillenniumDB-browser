@@ -1,21 +1,166 @@
+import { useTheme } from '@emotion/react';
+import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SettingsIcon from '@mui/icons-material/Settings';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Autocomplete,
   Box,
   Grid,
-  Paper,
+  IconButton,
+  Slider,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { debounce } from '@mui/material/utils';
-import parse from 'autosuggest-highlight/parse';
 import match from 'autosuggest-highlight/match';
+import parse from 'autosuggest-highlight/parse';
 import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeDetector } from 'react-resize-detector';
-import { useDarkModeContext } from '../context/DarkModeContext';
-import { useTheme } from '@emotion/react';
 import { useDriverContext } from '../context/DriverContext';
+
+const FORCE_RANGES = {
+  linkDistance: {
+    min: 10.0,
+    step: 1.0,
+    max: 250.0,
+    default: 60.0,
+  },
+  linkStrength: {
+    min: 0.0,
+    max: 1.0,
+    step: 0.01,
+    default: 0.5,
+  },
+  chargeStrength: {
+    min: 0.0,
+    max: 1000.0,
+    step: 50.0,
+    default: 300.0,
+  },
+  center: {
+    default: 0.01,
+  },
+};
+
+const AccordionSetting = ({ title, children, defaultExpanded = false }) => (
+  <Accordion
+    disableGutters
+    square
+    variant="outlined"
+    elevation={0}
+    defaultExpanded={defaultExpanded}
+  >
+    <AccordionSummary
+      expandIcon={<ExpandMoreIcon />}
+      color="primary"
+      sx={{
+        fontWeight: 'bold',
+        flexDirection: 'row-reverse',
+        pl: 1,
+        gap: 1,
+      }}
+    >
+      {title}
+    </AccordionSummary>
+    <AccordionDetails>{children}</AccordionDetails>
+  </Accordion>
+);
+
+const Settings = ({
+  graphForceLinkDistance,
+  setGraphForceLinkDistance,
+  graphForceChargeStrength,
+  setGraphForceChargeStrength,
+  graphForceLinkStrength,
+  setGraphForceLinkStrength,
+}) => {
+  const [showSettings, setShowSettings] = useState(false);
+
+  return (
+    <Box
+      sx={(theme) => ({
+        position: 'absolute',
+        zIndex: (theme) => theme.zIndex.fab + 1,
+        top: 16,
+        right: 16,
+        [`${theme.breakpoints.down('md')}`]: {
+          top: 88,
+        },
+      })}
+    >
+      {!showSettings && (
+        <Tooltip title="Graph Settings" placement="left">
+          <IconButton size="large" onClick={() => setShowSettings(true)}>
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
+      )}
+      {showSettings && (
+        <Box sx={{ width: 200, position: 'relative' }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              right: 7,
+              top: 7,
+              zIndex: (theme) => theme.zIndex.fab + 2,
+            }}
+          >
+            <IconButton
+              onClick={(e) => {
+                e.preventDefault();
+                setShowSettings(false);
+              }}
+              size="small"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <AccordionSetting title="Forces" defaultExpanded>
+            <Typography gutterBottom variant="body2">
+              Link Distance
+            </Typography>
+            <Slider
+              valueLabelDisplay="auto"
+              min={FORCE_RANGES.linkDistance.min}
+              max={FORCE_RANGES.linkDistance.max}
+              step={FORCE_RANGES.linkDistance.step}
+              value={graphForceLinkDistance}
+              onChange={(_, value) => setGraphForceLinkDistance(value)}
+            />
+            <Typography gutterBottom variant="body2">
+              Link Force
+            </Typography>
+            <Slider
+              valueLabelDisplay="auto"
+              min={FORCE_RANGES.linkStrength.min}
+              max={FORCE_RANGES.linkStrength.max}
+              step={FORCE_RANGES.linkStrength.step}
+              value={graphForceLinkStrength}
+              onChange={(_, value) => setGraphForceLinkStrength(value)}
+            />
+            <Typography gutterBottom variant="body2">
+              Repel Force
+            </Typography>
+            <Slider
+              valueLabelDisplay="auto"
+              min={FORCE_RANGES.chargeStrength.min}
+              max={FORCE_RANGES.chargeStrength.max}
+              step={FORCE_RANGES.chargeStrength.step}
+              value={graphForceChargeStrength}
+              onChange={(_, value) => setGraphForceChargeStrength(value)}
+            />
+          </AccordionSetting>
+        </Box>
+      )}
+    </Box>
+  );
+};
 
 const SearchBar = () => {
   const [value, setValue] = useState(null);
@@ -71,15 +216,17 @@ const SearchBar = () => {
   }, [value, inputValue, textSearch]);
 
   return (
-    <Paper
+    <Box
       elevation={0}
+      variant="outlined"
       sx={(theme) => ({
+        background: theme.palette.background.paper,
         position: 'absolute',
         zIndex: 'fab',
         top: 16,
         left: 16,
         width: 400,
-        [`${theme.breakpoints.down('sm')}`]: {
+        [`${theme.breakpoints.down('md')}`]: {
           left: 0,
           display: 'block',
           boxSizing: 'border-box',
@@ -138,7 +285,7 @@ const SearchBar = () => {
           );
         }}
       />
-    </Paper>
+    </Box>
   );
 };
 
@@ -153,8 +300,6 @@ export default function GraphView() {
 
   const { width, height, ref } = useResizeDetector();
 
-  const darkModeContext = useDarkModeContext();
-
   const driverContext = useDriverContext();
 
   const graphRef = useRef(null);
@@ -164,31 +309,30 @@ export default function GraphView() {
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
 
+  const [graphForceLinkDistance, setGraphLinkDistance] = useState(
+    FORCE_RANGES.linkDistance.default
+  );
+  const [graphForceLinkStrength, setGraphForceLinkStrength] = useState(
+    FORCE_RANGES.linkStrength.default
+  );
+  const [graphForceChargeStrength, setGraphForceChargeStrength] = useState(
+    FORCE_RANGES.chargeStrength.default
+  );
+
   // Cache this values as they are used multiple times
-  const graphSettings = useMemo(() => {
+  const graphColorSettings = useMemo(() => {
     const settings = {
-      backgroundColor: darkModeContext.darkMode ? '#151515' : '#ffffff',
-      nodeColor: darkModeContext.darkMode ? '#aaaaaa' : '#5c5c5c',
-      linkColor: darkModeContext.darkMode ? '#3f3f3f' : '#c4c4c4',
+      backgroundColor: theme.palette.mode === 'dark' ? '#151515' : '#ffffff',
+      nodeColor: theme.palette.mode === 'dark' ? '#aaaaaa' : '#5c5c5c',
+      linkColor: theme.palette.mode === 'dark' ? '#3f3f3f' : '#c4c4c4',
       nodeHighlightColor: theme.palette.primary.main,
       linkHighlightColor: theme.palette.secondary.main,
       nodeHoverColor: theme.palette.primary.light,
       linkHoverColor: theme.palette.secondary.light,
-      nodeVal: 2,
-      nodeRelSize: 10,
-      fontSize: 24,
-      // When the text is completely transparent
-      maxTextFadeAtGlobalScale: 0.45,
-      // When the text is completely visible
-      minTextFadeAtGlobalScale: 0.6,
       nonHoveredOpacity: 0.1,
-      hoverlineWidth: 2,
     };
 
-    settings.edgeSide = settings.nodeVal * settings.nodeRelSize;
-    settings.nodeRadius = Math.sqrt(settings.nodeVal) * settings.nodeRelSize;
     settings.textColor = settings.nodeColor;
-    settings.arrowSize = settings.nodeVal * settings.nodeRelSize;
 
     const nonHoveredOpacityHex = Math.round(255 * settings.nonHoveredOpacity)
       .toString(16)
@@ -196,19 +340,22 @@ export default function GraphView() {
     settings.nodeNonHoveredColor = settings.nodeColor + nonHoveredOpacityHex;
     settings.linkNonHoveredColor = settings.linkColor + nonHoveredOpacityHex;
 
-    // Get opacity of globalScale, interpolating from [textFadeThreshold, 1] to [0, 1]
-    settings.getTextOpacityAtGlobalScale = (globalScale) =>
-      Math.min(
-        1.0,
-        Math.max(
-          0.0,
-          (globalScale - settings.maxTextFadeAtGlobalScale) /
-            (settings.minTextFadeAtGlobalScale -
-              settings.maxTextFadeAtGlobalScale)
-        )
-      );
     return settings;
-  }, [theme, darkModeContext.darkMode]);
+  }, [theme]);
+
+  const graphSizeSettings = useMemo(() => {
+    const settings = {
+      nodeVal: 2,
+      nodeRelSize: 10,
+      fontSize: 24,
+      hoverlineWidth: 2,
+    };
+    settings.edgeSide = settings.nodeVal * settings.nodeRelSize;
+    settings.nodeRadius = Math.sqrt(settings.nodeVal) * settings.nodeRelSize;
+    settings.arrowSize = settings.nodeVal * settings.nodeRelSize;
+
+    return settings;
+  }, []);
 
   const handleNodeClick = useCallback((node) => {
     console.log('handleNodeClick', node);
@@ -256,14 +403,15 @@ export default function GraphView() {
   );
 
   const handleRenderFramePre = (ctx, globalScale) => {
+    const maxTextFadeAtGlobalScale = 0.45;
+    const minTextFadeAtGlobalScale = 0.6;
     setTextOpacityAtScale(
       Math.min(
         1.0,
         Math.max(
           0.0,
-          (globalScale - graphSettings.maxTextFadeAtGlobalScale) /
-            (graphSettings.minTextFadeAtGlobalScale -
-              graphSettings.maxTextFadeAtGlobalScale)
+          (globalScale - maxTextFadeAtGlobalScale) /
+            (minTextFadeAtGlobalScale - maxTextFadeAtGlobalScale)
         )
       )
     );
@@ -278,67 +426,67 @@ export default function GraphView() {
       if (node.isEdge) {
         if (hoveredNodeId) {
           if (isHovered) {
-            ctx.strokeStyle = graphSettings.linkHoverColor;
-            ctx.lineWidth = graphSettings.hoverlineWidth;
+            ctx.strokeStyle = graphColorSettings.linkHoverColor;
+            ctx.lineWidth = graphSizeSettings.hoverlineWidth;
             ctx.strokeRect(
-              x - graphSettings.edgeSide / 2,
-              y - graphSettings.edgeSide / 2,
-              graphSettings.edgeSide,
-              graphSettings.edgeSide
+              x - graphSizeSettings.edgeSide / 2,
+              y - graphSizeSettings.edgeSide / 2,
+              graphSizeSettings.edgeSide,
+              graphSizeSettings.edgeSide
             );
-            ctx.fillStyle = graphSettings.linkHighlightColor;
+            ctx.fillStyle = graphColorSettings.linkHighlightColor;
           } else if (highlightNodeIds.has(node.id)) {
-            ctx.fillStyle = graphSettings.linkHighlightColor;
+            ctx.fillStyle = graphColorSettings.linkHighlightColor;
           } else {
-            ctx.fillStyle = graphSettings.linkNonHoveredColor;
+            ctx.fillStyle = graphColorSettings.linkNonHoveredColor;
           }
         } else {
-          ctx.fillStyle = graphSettings.linkColor;
+          ctx.fillStyle = graphColorSettings.linkColor;
         }
 
         ctx.fillRect(
-          x - graphSettings.edgeSide / 2,
-          y - graphSettings.edgeSide / 2,
-          graphSettings.edgeSide,
-          graphSettings.edgeSide
+          x - graphSizeSettings.edgeSide / 2,
+          y - graphSizeSettings.edgeSide / 2,
+          graphSizeSettings.edgeSide,
+          graphSizeSettings.edgeSide
         );
       } else {
         if (hoveredNodeId) {
           if (isHovered) {
-            ctx.strokeStyle = graphSettings.nodeHoverColor;
-            ctx.lineWidth = graphSettings.hoverlineWidth;
+            ctx.strokeStyle = graphColorSettings.nodeHoverColor;
+            ctx.lineWidth = graphSizeSettings.hoverlineWidth;
             ctx.beginPath();
-            ctx.arc(x, y, graphSettings.nodeRadius, 0, 2 * Math.PI);
+            ctx.arc(x, y, graphSizeSettings.nodeRadius, 0, 2 * Math.PI);
             ctx.stroke();
-            ctx.fillStyle = graphSettings.nodeHighlightColor;
+            ctx.fillStyle = graphColorSettings.nodeHighlightColor;
           } else if (highlightNodeIds.has(node.id)) {
-            ctx.fillStyle = graphSettings.nodeHighlightColor;
+            ctx.fillStyle = graphColorSettings.nodeHighlightColor;
           } else {
-            ctx.fillStyle = graphSettings.linkNonHoveredColor;
+            ctx.fillStyle = graphColorSettings.linkNonHoveredColor;
           }
         } else {
-          ctx.fillStyle = graphSettings.nodeColor;
+          ctx.fillStyle = graphColorSettings.nodeColor;
         }
 
         ctx.beginPath();
-        ctx.arc(x, y, graphSettings.nodeRadius, 0, 2 * Math.PI);
+        ctx.arc(x, y, graphSizeSettings.nodeRadius, 0, 2 * Math.PI);
         ctx.fill();
       }
 
       // Label
       let fontSize = Math.min(
-        graphSettings.fontSize,
-        graphSettings.fontSize * globalScale
+        graphSizeSettings.fontSize,
+        graphSizeSettings.fontSize * globalScale
       );
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       if (hoveredNodeId) {
         if (isHovered) {
-          ctx.fillStyle = graphSettings.textColor;
+          ctx.fillStyle = graphColorSettings.textColor;
           fontSize = Math.max(
-            graphSettings.fontSize,
-            graphSettings.fontSize / globalScale
+            graphSizeSettings.fontSize,
+            graphSizeSettings.fontSize / globalScale
           );
         } else {
           // Prevent drawing text when opacity is zero
@@ -349,9 +497,10 @@ export default function GraphView() {
             const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
               .toString(16)
               .padStart(2, '0');
-            ctx.fillStyle = graphSettings.textColor + textOpacityAtScaleHex;
+            ctx.fillStyle =
+              graphColorSettings.textColor + textOpacityAtScaleHex;
           } else {
-            ctx.fillStyle = graphSettings.textNonHoveredColor;
+            ctx.fillStyle = graphColorSettings.textNonHoveredColor;
           }
         }
       } else {
@@ -362,41 +511,84 @@ export default function GraphView() {
         const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
           .toString(16)
           .padStart(2, '0');
-        ctx.fillStyle = graphSettings.textColor + textOpacityAtScaleHex;
+        ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
       }
 
       ctx.font = `${fontSize}px "Roboto"`;
-      const yOffset = graphSettings.nodeRadius + fontSize * 1.75;
+      const yOffset = graphSizeSettings.nodeRadius + fontSize * 1.75;
       ctx.fillText(node.label, x, y + yOffset);
     },
-    [hoveredNodeId, highlightNodeIds, graphSettings, textOpacityAtScale]
+    [
+      hoveredNodeId,
+      highlightNodeIds,
+      graphColorSettings,
+      graphSizeSettings,
+      textOpacityAtScale,
+    ]
   );
 
   const handleLinkColor = useCallback(
     (link) => {
       if (hoveredNodeId) {
         if (highlightLinkIds.has(link.id)) {
-          return graphSettings.linkHighlightColor;
+          return graphColorSettings.linkHighlightColor;
         } else {
-          return graphSettings.linkNonHoveredColor;
+          return graphColorSettings.linkNonHoveredColor;
         }
       }
-      return graphSettings.linkColor;
+      return graphColorSettings.linkColor;
     },
-    [hoveredNodeId, highlightLinkIds, graphSettings]
+    [hoveredNodeId, highlightLinkIds, graphColorSettings]
   );
 
   useEffect(() => {
     const graph = graphRef.current;
     if (graph) {
-      graph.d3Force('link', d3Force.forceLink().distance(200));
-      graph.d3Force('center', d3Force.forceCenter().strength(0.05));
+      graph.d3Force(
+        'link',
+        d3Force
+          .forceLink()
+          .distance(FORCE_RANGES.linkDistance.default)
+          .strength(0.5)
+      );
       graph.d3Force(
         'charge',
-        d3Force.forceManyBody().strength(-500).distanceMin(1).distanceMax(500)
+        d3Force
+          .forceManyBody()
+          .strength(FORCE_RANGES.chargeStrength.default)
+          .distanceMin(1)
+          .distanceMax(2 * FORCE_RANGES.linkDistance.max)
+      );
+      graph.d3Force(
+        'center',
+        d3Force.forceCenter(0, 0).strength(FORCE_RANGES.center.default)
       );
     }
-  }, [graphRef]);
+  }, [graphRef, graphSizeSettings.nodeRadius]);
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (graph) {
+      graph.d3Force('link').strength(graphForceLinkStrength);
+      graph.d3ReheatSimulation();
+    }
+  }, [graphForceLinkStrength, graphRef]);
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (graph) {
+      graph.d3Force('link').distance(graphForceLinkDistance);
+      graph.d3ReheatSimulation();
+    }
+  }, [graphForceLinkDistance, graphRef]);
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (graph) {
+      graph.d3Force('charge').strength(-graphForceChargeStrength);
+      graph.d3ReheatSimulation();
+    }
+  }, [graphForceChargeStrength, graphRef]);
 
   useEffect(() => {
     const fetchGraph = async () => {
@@ -482,22 +674,30 @@ export default function GraphView() {
       })}
     >
       <SearchBar />
+      <Settings
+        graphForceLinkDistance={graphForceLinkDistance}
+        setGraphForceLinkDistance={setGraphLinkDistance}
+        graphForceChargeStrength={graphForceChargeStrength}
+        setGraphForceChargeStrength={setGraphForceChargeStrength}
+        graphForceLinkStrength={graphForceLinkStrength}
+        setGraphForceLinkStrength={setGraphForceLinkStrength}
+      />
       <ForceGraph2D
         ref={graphRef}
         graphData={graphData}
         width={width}
         height={height}
-        backgroundColor={graphSettings.backgroundColor}
+        backgroundColor={graphColorSettings.backgroundColor}
         // Nodes
-        nodeRelSize={graphSettings.nodeRelSize}
-        nodeVal={graphSettings.nodeVal}
+        nodeRelSize={graphSizeSettings.nodeRelSize}
+        nodeVal={graphSizeSettings.nodeVal}
         nodeColor={null}
         nodeLabel={null}
         nodeCanvasObject={NodeCanvasObject}
         nodeCanvasObjectMode={() => 'replace'}
         // Links
         linkDirectionalArrowLength={(link) =>
-          link.source.isEdge ? graphSettings.arrowSize : 0
+          link.source.isEdge ? graphSizeSettings.arrowSize : 0
         }
         linkDirectionalArrowRelPos={1}
         linkColor={handleLinkColor}
@@ -507,8 +707,8 @@ export default function GraphView() {
         onNodeHover={handleNodeHover}
         onRenderFramePre={handleRenderFramePre}
         // Performance
-        warmupTicks={100}
-        cooldownTicks={100}
+        warmupTicks={0}
+        cooldownTicks={Infinity}
         autoPauseRedraw={true}
       />
     </Box>
