@@ -3,11 +3,15 @@ import { debounce } from '@mui/material/utils';
 import { Box, Autocomplete, Grid, TextField, Typography } from '@mui/material';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
+import { useDriverContext } from '../context/DriverContext';
+import { driver } from 'millenniumdb-driver';
 
 export default function GraphSearchBar() {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
+
+  const driverContext = useDriverContext();
 
   const handleOnChange = (_event, newValue) => {
     setOptions(newValue ? [newValue, ...options] : options);
@@ -22,40 +26,37 @@ export default function GraphSearchBar() {
     () =>
       debounce((text, callback) => {
         // TODO: MDB text search
-        // callback(results);
+        const session = driverContext.getSession();
+        const result = session.run('MATCH (?node) RETURN ?node LIMIT 50');
+        result.records().then((records) => {
+          const options = records.map((record) => ({
+            id: record.get('node').id,
+            label: record.get('node').id,
+          }));
+          callback(options);
+        });
       }, 400),
-    []
+    [driverContext]
   );
 
   useEffect(() => {
-    let active = true;
-
-    if (!inputValue.length) {
-      setValue(null);
+    if (!inputValue) {
       setOptions([]);
+      setValue(null);
       return;
     }
 
-    textSearch(inputValue, (results) => {
-      if (active) {
-        let newOptions = [];
+    let active = true;
 
-        if (value) {
-          newOptions = [value];
-        }
-
-        if (results) {
-          newOptions = [...newOptions, ...results];
-        }
-
-        setOptions(newOptions);
-      }
-    });
+    // Search for nodes
+    if (active) {
+      textSearch(inputValue, setOptions);
+    }
 
     return () => {
       active = false;
     };
-  }, [value, inputValue, textSearch]);
+  }, [inputValue, textSearch]);
 
   return (
     <Box
@@ -86,6 +87,7 @@ export default function GraphSearchBar() {
         noOptionsText="No results"
         onChange={handleOnChange}
         onInputChange={handleOnInputChange}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
         autoComplete
         includeInputInList
         filterSelectedOptions

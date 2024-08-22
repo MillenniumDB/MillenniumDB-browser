@@ -276,7 +276,7 @@ export default function GraphView() {
           .forceManyBody()
           .strength(FORCE_RANGES.chargeStrength.default)
           .distanceMin(1)
-          .distanceMax(2 * FORCE_RANGES.linkDistance.max)
+          .distanceMax(FORCE_RANGES.linkDistance.max)
       );
       graph.d3Force(
         'center',
@@ -426,8 +426,8 @@ export default function GraphView() {
         onNodeHover={handleNodeHover}
         onRenderFramePre={handleRenderFramePre}
         // Performance
-        warmupTicks={0}
-        cooldownTicks={Infinity}
+        warmupTicks={300}
+        cooldownTicks={300}
         autoPauseRedraw={true}
       />
     </Box>
