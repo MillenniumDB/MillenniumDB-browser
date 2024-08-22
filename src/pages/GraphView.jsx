@@ -6,20 +6,17 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeDetector } from 'react-resize-detector';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
-import { useDriverContext } from '../context/DriverContext';
 
 export default function GraphView() {
   const [graphData, setGraphData] = useState({
     nodes: [],
     links: [],
-    node2neighbors: new Map(),
+    nodeToNeighbors: new Map(),
   });
 
   const theme = useTheme();
 
   const { width, height, ref } = useResizeDetector();
-
-  const driverContext = useDriverContext();
 
   const graphRef = useRef(null);
 
@@ -76,10 +73,6 @@ export default function GraphView() {
     return settings;
   }, []);
 
-  const handleNodeClick = useCallback((node) => {
-    console.log('handleNodeClick', node);
-  }, []);
-
   const handleNodeHover = useCallback(
     (node) => {
       if (!node) {
@@ -93,12 +86,12 @@ export default function GraphView() {
       const newHighlightLinkIds = new Set();
 
       if (node.isEdge) {
-        graphData.node2neighbors.get(node.id).forEach(([edgeId, nodeId]) => {
+        graphData.nodeToNeighbors.get(node.id).forEach(([edgeId, nodeId]) => {
           newHighlightNodeIds.add(nodeId);
           newHighlightLinkIds.add(edgeId);
         });
       } else {
-        for (const [firstEdgeId, firstNodeId] of graphData.node2neighbors.get(
+        for (const [firstEdgeId, firstNodeId] of graphData.nodeToNeighbors.get(
           node.id
         )) {
           newHighlightNodeIds.add(firstNodeId);
@@ -107,7 +100,7 @@ export default function GraphView() {
           for (const [
             secondEdgeId,
             secondNodeId,
-          ] of graphData.node2neighbors.get(firstNodeId)) {
+          ] of graphData.nodeToNeighbors.get(firstNodeId)) {
             newHighlightNodeIds.add(secondNodeId);
             newHighlightLinkIds.add(secondEdgeId);
           }
@@ -122,6 +115,7 @@ export default function GraphView() {
   );
 
   const handleRenderFramePre = (ctx, globalScale) => {
+    // Set the opacity given the current scale
     const maxTextFadeAtGlobalScale = 0.45;
     const minTextFadeAtGlobalScale = 0.6;
     setTextOpacityAtScale(
@@ -138,6 +132,8 @@ export default function GraphView() {
 
   const NodeCanvasObject = useCallback(
     (node, ctx, globalScale) => {
+      ctx.save();
+
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
 
@@ -209,7 +205,10 @@ export default function GraphView() {
           );
         } else {
           // Prevent drawing text when opacity is zero
-          if (!textOpacityAtScale) return;
+          if (!textOpacityAtScale) {
+            ctx.restore();
+            return;
+          }
 
           if (highlightNodeIds.has(node.id)) {
             // Calculate color at scale in hex
@@ -224,7 +223,10 @@ export default function GraphView() {
         }
       } else {
         // Prevent drawing text when opacity is zero
-        if (!textOpacityAtScale) return;
+        if (!textOpacityAtScale) {
+          ctx.restore();
+          return;
+        }
 
         // Calculate color at scale in hex
         const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
@@ -236,6 +238,8 @@ export default function GraphView() {
       ctx.font = `${fontSize}px "Roboto"`;
       const yOffset = graphSizeSettings.nodeRadius + fontSize * 1.75;
       ctx.fillText(node.label, x, y + yOffset);
+
+      ctx.restore();
     },
     [
       hoveredNodeId,
@@ -309,71 +313,112 @@ export default function GraphView() {
     }
   }, [graphForceChargeStrength, graphRef]);
 
-  useEffect(() => {
-    const fetchGraph = async () => {
-      // TODO: Just for testing
-      const query =
-        'MATCH (?source)-[?edge :?type]->(?target) RETURN * LIMIT 100';
+  const addNodes = useCallback((nodes) => {
+    setGraphData((prevGraphData) => {
+      const newNodes = nodes.filter(
+        (node) => !prevGraphData.nodes.find((n) => n.id === node.id)
+      );
 
-      const session = driverContext.getSession();
-      const result = session.run(query);
-      return await result.records();
-    };
+      if (!newNodes.length) return prevGraphData;
 
-    // TODO: try catch
-    fetchGraph().then((records) => {
-      const seenNodeIds = new Set();
-      const newNodes = [];
-      const newLinks = [];
-      const newNode2Neighbors = new Map();
-
-      for (const record of records) {
-        const { source, edge, type, target } = record.toObject();
-
-        if (!seenNodeIds.has(source.id)) {
-          seenNodeIds.add(source.id);
-          newNodes.push({ id: source.id, label: source.id });
-        }
-
-        if (!seenNodeIds.has(target.id)) {
-          seenNodeIds.add(target.id);
-          newNodes.push({ id: target.id, label: target.id });
-        }
-
-        newNodes.push({
-          id: edge.id,
-          label: type.id,
-          isEdge: true,
-        });
-
-        newLinks.push({
-          id: `${source.id}->${edge.id}`,
-          source: source.id,
-          target: edge.id,
-        });
-        newLinks.push({
-          id: `${edge.id}->${target.id}`,
-          source: edge.id,
-          target: target.id,
-        });
-      }
-
-      for (const node of newNodes) {
-        newNode2Neighbors.set(node.id, new Set());
-      }
-
-      for (const link of newLinks) {
-        newNode2Neighbors.get(link.source).add([link.id, link.target]);
-        newNode2Neighbors.get(link.target).add([link.id, link.source]);
-      }
-
-      setGraphData({
-        nodes: newNodes,
-        links: newLinks,
-        node2neighbors: newNode2Neighbors,
+      const newNodeToNeighbors = new Map();
+      newNodes.forEach((node) => {
+        newNodeToNeighbors.set(node.id, new Set());
       });
+
+      return {
+        ...prevGraphData,
+        nodes: [...prevGraphData.nodes, ...newNodes],
+        nodeToNeighbors: new Map([
+          ...prevGraphData.nodeToNeighbors,
+          ...newNodeToNeighbors,
+        ]),
+      };
     });
-  }, [driverContext]);
+  }, []);
+
+  const addLinks = useCallback((links) => {
+    setGraphData((prevGraphData) => {
+      if (!links.length) return prevGraphData;
+
+      for (const link of links) {
+        const { source, target } = link;
+        prevGraphData.nodeToNeighbors.get(source.id).add(target.id);
+        prevGraphData.nodeToNeighbors.get(target.id).add(source.id);
+      }
+
+      return {
+        ...prevGraphData,
+        links: [...prevGraphData.links, ...links],
+      };
+    });
+  }, []);
+
+  // useEffect(() => {
+  //   const fetchGraph = async () => {
+  //     // TODO: Just for testing
+  //     const query =
+  //       'MATCH (?source)-[?edge :?type]->(?target) RETURN * LIMIT 100';
+
+  //     const session = driverContext.getSession();
+  //     const result = session.run(query);
+  //     return await result.records();
+  //   };
+
+  //   // TODO: try catch
+  //   fetchGraph().then((records) => {
+  //     const seenNodeIds = new Set();
+  //     const newNodes = [];
+  //     const newLinks = [];
+  //     const newNode2Neighbors = new Map();
+
+  //     for (const record of records) {
+  //       const { source, edge, type, target } = record.toObject();
+
+  //       if (!seenNodeIds.has(source.id)) {
+  //         seenNodeIds.add(source.id);
+  //         newNodes.push({ id: source.id, label: source.id });
+  //       }
+
+  //       if (!seenNodeIds.has(target.id)) {
+  //         seenNodeIds.add(target.id);
+  //         newNodes.push({ id: target.id, label: target.id });
+  //       }
+
+  //       newNodes.push({
+  //         id: edge.id,
+  //         label: type.id,
+  //         isEdge: true,
+  //       });
+
+  //       newLinks.push({
+  //         id: `${source.id}->${edge.id}`,
+  //         source: source.id,
+  //         target: edge.id,
+  //       });
+  //       newLinks.push({
+  //         id: `${edge.id}->${target.id}`,
+  //         source: edge.id,
+  //         target: target.id,
+  //       });
+  //     }
+
+  //     for (const node of newNodes) {
+  //       newNode2Neighbors.set(node.id, new Set());
+  //     }
+
+  //     for (const link of newLinks) {
+  //       newNode2Neighbors.get(link.source).add([link.id, link.target]);
+  //       newNode2Neighbors.get(link.target).add([link.id, link.source]);
+  //     }
+
+  //     setGraphData({
+  //       nodes: newNodes,
+  //       links: newLinks,
+  //       node2neighbors: newNode2Neighbors,
+  //     });
+  //   });
+  // }, [driverContext]);
 
   return (
     <Box
@@ -422,7 +467,6 @@ export default function GraphView() {
         linkColor={handleLinkColor}
         linkWidth={1}
         // Events
-        onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
         onRenderFramePre={handleRenderFramePre}
         // Performance
