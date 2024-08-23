@@ -4,6 +4,7 @@ import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeDetector } from 'react-resize-detector';
+import GraphObjectDetails from '../components/GraphObjectDetails';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
 import { useDriverContext } from '../context/DriverContext';
@@ -83,6 +84,10 @@ export default function GraphView() {
 
     return settings;
   }, []);
+
+  const handleNodeClick = (node) => {
+    console.log('clicked node with id', node.id);
+  };
 
   const handleNodeHover = useCallback(
     (node) => {
@@ -501,9 +506,11 @@ export default function GraphView() {
         },
         width: '100vw',
         position: 'relative',
+        overflow: 'hidden',
       })}
     >
       <GraphSearchBar />
+      <GraphObjectDetails/>
       <GraphSettings
         graphForceLinkDistance={graphForceLinkDistance}
         setGraphForceLinkDistance={setGraphLinkDistance}
@@ -540,6 +547,7 @@ export default function GraphView() {
         onNodeHover={handleNodeHover}
         onRenderFramePre={handleRenderFramePre}
         onZoom={handleOnZoom}
+        onNodeClick={handleNodeClick}
         // Performance
         warmupTicks={300}
         cooldownTicks={300}

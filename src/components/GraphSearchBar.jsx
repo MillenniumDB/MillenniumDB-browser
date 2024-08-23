@@ -1,15 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { debounce } from '@mui/material/utils';
-import { Box, Autocomplete, Grid, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Autocomplete,
+  Grid,
+  TextField,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { useDriverContext } from '../context/DriverContext';
-import { driver } from 'millenniumdb-driver';
 
 export default function GraphSearchBar() {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const driverContext = useDriverContext();
 
@@ -26,6 +33,7 @@ export default function GraphSearchBar() {
     () =>
       debounce((text, callback) => {
         // TODO: MDB text search
+        setLoading(true);
         const session = driverContext.getSession();
         const result = session.run('MATCH (?node) RETURN ?node LIMIT 50');
         result.records().then((records) => {
@@ -34,6 +42,7 @@ export default function GraphSearchBar() {
             label: record.get('node').id,
           }));
           callback(options);
+          setLoading(false);
         });
       }, 400),
     [driverContext]
@@ -65,10 +74,10 @@ export default function GraphSearchBar() {
       sx={(theme) => ({
         background: theme.palette.background.paper,
         position: 'absolute',
-        zIndex: 'fab',
+        zIndex: theme.zIndex.drawer + 1,
         top: 16,
         left: 16,
-        width: 400,
+        width: 368,
         [`${theme.breakpoints.down('md')}`]: {
           left: 0,
           display: 'block',
@@ -84,6 +93,8 @@ export default function GraphSearchBar() {
         filterOptions={(x) => x}
         options={options}
         value={value}
+        loading={loading}
+        loadingText="Searching..."
         noOptionsText="No results"
         onChange={handleOnChange}
         onInputChange={handleOnInputChange}
@@ -97,6 +108,15 @@ export default function GraphSearchBar() {
             {...params}
             color="primary"
             placeholder="Search for a node"
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {loading ? <CircularProgress size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
             fullWidth
           />
         )}

@@ -7,6 +7,7 @@ import {
   AccordionSummary,
   Box,
   IconButton,
+  Paper,
   Slider,
   Switch,
   Tooltip,
@@ -78,7 +79,7 @@ export default function GraphSettings({
     <Box
       sx={(theme) => ({
         position: 'absolute',
-        zIndex: (theme) => theme.zIndex.fab + 1,
+        zIndex: theme.zIndex.fab + 1,
         top: 16,
         right: 16,
         [`${theme.breakpoints.down('md')}`]: {
@@ -94,7 +95,19 @@ export default function GraphSettings({
         </Tooltip>
       )}
       {showSettings && (
-        <Box sx={{ width: 200, position: 'relative', userSelect: 'none' }}>
+        <Paper
+          variant="outlined"
+          sx={(theme) => ({
+            width: 200,
+            position: 'relative',
+            userSelect: 'none',
+            overflowY: 'scroll',
+            maxHeight: 'calc(100vh - 98px)',
+            [`${theme.breakpoints.down('md')}`]: {
+              maxHeight: 'calc(100vh - 168px)',
+            },
+          })}
+        >
           <Box
             sx={{
               position: 'absolute',
@@ -165,7 +178,7 @@ export default function GraphSettings({
               />
             </Box>
           </AccordionSetting>
-        </Box>
+        </Paper>
       )}
     </Box>
   );
