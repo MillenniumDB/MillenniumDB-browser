@@ -6,6 +6,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeDetector } from 'react-resize-detector';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
+import { useDriverContext } from '../context/DriverContext';
 
 export default function GraphView() {
   const [graphData, setGraphData] = useState({
@@ -20,10 +21,14 @@ export default function GraphView() {
 
   const graphRef = useRef(null);
 
-  const [textOpacityAtScale, setTextOpacityAtScale] = useState(0);
+  const driverContext = useDriverContext();
+
+  const [opacityAtScale, setOpacityAtScale] = useState(0);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
+
+  const zoomTransformRef = useRef(null);
 
   const [graphForceLinkDistance, setGraphLinkDistance] = useState(
     FORCE_RANGES.linkDistance.default
@@ -34,11 +39,13 @@ export default function GraphView() {
   const [graphForceChargeStrength, setGraphForceChargeStrength] = useState(
     FORCE_RANGES.chargeStrength.default
   );
+  const [showGrid, setShowGrid] = useState(true);
 
   // Cache this values as they are used multiple times
   const graphColorSettings = useMemo(() => {
     const settings = {
       backgroundColor: theme.palette.mode === 'dark' ? '#151515' : '#ffffff',
+      gridColor: theme.palette.mode === 'dark' ? '#242424' : '#eaeaea',
       nodeColor: theme.palette.mode === 'dark' ? '#aaaaaa' : '#5c5c5c',
       linkColor: theme.palette.mode === 'dark' ? '#3f3f3f' : '#c4c4c4',
       nodeHighlightColor: theme.palette.primary.main,
@@ -65,6 +72,10 @@ export default function GraphView() {
       nodeRelSize: 10,
       fontSize: 24,
       hoverlineWidth: 2,
+      maxZoom: 3,
+      minZoom: 0.1,
+      gridSize: 512,
+      linkWidth: 1,
     };
     settings.edgeSide = settings.nodeVal * settings.nodeRelSize;
     settings.nodeRadius = Math.sqrt(settings.nodeVal) * settings.nodeRelSize;
@@ -114,20 +125,75 @@ export default function GraphView() {
     [graphData]
   );
 
+  const handleOnZoom = (zoom) => {
+    zoomTransformRef.current = zoom;
+  };
+
   const handleRenderFramePre = (ctx, globalScale) => {
     // Set the opacity given the current scale
-    const maxTextFadeAtGlobalScale = 0.45;
-    const minTextFadeAtGlobalScale = 0.6;
-    setTextOpacityAtScale(
+    const maxFadeAtGlobalScale = 0.45;
+    const minFadeAtGlobalScale = 0.6;
+    setOpacityAtScale(
       Math.min(
         1.0,
         Math.max(
           0.0,
-          (globalScale - maxTextFadeAtGlobalScale) /
-            (minTextFadeAtGlobalScale - maxTextFadeAtGlobalScale)
+          (globalScale - maxFadeAtGlobalScale) /
+            (minFadeAtGlobalScale - maxFadeAtGlobalScale)
         )
       )
     );
+
+    if (!showGrid) return;
+
+    // Handle grid drawing
+    const graph = graphRef.current;
+    const zoomTransform = zoomTransformRef.current;
+    if (!graph || !zoomTransform) return;
+
+    ctx.save();
+    const { gridSize } = graphSizeSettings;
+    const { gridColor } = graphColorSettings;
+    const { x: xMin, y: yMin } = graph.screen2GraphCoords(0, 0);
+    const { x: xMax, y: yMax } = graph.screen2GraphCoords(width, height);
+    const xMid = (xMin + xMax) / 2;
+    const yMid = (yMin + yMax) / 2;
+
+    ctx.beginPath();
+    ctx.setLineDash([1 / globalScale, 1 / globalScale]);
+    ctx.lineWidth = 1 / globalScale;
+    ctx.strokeStyle = gridColor;
+
+    // Draw vertical lines
+    for (let x = xMid - (zoomTransform.x % gridSize); x > xMin; x -= gridSize) {
+      ctx.moveTo(x, yMin);
+      ctx.lineTo(x, yMax);
+    }
+    for (
+      let x = xMid + gridSize - (zoomTransform.x % gridSize);
+      x < xMax;
+      x += gridSize
+    ) {
+      ctx.moveTo(x, yMin);
+      ctx.lineTo(x, yMax);
+    }
+
+    // Draw horizontal lines
+    for (let y = yMid - (zoomTransform.y % gridSize); y > yMin; y -= gridSize) {
+      ctx.moveTo(xMin, y);
+      ctx.lineTo(xMax, y);
+    }
+    for (
+      let y = yMid + gridSize - (zoomTransform.y % gridSize);
+      y < yMax;
+      y += gridSize
+    ) {
+      ctx.moveTo(xMin, y);
+      ctx.lineTo(xMax, y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
   };
 
   const NodeCanvasObject = useCallback(
@@ -205,14 +271,14 @@ export default function GraphView() {
           );
         } else {
           // Prevent drawing text when opacity is zero
-          if (!textOpacityAtScale) {
+          if (!opacityAtScale) {
             ctx.restore();
             return;
           }
 
           if (highlightNodeIds.has(node.id)) {
             // Calculate color at scale in hex
-            const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
+            const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
               .toString(16)
               .padStart(2, '0');
             ctx.fillStyle =
@@ -223,13 +289,13 @@ export default function GraphView() {
         }
       } else {
         // Prevent drawing text when opacity is zero
-        if (!textOpacityAtScale) {
+        if (!opacityAtScale) {
           ctx.restore();
           return;
         }
 
         // Calculate color at scale in hex
-        const textOpacityAtScaleHex = Math.round(textOpacityAtScale * 255)
+        const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
           .toString(16)
           .padStart(2, '0');
         ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
@@ -246,7 +312,7 @@ export default function GraphView() {
       highlightNodeIds,
       graphColorSettings,
       graphSizeSettings,
-      textOpacityAtScale,
+      opacityAtScale,
     ]
   );
 
@@ -354,71 +420,71 @@ export default function GraphView() {
     });
   }, []);
 
-  // useEffect(() => {
-  //   const fetchGraph = async () => {
-  //     // TODO: Just for testing
-  //     const query =
-  //       'MATCH (?source)-[?edge :?type]->(?target) RETURN * LIMIT 100';
+  useEffect(() => {
+    const fetchGraph = async () => {
+      // TODO: Just for testing
+      const query =
+        'MATCH (?source)-[?edge :?type]->(?target) RETURN * LIMIT 100';
 
-  //     const session = driverContext.getSession();
-  //     const result = session.run(query);
-  //     return await result.records();
-  //   };
+      const session = driverContext.getSession();
+      const result = session.run(query);
+      return await result.records();
+    };
 
-  //   // TODO: try catch
-  //   fetchGraph().then((records) => {
-  //     const seenNodeIds = new Set();
-  //     const newNodes = [];
-  //     const newLinks = [];
-  //     const newNode2Neighbors = new Map();
+    // TODO: try catch
+    fetchGraph().then((records) => {
+      const seenNodeIds = new Set();
+      const newNodes = [];
+      const newLinks = [];
+      const newNodeToNeighbors = new Map();
 
-  //     for (const record of records) {
-  //       const { source, edge, type, target } = record.toObject();
+      for (const record of records) {
+        const { source, edge, type, target } = record.toObject();
 
-  //       if (!seenNodeIds.has(source.id)) {
-  //         seenNodeIds.add(source.id);
-  //         newNodes.push({ id: source.id, label: source.id });
-  //       }
+        if (!seenNodeIds.has(source.id)) {
+          seenNodeIds.add(source.id);
+          newNodes.push({ id: source.id, label: source.id });
+        }
 
-  //       if (!seenNodeIds.has(target.id)) {
-  //         seenNodeIds.add(target.id);
-  //         newNodes.push({ id: target.id, label: target.id });
-  //       }
+        if (!seenNodeIds.has(target.id)) {
+          seenNodeIds.add(target.id);
+          newNodes.push({ id: target.id, label: target.id });
+        }
 
-  //       newNodes.push({
-  //         id: edge.id,
-  //         label: type.id,
-  //         isEdge: true,
-  //       });
+        newNodes.push({
+          id: edge.id,
+          label: type.id,
+          isEdge: true,
+        });
 
-  //       newLinks.push({
-  //         id: `${source.id}->${edge.id}`,
-  //         source: source.id,
-  //         target: edge.id,
-  //       });
-  //       newLinks.push({
-  //         id: `${edge.id}->${target.id}`,
-  //         source: edge.id,
-  //         target: target.id,
-  //       });
-  //     }
+        newLinks.push({
+          id: `${source.id}->${edge.id}`,
+          source: source.id,
+          target: edge.id,
+        });
+        newLinks.push({
+          id: `${edge.id}->${target.id}`,
+          source: edge.id,
+          target: target.id,
+        });
+      }
 
-  //     for (const node of newNodes) {
-  //       newNode2Neighbors.set(node.id, new Set());
-  //     }
+      for (const node of newNodes) {
+        newNodeToNeighbors.set(node.id, new Set());
+      }
 
-  //     for (const link of newLinks) {
-  //       newNode2Neighbors.get(link.source).add([link.id, link.target]);
-  //       newNode2Neighbors.get(link.target).add([link.id, link.source]);
-  //     }
+      for (const link of newLinks) {
+        newNodeToNeighbors.get(link.source).add([link.id, link.target]);
+        newNodeToNeighbors.get(link.target).add([link.id, link.source]);
+      }
 
-  //     setGraphData({
-  //       nodes: newNodes,
-  //       links: newLinks,
-  //       node2neighbors: newNode2Neighbors,
-  //     });
-  //   });
-  // }, [driverContext]);
+      setGraphData({
+        nodes: newNodes,
+        links: newLinks,
+        nodeToNeighbors: newNodeToNeighbors,
+      });
+    });
+  }, [driverContext]);
 
   return (
     <Box
@@ -445,6 +511,8 @@ export default function GraphView() {
         setGraphForceChargeStrength={setGraphForceChargeStrength}
         graphForceLinkStrength={graphForceLinkStrength}
         setGraphForceLinkStrength={setGraphForceLinkStrength}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
       />
       <ForceGraph2D
         ref={graphRef}
@@ -452,6 +520,8 @@ export default function GraphView() {
         width={width}
         height={height}
         backgroundColor={graphColorSettings.backgroundColor}
+        maxZoom={graphSizeSettings.maxZoom}
+        minZoom={graphSizeSettings.minZoom}
         // Nodes
         nodeRelSize={graphSizeSettings.nodeRelSize}
         nodeVal={graphSizeSettings.nodeVal}
@@ -465,10 +535,11 @@ export default function GraphView() {
         }
         linkDirectionalArrowRelPos={1}
         linkColor={handleLinkColor}
-        linkWidth={1}
+        linkWidth={graphSizeSettings.linkWidth}
         // Events
         onNodeHover={handleNodeHover}
         onRenderFramePre={handleRenderFramePre}
+        onZoom={handleOnZoom}
         // Performance
         warmupTicks={300}
         cooldownTicks={300}

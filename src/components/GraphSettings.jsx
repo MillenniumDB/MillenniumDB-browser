@@ -2,14 +2,15 @@ import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Box,
-    IconButton,
-    Slider,
-    Tooltip,
-    Typography,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  IconButton,
+  Slider,
+  Switch,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 
@@ -68,6 +69,8 @@ export default function GraphSettings({
   setGraphForceChargeStrength,
   graphForceLinkStrength,
   setGraphForceLinkStrength,
+  showGrid,
+  setShowGrid,
 }) {
   const [showSettings, setShowSettings] = useState(false);
 
@@ -91,7 +94,7 @@ export default function GraphSettings({
         </Tooltip>
       )}
       {showSettings && (
-        <Box sx={{ width: 200, position: 'relative' }}>
+        <Box sx={{ width: 200, position: 'relative', userSelect: 'none' }}>
           <Box
             sx={{
               position: 'absolute',
@@ -144,6 +147,23 @@ export default function GraphSettings({
               value={graphForceChargeStrength}
               onChange={(_, value) => setGraphForceChargeStrength(value)}
             />
+          </AccordionSetting>
+          <AccordionSetting title="Style">
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+              }}
+            >
+              <Typography variant="body2">Grid</Typography>
+              <Switch
+                checked={showGrid}
+                onChange={(e) => setShowGrid(e.target.checked)}
+              />
+            </Box>
           </AccordionSetting>
         </Box>
       )}
