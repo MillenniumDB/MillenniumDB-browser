@@ -1,3 +1,4 @@
+import { useTheme } from '@emotion/react';
 import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useRef, useState } from 'react';
@@ -8,14 +9,16 @@ import AGTable from '../components/AGTable';
 import Editor from '../components/Editor';
 import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
-import { useDarkModeContext } from '../context/DarkModeContext';
 import examples from '../data/examples';
 
 // TODO: WebWorker for queries could improve interface?
 export default function Query() {
   const driverContext = useDriverContext();
-  const darkModeContext = useDarkModeContext();
+
+  const theme = useTheme();
+
   const [searchParams] = useSearchParams();
+
   const query = searchParams.get('query') || '';
 
   const [running, setRunning] = useState(false);
@@ -159,9 +162,10 @@ export default function Query() {
               width: '100%',
               minHeight: '400px',
               border: 1,
-              borderColor: darkModeContext.darkMode
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.12)',
+              borderColor:
+                theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.12)',
             }}
             query={query || getDefaultQuery()}
             language={language}

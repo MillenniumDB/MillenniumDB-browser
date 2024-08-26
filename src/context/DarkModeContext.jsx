@@ -3,23 +3,20 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { MUIThemeDark, MUIThemeLight } from '../MUIThemes';
 
 export const DarkModeContext = createContext({
-  darkMode: false,
   toggleDarkMode: () => {},
 });
 
-export default function DarModeContext({ children }) {
+export default function DarkModeProvider({ children }) {
+  console.log('provider');
   const [darkMode, setDarkMode] = useState(
     window.localStorage.getItem('darkMode') === 'true'
   );
 
   const providerValue = useMemo(
     () => ({
-      darkMode,
-      toggleDarkMode: () => {
-        setDarkMode((prevMode) => !prevMode);
-      },
+      toggleDarkMode: () => setDarkMode((prevMode) => !prevMode),
     }),
-    [darkMode]
+    []
   );
 
   const theme = useMemo(

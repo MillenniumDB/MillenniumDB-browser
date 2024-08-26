@@ -1,3 +1,4 @@
+import { useTheme } from '@emotion/react';
 import { Box } from '@mui/material';
 import * as monaco from 'monaco-editor-core';
 import {
@@ -7,10 +8,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useDarkModeContext } from '../context/DarkModeContext';
 
 const Editor = forwardRef(({ language, query, ...props }, ref) => {
-  const darkModeContext = useDarkModeContext();
+  const theme = useTheme();
 
   const monacoEl = useRef(null);
   const [editor, setEditor] = useState(null);
@@ -25,9 +25,9 @@ const Editor = forwardRef(({ language, query, ...props }, ref) => {
 
   useEffect(() => {
     monaco.editor.setTheme(
-      darkModeContext.darkMode ? 'millenniumdb-dark' : 'millenniumdb-light'
+      theme.palette.mode === 'dark' ? 'millenniumdb-dark' : 'millenniumdb-light'
     );
-  }, [darkModeContext.darkMode]);
+  }, [theme.palette.mode]);
 
   useEffect(() => {
     if (editor && query) {
@@ -46,9 +46,10 @@ const Editor = forwardRef(({ language, query, ...props }, ref) => {
   useEffect(() => {
     setEditor(
       monaco.editor.create(monacoEl.current, {
-        theme: darkModeContext.darkMode
-          ? 'millenniumdb-dark'
-          : 'millenniumdb-light',
+        theme:
+          theme.palette.mode === 'dark'
+            ? 'millenniumdb-dark'
+            : 'millenniumdb-light',
         language: 'plaintext',
         automaticLayout: true,
         minimap: { enabled: false },

@@ -1,3 +1,4 @@
+import { useTheme } from '@emotion/react';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import {
@@ -15,6 +16,9 @@ import { useDarkModeContext } from '../context/DarkModeContext';
 
 export default function Navbar() {
   const navigation = useNavigation();
+
+  const theme = useTheme();
+
   const darkModeContext = useDarkModeContext();
 
   const loading = useMemo(() => {
@@ -29,7 +33,8 @@ export default function Navbar() {
         elevation={0}
         color="transparent"
         sx={{
-          backgroundColor: darkModeContext.darkMode ? '#000000' : '#ffffff',
+          backgroundColor:
+            theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
@@ -55,7 +60,11 @@ export default function Navbar() {
               edge="end"
               onClick={darkModeContext.toggleDarkMode}
             >
-              {darkModeContext.darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+              {theme.palette.mode === 'dark' ? (
+                <LightModeIcon />
+              ) : (
+                <DarkModeIcon />
+              )}
             </IconButton>
           </Tooltip>
         </Toolbar>
