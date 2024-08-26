@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 export const FORCE_RANGES = {
   linkDistance: {
@@ -63,123 +63,127 @@ const AccordionSetting = ({ title, children, defaultExpanded = false }) => (
   </Accordion>
 );
 
-export default function GraphSettings({
-  graphForceLinkDistance,
-  setGraphForceLinkDistance,
-  graphForceChargeStrength,
-  setGraphForceChargeStrength,
-  graphForceLinkStrength,
-  setGraphForceLinkStrength,
-  showGrid,
-  setShowGrid,
-}) {
-  const [showSettings, setShowSettings] = useState(false);
+const GraphSettings = React.memo(
+  ({
+    graphForceLinkDistance,
+    setGraphForceLinkDistance,
+    graphForceChargeStrength,
+    setGraphForceChargeStrength,
+    graphForceLinkStrength,
+    setGraphForceLinkStrength,
+    showGrid,
+    setShowGrid,
+  }) => {
+    const [showSettings, setShowSettings] = useState(false);
 
-  return (
-    <Box
-      sx={(theme) => ({
-        position: 'absolute',
-        zIndex: theme.zIndex.fab + 1,
-        top: 16,
-        right: 16,
-        [`${theme.breakpoints.down('md')}`]: {
-          top: 88,
-        },
-      })}
-    >
-      {!showSettings && (
-        <Tooltip title="Graph Settings" placement="left">
-          <IconButton size="large" onClick={() => setShowSettings(true)}>
-            <SettingsIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-      {showSettings && (
-        <Paper
-          variant="outlined"
-          sx={(theme) => ({
-            width: 200,
-            position: 'relative',
-            userSelect: 'none',
-            overflowY: 'scroll',
-            maxHeight: 'calc(100vh - 98px)',
-            [`${theme.breakpoints.down('md')}`]: {
-              maxHeight: 'calc(100vh - 168px)',
-            },
-          })}
-        >
-          <Box
-            sx={{
-              position: 'absolute',
-              right: 7,
-              top: 7,
-              zIndex: (theme) => theme.zIndex.fab + 2,
-            }}
-          >
-            <IconButton
-              onClick={(e) => {
-                e.preventDefault();
-                setShowSettings(false);
-              }}
-              size="small"
-            >
-              <CloseIcon />
+    return (
+      <Box
+        sx={(theme) => ({
+          position: 'absolute',
+          zIndex: theme.zIndex.fab + 1,
+          top: 16,
+          right: 16,
+          [`${theme.breakpoints.down('md')}`]: {
+            top: 88,
+          },
+        })}
+      >
+        {!showSettings && (
+          <Tooltip title="Graph Settings" placement="left">
+            <IconButton size="large" onClick={() => setShowSettings(true)}>
+              <SettingsIcon />
             </IconButton>
-          </Box>
-          <AccordionSetting title="Forces" defaultExpanded>
-            <Typography gutterBottom variant="body2">
-              Link Distance
-            </Typography>
-            <Slider
-              valueLabelDisplay="auto"
-              min={FORCE_RANGES.linkDistance.min}
-              max={FORCE_RANGES.linkDistance.max}
-              step={FORCE_RANGES.linkDistance.step}
-              value={graphForceLinkDistance}
-              onChange={(_, value) => setGraphForceLinkDistance(value)}
-            />
-            <Typography gutterBottom variant="body2">
-              Link Force
-            </Typography>
-            <Slider
-              valueLabelDisplay="auto"
-              min={FORCE_RANGES.linkStrength.min}
-              max={FORCE_RANGES.linkStrength.max}
-              step={FORCE_RANGES.linkStrength.step}
-              value={graphForceLinkStrength}
-              onChange={(_, value) => setGraphForceLinkStrength(value)}
-            />
-            <Typography gutterBottom variant="body2">
-              Repel Force
-            </Typography>
-            <Slider
-              valueLabelDisplay="auto"
-              min={FORCE_RANGES.chargeStrength.min}
-              max={FORCE_RANGES.chargeStrength.max}
-              step={FORCE_RANGES.chargeStrength.step}
-              value={graphForceChargeStrength}
-              onChange={(_, value) => setGraphForceChargeStrength(value)}
-            />
-          </AccordionSetting>
-          <AccordionSetting title="Style">
+          </Tooltip>
+        )}
+        {showSettings && (
+          <Paper
+            variant="outlined"
+            sx={(theme) => ({
+              width: 200,
+              position: 'relative',
+              userSelect: 'none',
+              overflowY: 'scroll',
+              maxHeight: 'calc(100vh - 98px)',
+              [`${theme.breakpoints.down('md')}`]: {
+                maxHeight: 'calc(100vh - 168px)',
+              },
+            })}
+          >
             <Box
               sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
+                position: 'absolute',
+                right: 7,
+                top: 7,
+                zIndex: (theme) => theme.zIndex.fab + 2,
               }}
             >
-              <Typography variant="body2">Grid</Typography>
-              <Switch
-                checked={showGrid}
-                onChange={(e) => setShowGrid(e.target.checked)}
-              />
+              <IconButton
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowSettings(false);
+                }}
+                size="small"
+              >
+                <CloseIcon />
+              </IconButton>
             </Box>
-          </AccordionSetting>
-        </Paper>
-      )}
-    </Box>
-  );
-}
+            <AccordionSetting title="Forces" defaultExpanded>
+              <Typography gutterBottom variant="body2">
+                Link Distance
+              </Typography>
+              <Slider
+                valueLabelDisplay="auto"
+                min={FORCE_RANGES.linkDistance.min}
+                max={FORCE_RANGES.linkDistance.max}
+                step={FORCE_RANGES.linkDistance.step}
+                value={graphForceLinkDistance}
+                onChange={(_, value) => setGraphForceLinkDistance(value)}
+              />
+              <Typography gutterBottom variant="body2">
+                Link Force
+              </Typography>
+              <Slider
+                valueLabelDisplay="auto"
+                min={FORCE_RANGES.linkStrength.min}
+                max={FORCE_RANGES.linkStrength.max}
+                step={FORCE_RANGES.linkStrength.step}
+                value={graphForceLinkStrength}
+                onChange={(_, value) => setGraphForceLinkStrength(value)}
+              />
+              <Typography gutterBottom variant="body2">
+                Repel Force
+              </Typography>
+              <Slider
+                valueLabelDisplay="auto"
+                min={FORCE_RANGES.chargeStrength.min}
+                max={FORCE_RANGES.chargeStrength.max}
+                step={FORCE_RANGES.chargeStrength.step}
+                value={graphForceChargeStrength}
+                onChange={(_, value) => setGraphForceChargeStrength(value)}
+              />
+            </AccordionSetting>
+            <AccordionSetting title="Style">
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                }}
+              >
+                <Typography variant="body2">Grid</Typography>
+                <Switch
+                  checked={showGrid}
+                  onChange={(e) => setShowGrid(e.target.checked)}
+                />
+              </Box>
+            </AccordionSetting>
+          </Paper>
+        )}
+      </Box>
+    );
+  }
+);
+
+export default GraphSettings;

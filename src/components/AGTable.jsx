@@ -3,19 +3,26 @@ import { Box, Pagination } from '@mui/material';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { AgGridReact } from 'ag-grid-react';
-import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useMemo,
+} from 'react';
 import CustomCellRenderer from './CustomCellRenderer';
 
-function CustomPagination({
+const CustomPagination = ({
   agGridPageCount,
   agGridPage,
   agGridHandlePageChange,
-}) {
+}) => {
   const theme = useTheme();
 
   return (
     <Box
       sx={{
+        flex: '0 0 auto',
         userSelect: 'none',
         py: 1,
         border: 1,
@@ -35,12 +42,13 @@ function CustomPagination({
         page={agGridPage + 1}
         count={agGridPageCount}
         onChange={(_event, value) => agGridHandlePageChange(value - 1)}
+        siblingCount={0}
       />
     </Box>
   );
-}
+};
 
-export default forwardRef(function AGTable(
+export default React.forwardRef(function AGTable(
   { columns, rows, targetBlank },
   ref
 ) {
@@ -59,14 +67,20 @@ export default forwardRef(function AGTable(
       newColumns.map((col) => ({
         headerName: col,
         field: col,
-        minWidth: 200,
-        flex: 1,
         cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
-        sortable: false,
       }))
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const defaultColDef = useMemo(
+    () => ({
+      flex: 1,
+      minWidth: 100,
+      sortable: false,
+    }),
+    []
+  );
 
   const addRows = useCallback((newRows) => {
     gridRef.current.api.applyTransactionAsync({
@@ -107,7 +121,6 @@ export default forwardRef(function AGTable(
           : 'ag-theme-material'
       }
       sx={{
-        flex: 1,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -115,15 +128,16 @@ export default forwardRef(function AGTable(
     >
       <AgGridReact
         ref={gridRef}
+        containerStyle={{ flex: 1 }}
+        headerHeight={36}
+        defaultColDef={defaultColDef}
         columnDefs={
           columns
             ? columns.map((col) => ({
                 headerName: col,
                 field: col,
-                minWidth: 100,
-                flex: 1,
                 cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
-                sortable: false,
+                tooltipValueGetter: (params) => 'hola',
               }))
             : undefined
         }
@@ -132,7 +146,7 @@ export default forwardRef(function AGTable(
         asyncTransactionWaitMillis={100}
         pagination={true}
         paginationAutoPageSize={true}
-        rowHeight={40}
+        rowHeight={36}
         enableCellTextSelection
         suppressFieldDotNotation
         columnHoverHighlight

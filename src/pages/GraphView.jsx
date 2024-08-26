@@ -25,6 +25,7 @@ export default function GraphView() {
   const driverContext = useDriverContext();
 
   const [opacityAtScale, setOpacityAtScale] = useState(0);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
@@ -53,6 +54,8 @@ export default function GraphView() {
       linkHighlightColor: theme.palette.secondary.main,
       nodeHoverColor: theme.palette.primary.light,
       linkHoverColor: theme.palette.secondary.light,
+      selectedColor: theme.palette.success.main,
+      selectedHoverColor: theme.palette.success.light,
       nonHoveredOpacity: 0.1,
     };
 
@@ -85,11 +88,11 @@ export default function GraphView() {
     return settings;
   }, []);
 
-  const handleNodeClick = (node) => {
-    console.log('clicked node with id', node.id);
+  const handleOnNodeClick = (node) => {
+    setSelectedNodeId(node.id);
   };
 
-  const handleNodeHover = useCallback(
+  const handleOnNodeHover = useCallback(
     (node) => {
       if (!node) {
         setHoveredNodeId(null);
@@ -207,12 +210,15 @@ export default function GraphView() {
 
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
+      const isSelected = selectedNodeId === node.id;
 
       // Draw the shape of the node
       if (node.isEdge) {
         if (hoveredNodeId) {
           if (isHovered) {
-            ctx.strokeStyle = graphColorSettings.linkHoverColor;
+            ctx.strokeStyle = isSelected
+              ? graphColorSettings.selectedHoverColor
+              : graphColorSettings.linkHoverColor;
             ctx.lineWidth = graphSizeSettings.hoverlineWidth;
             ctx.strokeRect(
               x - graphSizeSettings.edgeSide / 2,
@@ -230,6 +236,10 @@ export default function GraphView() {
           ctx.fillStyle = graphColorSettings.linkColor;
         }
 
+        if (isSelected) {
+          ctx.fillStyle = graphColorSettings.selectedColor;
+        }
+
         ctx.fillRect(
           x - graphSizeSettings.edgeSide / 2,
           y - graphSizeSettings.edgeSide / 2,
@@ -239,7 +249,9 @@ export default function GraphView() {
       } else {
         if (hoveredNodeId) {
           if (isHovered) {
-            ctx.strokeStyle = graphColorSettings.nodeHoverColor;
+            ctx.strokeStyle = isSelected
+              ? graphColorSettings.selectedHoverColor
+              : graphColorSettings.nodeHoverColor;
             ctx.lineWidth = graphSizeSettings.hoverlineWidth;
             ctx.beginPath();
             ctx.arc(x, y, graphSizeSettings.nodeRadius, 0, 2 * Math.PI);
@@ -252,6 +264,10 @@ export default function GraphView() {
           }
         } else {
           ctx.fillStyle = graphColorSettings.nodeColor;
+        }
+
+        if (isSelected) {
+          ctx.fillStyle = graphColorSettings.selectedColor;
         }
 
         ctx.beginPath();
@@ -267,7 +283,13 @@ export default function GraphView() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      if (hoveredNodeId) {
+      if (isSelected) {
+        ctx.fillStyle = graphColorSettings.selectedColor;
+        fontSize = Math.max(
+          graphSizeSettings.fontSize,
+          graphSizeSettings.fontSize / globalScale
+        );
+      } else if (hoveredNodeId) {
         if (isHovered) {
           ctx.fillStyle = graphColorSettings.textColor;
           fontSize = Math.max(
@@ -318,6 +340,7 @@ export default function GraphView() {
       graphColorSettings,
       graphSizeSettings,
       opacityAtScale,
+      selectedNodeId,
     ]
   );
 
@@ -510,7 +533,10 @@ export default function GraphView() {
       })}
     >
       <GraphSearchBar />
-      <GraphObjectDetails/>
+      <GraphObjectDetails
+        selectedNodeId={selectedNodeId}
+        setSelectedNodeId={setSelectedNodeId}
+      />
       <GraphSettings
         graphForceLinkDistance={graphForceLinkDistance}
         setGraphForceLinkDistance={setGraphLinkDistance}
@@ -544,10 +570,10 @@ export default function GraphView() {
         linkColor={handleLinkColor}
         linkWidth={graphSizeSettings.linkWidth}
         // Events
-        onNodeHover={handleNodeHover}
+        onNodeHover={handleOnNodeHover}
         onRenderFramePre={handleRenderFramePre}
         onZoom={handleOnZoom}
-        onNodeClick={handleNodeClick}
+        onNodeClick={handleOnNodeClick}
         // Performance
         warmupTicks={300}
         cooldownTicks={300}

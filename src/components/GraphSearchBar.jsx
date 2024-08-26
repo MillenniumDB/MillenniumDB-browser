@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { debounce } from '@mui/material/utils';
 import {
   Box,
@@ -12,7 +12,7 @@ import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { useDriverContext } from '../context/DriverContext';
 
-export default function GraphSearchBar() {
+const GraphSearchBar = React.memo(() => {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
@@ -151,4 +151,6 @@ export default function GraphSearchBar() {
       />
     </Box>
   );
-}
+});
+
+export default GraphSearchBar;

@@ -7,7 +7,6 @@ export const DarkModeContext = createContext({
 });
 
 export default function DarkModeProvider({ children }) {
-  console.log('provider');
   const [darkMode, setDarkMode] = useState(
     window.localStorage.getItem('darkMode') === 'true'
   );

@@ -1,15 +1,9 @@
 import { useTheme } from '@emotion/react';
 import { Box } from '@mui/material';
 import * as monaco from 'monaco-editor-core';
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-const Editor = forwardRef(({ language, query, ...props }, ref) => {
+const Editor = React.forwardRef(({ language, query, ...props }, ref) => {
   const theme = useTheme();
 
   const monacoEl = useRef(null);
