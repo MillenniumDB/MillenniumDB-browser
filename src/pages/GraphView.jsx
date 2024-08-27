@@ -7,7 +7,6 @@ import { useResizeDetector } from 'react-resize-detector';
 import GraphObjectDetails from '../components/GraphObjectDetails';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
-import { useDriverContext } from '../context/DriverContext';
 import { Helmet } from 'react-helmet';
 
 export default function GraphView() {
@@ -22,8 +21,6 @@ export default function GraphView() {
   const { width, height, ref } = useResizeDetector();
 
   const graphRef = useRef(null);
-
-  const driverContext = useDriverContext();
 
   const [selectedNode, setSelectedNode] = useState(null);
   const [opacityAtScale, setOpacityAtScale] = useState(0);
@@ -477,6 +474,7 @@ export default function GraphView() {
         <GraphObjectDetails
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
+          addNodes={addNodes}
         />
         <GraphSettings
           graphForceLinkDistance={graphForceLinkDistance}
@@ -517,7 +515,7 @@ export default function GraphView() {
           onNodeClick={handleOnNodeClick}
           onBackgroundClick={handleOnBackgroundClick}
           // Performance
-          warmupTicks={300}
+          warmupTicks={0}
           cooldownTicks={300}
           autoPauseRedraw={true}
         />
