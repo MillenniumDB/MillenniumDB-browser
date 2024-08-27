@@ -8,6 +8,7 @@ import GraphObjectDetails from '../components/GraphObjectDetails';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
 import { useDriverContext } from '../context/DriverContext';
+import { Helmet } from 'react-helmet';
 
 export default function GraphView() {
   const [graphData, setGraphData] = useState({
@@ -24,8 +25,8 @@ export default function GraphView() {
 
   const driverContext = useDriverContext();
 
+  const [selectedNode, setSelectedNode] = useState(null);
   const [opacityAtScale, setOpacityAtScale] = useState(0);
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
@@ -46,7 +47,7 @@ export default function GraphView() {
   // Cache this values as they are used multiple times
   const graphColorSettings = useMemo(() => {
     const settings = {
-      backgroundColor: theme.palette.mode === 'dark' ? '#151515' : '#ffffff',
+      backgroundColor: theme.palette.mode === 'dark' ? '#151515' : '#fbfbfb',
       gridColor: theme.palette.mode === 'dark' ? '#242424' : '#eaeaea',
       nodeColor: theme.palette.mode === 'dark' ? '#aaaaaa' : '#5c5c5c',
       linkColor: theme.palette.mode === 'dark' ? '#3f3f3f' : '#c4c4c4',
@@ -89,7 +90,11 @@ export default function GraphView() {
   }, []);
 
   const handleOnNodeClick = (node) => {
-    setSelectedNodeId(node.id);
+    setSelectedNode(node);
+  };
+
+  const handleOnBackgroundClick = () => {
+    setSelectedNode(null);
   };
 
   const handleOnNodeHover = useCallback(
@@ -210,7 +215,7 @@ export default function GraphView() {
 
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
-      const isSelected = selectedNodeId === node.id;
+      const isSelected = selectedNode?.id === node.id;
 
       // Draw the shape of the node
       if (node.isEdge) {
@@ -340,7 +345,7 @@ export default function GraphView() {
       graphColorSettings,
       graphSizeSettings,
       opacityAtScale,
-      selectedNodeId,
+      selectedNode?.id,
     ]
   );
 
@@ -471,18 +476,19 @@ export default function GraphView() {
 
         if (!seenNodeIds.has(source.id)) {
           seenNodeIds.add(source.id);
-          newNodes.push({ id: source.id, label: source.id });
+          newNodes.push({ id: source.id, label: source.id, object: source });
         }
 
         if (!seenNodeIds.has(target.id)) {
           seenNodeIds.add(target.id);
-          newNodes.push({ id: target.id, label: target.id });
+          newNodes.push({ id: target.id, label: target.id, object: target });
         }
 
         newNodes.push({
           id: edge.id,
           label: type.id,
           isEdge: true,
+          object: edge,
         });
 
         newLinks.push({
@@ -515,70 +521,74 @@ export default function GraphView() {
   }, [driverContext]);
 
   return (
-    <Box
-      ref={ref}
-      sx={(theme) => ({
-        height: 'calc(100vh - 56px)',
-        [`${theme.breakpoints.up('sm')}`]: {
-          height: 'calc(100vh - 64px)',
-        },
-        [`${theme.breakpoints.up('xs')}`]: {
-          '@media (orientation: landscape)': {
-            height: 'calc(100vh - 48px)',
+    <>
+      <Helmet title={`GraphView | MillenniumDB`} />
+      <Box
+        ref={ref}
+        sx={(theme) => ({
+          height: 'calc(100vh - 56px)',
+          [`${theme.breakpoints.up('sm')}`]: {
+            height: 'calc(100vh - 64px)',
           },
-        },
-        width: '100vw',
-        position: 'relative',
-        overflow: 'hidden',
-      })}
-    >
-      <GraphSearchBar />
-      <GraphObjectDetails
-        selectedNodeId={selectedNodeId}
-        setSelectedNodeId={setSelectedNodeId}
-      />
-      <GraphSettings
-        graphForceLinkDistance={graphForceLinkDistance}
-        setGraphForceLinkDistance={setGraphLinkDistance}
-        graphForceChargeStrength={graphForceChargeStrength}
-        setGraphForceChargeStrength={setGraphForceChargeStrength}
-        graphForceLinkStrength={graphForceLinkStrength}
-        setGraphForceLinkStrength={setGraphForceLinkStrength}
-        showGrid={showGrid}
-        setShowGrid={setShowGrid}
-      />
-      <ForceGraph2D
-        ref={graphRef}
-        graphData={graphData}
-        width={width}
-        height={height}
-        backgroundColor={graphColorSettings.backgroundColor}
-        maxZoom={graphSizeSettings.maxZoom}
-        minZoom={graphSizeSettings.minZoom}
-        // Nodes
-        nodeRelSize={graphSizeSettings.nodeRelSize}
-        nodeVal={graphSizeSettings.nodeVal}
-        nodeColor={null}
-        nodeLabel={null}
-        nodeCanvasObject={NodeCanvasObject}
-        nodeCanvasObjectMode={() => 'replace'}
-        // Links
-        linkDirectionalArrowLength={(link) =>
-          link.source.isEdge ? graphSizeSettings.arrowSize : 0
-        }
-        linkDirectionalArrowRelPos={1}
-        linkColor={handleLinkColor}
-        linkWidth={graphSizeSettings.linkWidth}
-        // Events
-        onNodeHover={handleOnNodeHover}
-        onRenderFramePre={handleRenderFramePre}
-        onZoom={handleOnZoom}
-        onNodeClick={handleOnNodeClick}
-        // Performance
-        warmupTicks={300}
-        cooldownTicks={300}
-        autoPauseRedraw={true}
-      />
-    </Box>
+          [`${theme.breakpoints.up('xs')}`]: {
+            '@media (orientation: landscape)': {
+              height: 'calc(100vh - 48px)',
+            },
+          },
+          width: '100vw',
+          position: 'relative',
+          overflow: 'hidden',
+        })}
+      >
+        <GraphSearchBar setSelectedNode={setSelectedNode} />
+        <GraphObjectDetails
+          selectedNode={selectedNode}
+          setSelectedNode={setSelectedNode}
+        />
+        <GraphSettings
+          graphForceLinkDistance={graphForceLinkDistance}
+          setGraphForceLinkDistance={setGraphLinkDistance}
+          graphForceChargeStrength={graphForceChargeStrength}
+          setGraphForceChargeStrength={setGraphForceChargeStrength}
+          graphForceLinkStrength={graphForceLinkStrength}
+          setGraphForceLinkStrength={setGraphForceLinkStrength}
+          showGrid={showGrid}
+          setShowGrid={setShowGrid}
+        />
+        <ForceGraph2D
+          ref={graphRef}
+          graphData={graphData}
+          width={width}
+          height={height}
+          backgroundColor={graphColorSettings.backgroundColor}
+          maxZoom={graphSizeSettings.maxZoom}
+          minZoom={graphSizeSettings.minZoom}
+          // Nodes
+          nodeRelSize={graphSizeSettings.nodeRelSize}
+          nodeVal={graphSizeSettings.nodeVal}
+          nodeColor={null}
+          nodeLabel={null}
+          nodeCanvasObject={NodeCanvasObject}
+          nodeCanvasObjectMode={() => 'replace'}
+          // Links
+          linkDirectionalArrowLength={(link) =>
+            link.source.isEdge ? graphSizeSettings.arrowSize : 0
+          }
+          linkDirectionalArrowRelPos={1}
+          linkColor={handleLinkColor}
+          linkWidth={graphSizeSettings.linkWidth}
+          // Events
+          onNodeHover={handleOnNodeHover}
+          onRenderFramePre={handleRenderFramePre}
+          onZoom={handleOnZoom}
+          onNodeClick={handleOnNodeClick}
+          onBackgroundClick={handleOnBackgroundClick}
+          // Performance
+          warmupTicks={300}
+          cooldownTicks={300}
+          autoPauseRedraw={true}
+        />
+      </Box>
+    </>
   );
 }

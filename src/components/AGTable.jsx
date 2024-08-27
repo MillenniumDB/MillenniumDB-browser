@@ -6,9 +6,9 @@ import { AgGridReact } from 'ag-grid-react';
 import React, {
   useCallback,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
-  useMemo,
 } from 'react';
 import CustomCellRenderer from './CustomCellRenderer';
 
@@ -67,7 +67,6 @@ export default React.forwardRef(function AGTable(
       newColumns.map((col) => ({
         headerName: col,
         field: col,
-        cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
       }))
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,8 +77,10 @@ export default React.forwardRef(function AGTable(
       flex: 1,
       minWidth: 100,
       sortable: false,
+      cellDataType: false,
+      cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
     }),
-    []
+    [targetBlank]
   );
 
   const addRows = useCallback((newRows) => {
@@ -136,8 +137,6 @@ export default React.forwardRef(function AGTable(
             ? columns.map((col) => ({
                 headerName: col,
                 field: col,
-                cellRenderer: (props) => CustomCellRenderer(props, targetBlank),
-                tooltipValueGetter: (params) => 'hola',
               }))
             : undefined
         }
@@ -153,11 +152,13 @@ export default React.forwardRef(function AGTable(
         suppressPaginationPanel
         onPaginationChanged={handleOnPaginationChanged}
       />
-      <CustomPagination
-        agGridPageCount={pageCount}
-        agGridPage={currentPage}
-        agGridHandlePageChange={handlePageChange}
-      />
+      {pageCount > 1 && (
+        <CustomPagination
+          agGridPageCount={pageCount}
+          agGridPage={currentPage}
+          agGridHandlePageChange={handlePageChange}
+        />
+      )}
     </Box>
   );
 });

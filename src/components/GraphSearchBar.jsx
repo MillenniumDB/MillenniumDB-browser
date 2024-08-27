@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { debounce } from '@mui/material/utils';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Autocomplete,
@@ -11,8 +10,12 @@ import {
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { useDriverContext } from '../context/DriverContext';
+import {
+  graphObjectToString,
+  graphObjectToTypeString,
+} from '../utils/GraphObjectUtils';
 
-const GraphSearchBar = React.memo(() => {
+const GraphSearchBar = React.memo(({ setSelectedNode }) => {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
@@ -23,28 +26,39 @@ const GraphSearchBar = React.memo(() => {
   const handleOnChange = (_event, newValue) => {
     setOptions(newValue ? [newValue, ...options] : options);
     setValue(newValue);
+
+    if (newValue !== null) {
+      setSelectedNode(newValue.node);
+    }
   };
 
   const handleOnInputChange = (event, newInputValue) => {
     setInputValue(newInputValue);
   };
 
-  const textSearch = useMemo(
-    () =>
-      debounce((text, callback) => {
-        // TODO: MDB text search
-        setLoading(true);
-        const session = driverContext.getSession();
-        const result = session.run('MATCH (?node) RETURN ?node LIMIT 50');
-        result.records().then((records) => {
-          const options = records.map((record) => ({
-            id: record.get('node').id,
-            label: record.get('node').id,
-          }));
-          callback(options);
-          setLoading(false);
-        });
-      }, 400),
+  const textSearch = useCallback(
+    async (text) => {
+      // TODO: MDB text search
+      setLoading(true);
+      const session = driverContext.getSession();
+      const result = session.run('MATCH (?node) RETURN ?node LIMIT 50');
+      const records = await result.records();
+      const options = records.map((record) => {
+        const node = record.get('node');
+        const label = graphObjectToString(node);
+        const id = label;
+        const type = graphObjectToTypeString(node);
+        return {
+          node,
+          id,
+          label,
+          type,
+        };
+      });
+      console.log(options);
+      setOptions(options);
+      setLoading(false);
+    },
     [driverContext]
   );
 
@@ -59,7 +73,7 @@ const GraphSearchBar = React.memo(() => {
 
     // Search for nodes
     if (active) {
-      textSearch(inputValue, setOptions);
+      textSearch(inputValue);
     }
 
     return () => {
@@ -89,7 +103,7 @@ const GraphSearchBar = React.memo(() => {
     >
       <Autocomplete
         getOptionLabel={(option) => option.label}
-        getOptionKey={(option) => option.id}
+        // getOptionKey={(option) => option.id}
         filterOptions={(x) => x}
         options={options}
         value={value}
@@ -142,7 +156,7 @@ const GraphSearchBar = React.memo(() => {
                   ))}
                 </Grid>
                 <Typography variant="body2" color="text.secondary">
-                  {'Secondary text'}
+                  {option.type}
                 </Typography>
               </Grid>
             </li>

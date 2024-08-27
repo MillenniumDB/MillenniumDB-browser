@@ -73,6 +73,13 @@ const common = {
         LinkComponent: LinkBehavior,
       },
     },
+    MuiSkeleton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
   },
 };
 

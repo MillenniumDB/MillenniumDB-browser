@@ -66,7 +66,7 @@ export default function Node() {
               <Chip
                 key={labelIdx}
                 size="small"
-                color="secondary"
+                color="primary"
                 label={label}
               />
             ))}

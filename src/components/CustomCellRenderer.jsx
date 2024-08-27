@@ -4,13 +4,7 @@ import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import { Box, Chip, Link } from '@mui/material';
 import { types } from 'millenniumdb-driver';
 import { Fragment } from 'react';
-
-function JSONStringifyObject(obj) {
-  return JSON.stringify(
-    obj,
-    (key, value) => (typeof value === 'bigint' ? value.toString() : value) // return everything else unchanged
-  );
-}
+import { JSONStringifyObject } from '../utils/GraphObjectUtils';
 
 function PathNode({ value, color, targetBlank }) {
   if (value === null || value === undefined) {
@@ -127,12 +121,9 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                 return (
                   <Fragment key={segmentIdx}>
                     {segment.reverse ? (
-                      <ArrowBackIcon fontSize="small" sx={{ margin: 'auto' }} />
+                      <ArrowBackIcon color="secondary" fontSize="small" />
                     ) : (
-                      <HorizontalRuleIcon
-                        fontSize="small"
-                        sx={{ margin: 'auto' }}
-                      />
+                      <HorizontalRuleIcon color="secondary" fontSize="small" />
                     )}
                     <PathNode
                       color="secondary"
@@ -140,9 +131,9 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                       targetBlank={targetBlank}
                     />
                     {segment.reverse ? (
-                      <HorizontalRuleIcon fontSize="small" />
+                      <HorizontalRuleIcon color="secondary"  fontSize="small" />
                     ) : (
-                      <ArrowForwardIcon fontSize="small" />
+                      <ArrowForwardIcon  color="secondary" fontSize="small" />
                     )}
                     <PathNode
                       color="primary"

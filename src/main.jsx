@@ -25,6 +25,7 @@ import Node from './pages/Node';
 import NodeError from './pages/NodeError';
 import Query from './pages/Query';
 import './styles/ag-grid.css';
+import './styles/react-force-graph.css';
 
 setupLanguages();
 
