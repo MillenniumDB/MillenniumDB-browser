@@ -11,6 +11,7 @@ import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { useDriverContext } from '../context/DriverContext';
 import {
+  graphObjectToReactForceGraphNode,
   graphObjectToString,
   graphObjectToTypeString,
 } from '../utils/GraphObjectUtils';
@@ -28,6 +29,7 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
     setValue(newValue);
 
     if (newValue !== null) {
+      setInputValue('');
       setSelectedNode(newValue.node);
     }
   };
@@ -44,18 +46,18 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
       const result = session.run('MATCH (?node) RETURN ?node LIMIT 50');
       const records = await result.records();
       const options = records.map((record) => {
-        const node = record.get('node');
-        const label = graphObjectToString(node);
-        const id = label;
-        const type = graphObjectToTypeString(node);
+        const graphObject = record.get('node');
+        const node = graphObjectToReactForceGraphNode(graphObject);
+        const label = graphObjectToString(graphObject);
+        const id = node.id;
+        const type = graphObjectToTypeString(graphObject);
         return {
-          node,
           id,
           label,
           type,
+          node,
         };
       });
-      console.log(options);
       setOptions(options);
       setLoading(false);
     },
@@ -103,7 +105,7 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
     >
       <Autocomplete
         getOptionLabel={(option) => option.label}
-        // getOptionKey={(option) => option.id}
+        getOptionKey={(option) => option.id}
         filterOptions={(x) => x}
         options={options}
         value={value}
@@ -124,10 +126,14 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
             placeholder="Search for a node"
             InputProps={{
               ...params.InputProps,
+              sx: {
+                ...params.InputProps.sx,
+                pr: '16px !important',
+              },
               endAdornment: (
                 <>
                   {loading ? <CircularProgress size={20} /> : null}
-                  {params.InputProps.endAdornment}
+                  {/* {params.InputProps.endAdornment} */}
                 </>
               ),
             }}

@@ -90,3 +90,48 @@ export const graphObjectToString = (value) => {
       return 'unknown';
   }
 };
+
+export const graphObjectToReactForceGraphNode = (value) => {
+  if (value === null || value === undefined) return { id: null, label: 'null' };
+
+  switch (typeof value) {
+    case 'number':
+    case 'bigint':
+    case 'boolean': {
+      const id = value.toString();
+      return { id, label: id, value };
+    }
+    case 'string': {
+      const id = `"${value}"`;
+      return { id, label: id, value };
+    }
+    case 'object': {
+      switch (value.constructor) {
+        case types.DateTime:
+        case types.Decimal:
+        case types.SimpleDate:
+        case types.StringDatatype:
+        case types.StringLang:
+        case types.Time:
+        case types.IRI: {
+          const id = value.toString();
+          return { id, label: id, value };
+        }
+        case types.GraphAnon:
+        case types.GraphEdge:
+        case types.GraphNode:
+          return { id: value.id, label: value.toString(), value };
+        default: {
+          const id = JSONStringifyObject(value);
+          return {
+            id,
+            label: id,
+            value,
+          };
+        }
+      }
+    }
+    default:
+      return { id: 'unknown', label: 'unknown', value };
+  }
+};

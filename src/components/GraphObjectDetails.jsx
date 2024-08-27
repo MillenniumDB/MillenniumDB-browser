@@ -34,38 +34,60 @@ const GraphObjectDetails = React.memo(({ selectedNode, setSelectedNode }) => {
   const [outgoing, setOutgoing] = useState([]);
   const [incoming, setIncoming] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isLiteral, setIsLiteral] = useState(false);
 
   const describe = useCallback(
     async (selectedNode) => {
-      if (
-        typeof selectedNode.object === 'object' &&
-        selectedNode.object.constructor === types.GraphNode
-      ) {
+      const { value } = selectedNode;
+
+      setIsLiteral(
+        !typeof value === 'object' ||
+          ![
+            types.GraphNode,
+            types.GraphAnon,
+            types.GraphEdge,
+            types.IRI,
+          ].includes(value.constructor)
+      );
+
+      if (typeof value === 'object') {
+        if (value.constructor === types.GraphNode) {
+          setLoading(true);
+          try {
+            const session = driverContext.getSession();
+            const query = `DESCRIBE ${value.id}`;
+            const result = session.run(query);
+            const records = await result.records();
+            const describeResult = records[0].toObject();
+            setLabels(describeResult.labels);
+            setProperties(
+              Object.keys(describeResult.properties).map((key) => ({
+                key,
+                value: describeResult.properties[key],
+              }))
+            );
+            setOutgoing(
+              describeResult.outgoing.map(({ type, edge, to }) => ({
+                type,
+                edge,
+                to,
+              }))
+            );
+            setIncoming(
+              describeResult.incoming.map(({ type, edge, from }) => ({
+                type,
+                edge,
+                from,
+              }))
+            );
+          } catch (error) {
+            // TODO: Handle error
+            console.error(error);
+          }
+          setLoading(false);
+          return;
+        }
       }
-      // TODO: Handle datatype clicks
-
-      // TODO: Handle error
-      setLoading(true);
-      const session = driverContext.getSession();
-      const query = `DESCRIBE ${selectedNode.id}`;
-      const result = session.run(query);
-      const records = await result.records();
-      const describeResult = records[0].toObject();
-
-      setLabels(describeResult.labels);
-      setProperties(
-        Object.keys(describeResult.properties).map((key) => ({
-          key,
-          value: describeResult.properties[key],
-        }))
-      );
-      setOutgoing(
-        describeResult.outgoing.map(({ type, to }) => ({ type, to }))
-      );
-      setIncoming(
-        describeResult.incoming.map(({ type, from }) => ({ type, from }))
-      );
-      setLoading(false);
     },
     [driverContext]
   );
@@ -113,15 +135,13 @@ const GraphObjectDetails = React.memo(({ selectedNode, setSelectedNode }) => {
           }}
         >
           <Typography variant="h5" component="h5">
-            {loading ? <Skeleton /> : selectedNode?.id || ''}
+            {loading ? <Skeleton /> : selectedNode?.label || ''}
           </Typography>
           <Typography variant="body2" component="p" color="text.secondary">
             {loading ? (
               <Skeleton />
-            ) : selectedNode?.object ? (
-              graphObjectToTypeString(selectedNode.object)
             ) : (
-              ''
+              selectedNode?.value && graphObjectToTypeString(selectedNode.value)
             )}
           </Typography>
 
@@ -138,50 +158,55 @@ const GraphObjectDetails = React.memo(({ selectedNode, setSelectedNode }) => {
             </Box>
           ) : null}
         </Box>
-        <Divider />
-        <GraphObjectDetailsSection title="Properties">
-          <Box sx={{ height: 400 }}>
-            {loading ? (
-              <Skeleton variant="rectangular" height="inherit" />
-            ) : (
-              <AGTable
-                columns={['key', 'value']}
-                rows={properties}
-                targetBlank={false}
-              />
-            )}
-          </Box>
-        </GraphObjectDetailsSection>
-        <Divider />
+        {!isLiteral && (
+          <>
+            <Divider />
 
-        <GraphObjectDetailsSection title="Outgoing">
-          <Box sx={{ height: 400 }}>
-            {loading ? (
-              <Skeleton variant="rectangular" height="inherit" />
-            ) : (
-              <AGTable
-                columns={['type', 'to']}
-                rows={outgoing}
-                targetBlank={false}
-              />
-            )}
-          </Box>
-        </GraphObjectDetailsSection>
-        <Divider />
+            <GraphObjectDetailsSection title="Properties">
+              <Box sx={{ height: 400 }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height="inherit" />
+                ) : (
+                  <AGTable
+                    columns={['key', 'value']}
+                    rows={properties}
+                    targetBlank={false}
+                  />
+                )}
+              </Box>
+            </GraphObjectDetailsSection>
+            <Divider />
 
-        <GraphObjectDetailsSection title="Incoming">
-          <Box sx={{ height: 400 }}>
-            {loading ? (
-              <Skeleton variant="rectangular" height="inherit" />
-            ) : (
-              <AGTable
-                columns={['type', 'from']}
-                rows={incoming}
-                targetBlank={false}
-              />
-            )}
-          </Box>
-        </GraphObjectDetailsSection>
+            <GraphObjectDetailsSection title="Outgoing">
+              <Box sx={{ height: 400 }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height="inherit" />
+                ) : (
+                  <AGTable
+                    columns={['type', 'edge', 'to']}
+                    rows={outgoing}
+                    targetBlank={false}
+                  />
+                )}
+              </Box>
+            </GraphObjectDetailsSection>
+            <Divider />
+
+            <GraphObjectDetailsSection title="Incoming">
+              <Box sx={{ height: 400 }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height="inherit" />
+                ) : (
+                  <AGTable
+                    columns={['type', 'edge', 'from']}
+                    rows={incoming}
+                    targetBlank={false}
+                  />
+                )}
+              </Box>
+            </GraphObjectDetailsSection>
+          </>
+        )}
       </Box>
     </Drawer>
   );

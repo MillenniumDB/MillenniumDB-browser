@@ -39,15 +39,17 @@ export default function Node() {
           value,
         })
       ),
-      outgoing: data.outgoing.map(({ to, type }, outgoingIdx) => ({
+      outgoing: data.outgoing.map(({ type, edge, to }, outgoingIdx) => ({
         id: outgoingIdx,
+        type,
+        edge,
         to,
-        type,
       })),
-      incoming: data.incoming.map(({ from, type }, incomingIdx) => ({
+      incoming: data.incoming.map(({ type, edge, from }, incomingIdx) => ({
         id: incomingIdx,
-        from,
         type,
+        edge,
+        from,
       })),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,12 +65,7 @@ export default function Node() {
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, py: 1 }}>
             {description?.labels.map((label, labelIdx) => (
-              <Chip
-                key={labelIdx}
-                size="small"
-                color="primary"
-                label={label}
-              />
+              <Chip key={labelIdx} size="small" color="primary" label={label} />
             ))}
           </Box>
 
@@ -84,7 +81,7 @@ export default function Node() {
               {'Outgoing Connections'}
             </Typography>
             <ConnectionsTable
-              columns={['type', 'to']}
+              columns={['type', 'edge', 'to']}
               rows={description?.outgoing}
             />
           </Box>
@@ -94,7 +91,7 @@ export default function Node() {
               {'Incoming Connections'}
             </Typography>
             <ConnectionsTable
-              columns={['type', 'from']}
+              columns={['type', 'edge', 'from']}
               rows={description?.incoming}
             />
           </Box>
