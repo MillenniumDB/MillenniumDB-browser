@@ -7,7 +7,6 @@ import {
   AccordionSummary,
   Box,
   IconButton,
-  Paper,
   Slider,
   Switch,
   Tooltip,
@@ -96,12 +95,12 @@ const GraphSettings = React.memo(
           </Tooltip>
         )}
         {showSettings && (
-          <Paper
-            variant="outlined"
+          <Box
             sx={(theme) => ({
               width: 200,
               position: 'relative',
               userSelect: 'none',
+              overflowX: 'hidden',
               overflowY: 'scroll',
               maxHeight: 'calc(100vh - 98px)',
               [`${theme.breakpoints.down('md')}`]: {
@@ -179,7 +178,7 @@ const GraphSettings = React.memo(
                 />
               </Box>
             </AccordionSetting>
-          </Paper>
+          </Box>
         )}
       </Box>
     );

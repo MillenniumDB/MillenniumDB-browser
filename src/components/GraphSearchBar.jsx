@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box,
   Autocomplete,
+  Box,
+  CircularProgress,
+  debounce,
   Grid,
   TextField,
   Typography,
-  CircularProgress,
 } from '@mui/material';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
+import { enqueueSnackbar } from 'notistack';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import {
   graphObjectToReactForceGraphNode,
@@ -39,27 +41,39 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
   };
 
   const textSearch = useCallback(
-    async (text) => {
-      // TODO: MDB text search
-      setLoading(true);
-      const session = driverContext.getSession();
-      const result = session.run('MATCH (?node) RETURN ?node LIMIT 50');
-      const records = await result.records();
-      const options = records.map((record) => {
-        const graphObject = record.get('node');
-        const node = graphObjectToReactForceGraphNode(graphObject);
-        const label = graphObjectToString(graphObject);
-        const id = node.id;
-        const type = graphObjectToTypeString(graphObject);
-        return {
-          id,
-          label,
-          type,
-          node,
-        };
-      });
-      setOptions(options);
-      setLoading(false);
+    (text) => {
+      debounce(async () => {
+        // TODO: MDB text search
+        setLoading(true);
+        const session = driverContext.getSession();
+        try {
+          const query = 'MATCH (?node) RETURN ?node LIMIT 50';
+          const result = session.run(query);
+          const records = await result.records();
+          const options = records.map((record) => {
+            const graphObject = record.get('node');
+            const node = graphObjectToReactForceGraphNode(graphObject);
+            const label = graphObjectToString(graphObject);
+            const id = node.id;
+            const type = graphObjectToTypeString(graphObject);
+            return {
+              id,
+              label,
+              type,
+              node,
+            };
+          });
+          setOptions(options);
+        } catch (error) {
+          enqueueSnackbar({
+            message: error.message,
+            variant: 'error',
+          });
+        } finally {
+          session.close();
+          setLoading(false);
+        }
+      }, 500)();
     },
     [driverContext]
   );

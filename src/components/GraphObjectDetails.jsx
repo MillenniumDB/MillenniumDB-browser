@@ -17,7 +17,7 @@ import { useDriverContext } from '../context/DriverContext';
 import { graphObjectToTypeString } from '../utils/GraphObjectUtils';
 import AGTable from './AGTable';
 import CloseIcon from '@mui/icons-material/Close';
-import { useTheme } from '@emotion/react';
+import { enqueueSnackbar } from 'notistack';
 
 const GraphObjectDetailsSection = ({ title, children }) => {
   return (
@@ -62,8 +62,8 @@ const GraphObjectDetails = React.memo(
         if (typeof value === 'object') {
           if (value.constructor === types.GraphNode) {
             setLoading(true);
+            const session = driverContext.getSession();
             try {
-              const session = driverContext.getSession();
               const query = `DESCRIBE ${value.id}`;
               const result = session.run(query);
               const records = await result.records();
@@ -90,11 +90,14 @@ const GraphObjectDetails = React.memo(
                 }))
               );
             } catch (error) {
-              // TODO: Handle error
-              console.error(error);
+              enqueueSnackbar({
+                message: error.message,
+                variant: 'error',
+              });
+            } finally {
+              session.close();
+              setLoading(false);
             }
-            setLoading(false);
-            return;
           }
         }
       },
@@ -136,6 +139,15 @@ const GraphObjectDetails = React.memo(
         })}
       >
         <Toolbar sx={{ mb: '88px' }} />
+        <Box sx={{ p: 1 }}>
+          <IconButton
+            onClick={() => setSelectedNode(null)}
+            size="small"
+            sx={{ float: 'right' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
         <Divider />
         <Box sx={{ overflow: 'scroll' }}>
           <Box
@@ -143,28 +155,16 @@ const GraphObjectDetails = React.memo(
               p: 2,
             }}
           >
-            <IconButton
-              onClick={() => setSelectedNode(null)}
-              size="small"
-              sx={{ float: 'right' }}
-            >
-              <CloseIcon />
-            </IconButton>
-
             <Typography
               variant="h5"
               component="h5"
               sx={{ wordWrap: 'break-word' }}
             >
-              {loading ? <Skeleton /> : selectedNode?.label || ''}
+              {selectedNode?.label || ''}
             </Typography>
             <Typography variant="body2" component="p" color="text.secondary">
-              {loading ? (
-                <Skeleton />
-              ) : (
-                selectedNode?.value &&
-                graphObjectToTypeString(selectedNode.value)
-              )}
+              {selectedNode?.value !== undefined &&
+                graphObjectToTypeString(selectedNode.value)}
             </Typography>
             {labels.length ? (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, pt: 1 }}>
@@ -181,6 +181,7 @@ const GraphObjectDetails = React.memo(
 
             <Box
               sx={{
+                pt: 2,
                 px: 2,
                 display: 'flex',
                 justifyContent: 'flex-end',
