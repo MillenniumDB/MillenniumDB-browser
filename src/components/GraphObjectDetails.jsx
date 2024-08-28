@@ -12,7 +12,7 @@ import {
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { types } from 'millenniumdb-driver';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import { graphObjectToTypeString } from '../utils/GraphObjectUtils';
 import AGTable from './AGTable';
@@ -33,6 +33,8 @@ const GraphObjectDetailsSection = ({ title, children }) => {
 const GraphObjectDetails = React.memo(
   ({ selectedNode, setSelectedNode, addNodes }) => {
     const driverContext = useDriverContext();
+
+    const scrollableAreaRef = useRef(null);
 
     const [labels, setLabels] = useState([]);
     const [properties, setProperties] = useState([]);
@@ -78,15 +80,15 @@ const GraphObjectDetails = React.memo(
               setOutgoing(
                 describeResult.outgoing.map(({ type, edge, to }) => ({
                   type,
-                  edge,
                   to,
+                  edge,
                 }))
               );
               setIncoming(
                 describeResult.incoming.map(({ type, edge, from }) => ({
                   type,
-                  edge,
                   from,
+                  edge,
                 }))
               );
             } catch (error) {
@@ -121,6 +123,13 @@ const GraphObjectDetails = React.memo(
       };
     }, [selectedNode, describe]);
 
+    useEffect(() => {
+      const drawer = scrollableAreaRef.current;
+      if (drawer) {
+        drawer.scrollTo(0, 0);
+      }
+    }, [scrollableAreaRef, selectedNode]);
+
     return (
       <Drawer
         transitionDuration={100}
@@ -149,7 +158,7 @@ const GraphObjectDetails = React.memo(
           </IconButton>
         </Box>
         <Divider />
-        <Box sx={{ overflow: 'scroll' }}>
+        <Box ref={scrollableAreaRef} sx={{ overflow: 'scroll' }}>
           <Box
             sx={{
               p: 2,
@@ -210,6 +219,7 @@ const GraphObjectDetails = React.memo(
                       columns={['key', 'value']}
                       rows={properties}
                       targetBlank={false}
+                      onRowClicked={(row) => console.log(row)}
                     />
                   )}
                 </Box>
@@ -222,7 +232,7 @@ const GraphObjectDetails = React.memo(
                     <Skeleton variant="rectangular" height="inherit" />
                   ) : (
                     <AGTable
-                      columns={['type', 'edge', 'to']}
+                      columns={['type', 'to', 'edge']}
                       rows={outgoing}
                       targetBlank={false}
                     />
@@ -237,7 +247,7 @@ const GraphObjectDetails = React.memo(
                     <Skeleton variant="rectangular" height="inherit" />
                   ) : (
                     <AGTable
-                      columns={['type', 'edge', 'from']}
+                      columns={['type', 'from', 'edge']}
                       rows={incoming}
                       targetBlank={false}
                     />
