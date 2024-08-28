@@ -107,7 +107,7 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
         zIndex: theme.zIndex.drawer + 1,
         top: 16,
         left: 16,
-        width: 368,
+        width: 468,
         [`${theme.breakpoints.down('md')}`]: {
           left: 0,
           display: 'block',

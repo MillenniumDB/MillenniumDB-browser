@@ -107,23 +107,23 @@ export default function GraphView() {
       const newHighlightLinkIds = new Set();
 
       if (node.isEdge) {
-        graphData.nodeToNeighbors.get(node.id).forEach(([edgeId, nodeId]) => {
+        graphData.nodeToNeighbors.get(node.id).forEach(([linkId, nodeId]) => {
           newHighlightNodeIds.add(nodeId);
-          newHighlightLinkIds.add(edgeId);
+          newHighlightLinkIds.add(linkId);
         });
       } else {
-        for (const [firstEdgeId, firstNodeId] of graphData.nodeToNeighbors.get(
+        for (const [firstLinkId, firstNodeId] of graphData.nodeToNeighbors.get(
           node.id
         )) {
           newHighlightNodeIds.add(firstNodeId);
-          newHighlightLinkIds.add(firstEdgeId);
+          newHighlightLinkIds.add(firstLinkId);
 
           for (const [
-            secondEdgeId,
+            secondLinkId,
             secondNodeId,
           ] of graphData.nodeToNeighbors.get(firstNodeId)) {
             newHighlightNodeIds.add(secondNodeId);
-            newHighlightLinkIds.add(secondEdgeId);
+            newHighlightLinkIds.add(secondLinkId);
           }
         }
       }
@@ -435,17 +435,20 @@ export default function GraphView() {
 
   const addLinks = useCallback((links) => {
     setGraphData((prevGraphData) => {
-      if (!links.length) return prevGraphData;
+      const newLinks = links.filter(
+        (link) => !prevGraphData.links.find((l) => l.id === link.id)
+      );
 
-      for (const link of links) {
-        const { source, target } = link;
-        prevGraphData.nodeToNeighbors.get(source.id).add(target.id);
-        prevGraphData.nodeToNeighbors.get(target.id).add(source.id);
+      if (!newLinks.length) return prevGraphData;
+
+      for (const newLink of newLinks) {
+        const { id, source, target } = newLink;
+        prevGraphData.nodeToNeighbors.get(source).add([id, target]);
+        prevGraphData.nodeToNeighbors.get(target).add([id, source]);
       }
-
       return {
         ...prevGraphData,
-        links: [...prevGraphData.links, ...links],
+        links: [...prevGraphData.links, ...newLinks],
       };
     });
   }, []);
@@ -475,6 +478,7 @@ export default function GraphView() {
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
           addNodes={addNodes}
+          addLinks={addLinks}
         />
         <GraphSettings
           graphForceLinkDistance={graphForceLinkDistance}

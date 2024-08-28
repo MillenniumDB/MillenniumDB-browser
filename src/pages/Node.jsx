@@ -10,7 +10,14 @@ const TABLE_HEIGHT_PX = 500;
 function PropertiesTable({ rows }) {
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
-      <AGTable columns={['key', 'value']} rows={rows} targetBlank={false} />
+      <AGTable
+        columns={[
+          { field: 'key', headerName: 'key' },
+          { field: 'value', headerName: 'value' },
+        ]}
+        rows={rows}
+        targetBlank={false}
+      />
     </Box>
   );
 }
@@ -81,7 +88,11 @@ export default function Node() {
               {'Outgoing Connections'}
             </Typography>
             <ConnectionsTable
-              columns={['type', 'to', 'edge']}
+              columns={[
+                { field: 'type', headerName: 'type' },
+                { field: 'to', headerName: 'to' },
+                { field: 'edge', headerName: 'edge' },
+              ]}
               rows={description?.outgoing}
             />
           </Box>
@@ -91,7 +102,11 @@ export default function Node() {
               {'Incoming Connections'}
             </Typography>
             <ConnectionsTable
-              columns={['type', 'from', 'edge']}
+              columns={[
+                { field: 'type', headerName: 'type' },
+                { field: 'from', headerName: 'from' },
+                { field: 'edge', headerName: 'edge' },
+              ]}
               rows={description?.incoming}
             />
           </Box>

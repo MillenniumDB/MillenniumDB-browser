@@ -14,7 +14,10 @@ import 'ag-grid-community/styles/ag-theme-material.css';
 import { types } from 'millenniumdb-driver';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
-import { graphObjectToTypeString } from '../utils/GraphObjectUtils';
+import {
+  graphObjectToTypeString,
+  graphObjectToReactForceGraphNode,
+} from '../utils/GraphObjectUtils';
 import AGTable from './AGTable';
 import CloseIcon from '@mui/icons-material/Close';
 import { enqueueSnackbar } from 'notistack';
@@ -31,7 +34,7 @@ const GraphObjectDetailsSection = ({ title, children }) => {
 };
 
 const GraphObjectDetails = React.memo(
-  ({ selectedNode, setSelectedNode, addNodes }) => {
+  ({ selectedNode, setSelectedNode, addNodes, addLinks }) => {
     const driverContext = useDriverContext();
 
     const scrollableAreaRef = useRef(null);
@@ -42,6 +45,26 @@ const GraphObjectDetails = React.memo(
     const [incoming, setIncoming] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isLiteral, setIsLiteral] = useState(false);
+
+    const addConnection = ({ from, to, type, edge }) => {
+      const source = graphObjectToReactForceGraphNode(from);
+      const target = graphObjectToReactForceGraphNode(to);
+      const edgeNode = graphObjectToReactForceGraphNode(edge);
+      edgeNode.isEdge = true;
+      addNodes([source, target, edgeNode]);
+      addLinks([
+        {
+          id: `${source.id}->${edgeNode.id}`,
+          source: source.id,
+          target: edgeNode.id,
+        },
+        {
+          id: `${edgeNode.id}->${target.id}`,
+          source: edgeNode.id,
+          target: target.id,
+        },
+      ]);
+    };
 
     const handleShowInGraphView = useCallback(() => {
       addNodes([selectedNode]);
@@ -136,7 +159,7 @@ const GraphObjectDetails = React.memo(
         open={selectedNode !== null}
         variant="persistent"
         sx={(theme) => ({
-          width: 400,
+          width: 500,
           [`& .MuiDrawer-paper`]: {
             width: 'inherit',
             boxSizing: 'border-box',
@@ -216,10 +239,12 @@ const GraphObjectDetails = React.memo(
                     <Skeleton variant="rectangular" height="inherit" />
                   ) : (
                     <AGTable
-                      columns={['key', 'value']}
+                      columns={[
+                        { field: 'key', headerName: 'key' },
+                        { field: 'value', headerName: 'value' },
+                      ]}
                       rows={properties}
                       targetBlank={false}
-                      onRowClicked={(row) => console.log(row)}
                     />
                   )}
                 </Box>
@@ -232,9 +257,21 @@ const GraphObjectDetails = React.memo(
                     <Skeleton variant="rectangular" height="inherit" />
                   ) : (
                     <AGTable
-                      columns={['type', 'to', 'edge']}
+                      columns={[
+                        { field: 'type', headerName: 'type' },
+                        { field: 'to', headerName: 'to' },
+                        { field: 'edge', headerName: 'edge' },
+                      ]}
                       rows={outgoing}
-                      targetBlank={false}
+                      targetBlank={true}
+                      onRowClicked={(row) =>
+                        addConnection({
+                          from: selectedNode.value,
+                          to: row.data.to,
+                          type: row.data.type,
+                          edge: row.data.edge,
+                        })
+                      }
                     />
                   )}
                 </Box>
@@ -247,9 +284,21 @@ const GraphObjectDetails = React.memo(
                     <Skeleton variant="rectangular" height="inherit" />
                   ) : (
                     <AGTable
-                      columns={['type', 'from', 'edge']}
+                      columns={[
+                        { field: 'type', headerName: 'type' },
+                        { field: 'from', headerName: 'from' },
+                        { field: 'edge', headerName: 'edge' },
+                      ]}
                       rows={incoming}
-                      targetBlank={false}
+                      targetBlank={true}
+                      onRowClicked={(row) =>
+                        addConnection({
+                          from: row.data.from,
+                          to: selectedNode.value,
+                          type: row.data.type,
+                          edge: row.data.edge,
+                        })
+                      }
                     />
                   )}
                 </Box>

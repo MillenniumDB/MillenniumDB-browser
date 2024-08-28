@@ -131,9 +131,9 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                       targetBlank={targetBlank}
                     />
                     {segment.reverse ? (
-                      <HorizontalRuleIcon color="secondary"  fontSize="small" />
+                      <HorizontalRuleIcon color="secondary" fontSize="small" />
                     ) : (
-                      <ArrowForwardIcon  color="secondary" fontSize="small" />
+                      <ArrowForwardIcon color="secondary" fontSize="small" />
                     )}
                     <PathNode
                       color="primary"

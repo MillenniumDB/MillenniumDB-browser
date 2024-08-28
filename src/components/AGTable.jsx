@@ -49,7 +49,7 @@ const CustomPagination = ({
 };
 
 export default React.forwardRef(function AGTable(
-  { columns, rows, targetBlank },
+  { columns, rows, targetBlank, onRowClicked },
   ref
 ) {
   const theme = useTheme();
@@ -132,14 +132,7 @@ export default React.forwardRef(function AGTable(
         containerStyle={{ flex: 1 }}
         headerHeight={36}
         defaultColDef={defaultColDef}
-        columnDefs={
-          columns
-            ? columns.map((col) => ({
-                headerName: col,
-                field: col,
-              }))
-            : undefined
-        }
+        columnDefs={columns || undefined}
         rowData={rows || undefined}
         suppressLoadingOverlay
         asyncTransactionWaitMillis={100}
@@ -149,6 +142,7 @@ export default React.forwardRef(function AGTable(
         enableCellTextSelection
         suppressFieldDotNotation
         columnHoverHighlight
+        onRowClicked={onRowClicked}
         suppressPaginationPanel
         onPaginationChanged={handleOnPaginationChanged}
       />
