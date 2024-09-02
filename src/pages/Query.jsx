@@ -114,7 +114,7 @@ export default function Query() {
     });
   };
 
-  const stopQuery = async () => {
+  const stopQuery = () => {
     if (sessionRef.current) {
       sessionRef.current.close();
       sessionRef.current = null;
