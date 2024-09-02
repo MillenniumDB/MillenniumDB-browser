@@ -45,7 +45,7 @@ export default forwardRef(function AGTable(
   ref
 ) {
   const themeContext = useThemeContext();
-  useImperativeHandle(ref, () => ({ setColumns, addRow, clearRows, addRows }));
+  useImperativeHandle(ref, () => ({ setColumns, clearRows, addRows }));
 
   const [pageCount, setPageCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
@@ -64,7 +64,7 @@ export default forwardRef(function AGTable(
         sortable: false,
       }))
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addRows = useCallback((newRows) => {
@@ -73,19 +73,14 @@ export default forwardRef(function AGTable(
     });
   }, []);
 
-  const addRow = useCallback((newRow) => {
-    gridRef.current.api.applyTransactionAsync({
-      add: [newRow],
-    });
-  }, []);
-
   const clearRows = useCallback(() => {
-    const rowData = [];
+    const rowIds = [];
     gridRef.current.api.forEachNode((node) => {
-      rowData.push(node.data);
+      const { __rowId } = node.data;
+      rowIds.push({ __rowId });
     });
-    gridRef.current.api.applyTransaction({
-      remove: rowData,
+    gridRef.current.api.applyTransactionAsync({
+      remove: rowIds,
     });
   }, []);
 
@@ -97,6 +92,8 @@ export default forwardRef(function AGTable(
   const handlePageChange = (pageNumber) => {
     gridRef.current.api.paginationGoToPage(pageNumber);
   };
+
+  const handleGetRowId = useCallback((params) => params.data.__rowId, []);
 
   return (
     <Box
@@ -124,7 +121,12 @@ export default forwardRef(function AGTable(
               }))
             : undefined
         }
-        rowData={rows || undefined}
+        getRowId={handleGetRowId}
+        rowData={
+          rows
+            ? rows.map((row, rowIdx) => ({ ...row, __rowId: rowIdx }))
+            : undefined
+        }
         suppressLoadingOverlay
         asyncTransactionWaitMillis={100}
         pagination={true}
