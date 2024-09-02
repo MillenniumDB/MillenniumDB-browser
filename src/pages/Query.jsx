@@ -1,7 +1,7 @@
 import { useTheme } from '@emotion/react';
 import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useSearchParams } from 'react-router-dom';
 import Actions from '../components/Actions';
@@ -11,6 +11,8 @@ import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
 import examples from '../data/examples';
 
+const ADD_ROWS_DELAY_MS = 100;
+
 // TODO: WebWorker for queries could improve interface?
 export default function Query() {
   const driverContext = useDriverContext();
@@ -18,8 +20,7 @@ export default function Query() {
   const theme = useTheme();
 
   const [searchParams] = useSearchParams();
-
-  const query = searchParams.get('query') || '';
+  const query = useMemo(() => searchParams.get('query') || '', [searchParams]);
 
   const [running, setRunning] = useState(false);
   const [language, setLanguage] = useState('');
@@ -28,6 +29,18 @@ export default function Query() {
   const agTableRef = useRef(null);
   const editorRef = useRef(null);
   const sessionRef = useRef(null);
+
+  const processRecordsInterval = useRef(null);
+  const recordsBuffer = useRef([]);
+  const recordsCount = useRef(0);
+
+  const processRecords = () => {
+    if (recordsBuffer.current.length > 0) {
+      const records = recordsBuffer.current;
+      recordsBuffer.current = [];
+      agTableRef.current.addRows(records);
+    }
+  };
 
   const handleRun = () => {
     runQuery();
@@ -56,11 +69,19 @@ export default function Query() {
     const result = session.run(query);
 
     result.subscribe({
-      onKeys: (keys) => {
-        agTableRef.current.setColumns(keys);
+      onVariables: (variables) => {
+        agTableRef.current.setColumns(variables);
+        processRecordsInterval.current = setInterval(
+          processRecords,
+          ADD_ROWS_DELAY_MS
+        );
       },
       onRecord: (record) => {
-        agTableRef.current.addRow(record.toObject());
+        recordsBuffer.current.push({
+          ...record.toObject(),
+          __rowId: recordsCount.current,
+        });
+        ++recordsCount.current;
       },
       onSuccess: (summary) => {
         const {
@@ -88,17 +109,26 @@ export default function Query() {
       onError: (error) => {
         stopQuery();
         enqueueSnackbar({
-          message: error.message,
+          message: error.toString(),
           variant: 'error',
         });
       },
     });
   };
 
-  const stopQuery = async () => {
+  const stopQuery = () => {
     if (sessionRef.current) {
       sessionRef.current.close();
       sessionRef.current = null;
+    }
+
+    if (processRecordsInterval.current) {
+      clearInterval(processRecordsInterval.current);
+    }
+
+    if (recordsBuffer.current.length) {
+      processRecords();
+      recordsCount.current = 0;
     }
 
     setRunning(false);

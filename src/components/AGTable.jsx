@@ -54,7 +54,7 @@ export default React.forwardRef(function AGTable(
 ) {
   const theme = useTheme();
 
-  useImperativeHandle(ref, () => ({ setColumns, addRow, clearRows, addRows }));
+  useImperativeHandle(ref, () => ({ setColumns, clearRows, addRows }));
 
   const [pageCount, setPageCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
@@ -89,19 +89,14 @@ export default React.forwardRef(function AGTable(
     });
   }, []);
 
-  const addRow = useCallback((newRow) => {
-    gridRef.current.api.applyTransactionAsync({
-      add: [newRow],
-    });
-  }, []);
-
   const clearRows = useCallback(() => {
-    const rowData = [];
+    const rowIds = [];
     gridRef.current.api.forEachNode((node) => {
-      rowData.push(node.data);
+      const { __rowId } = node.data;
+      rowIds.push({ __rowId });
     });
-    gridRef.current.api.applyTransaction({
-      remove: rowData,
+    gridRef.current.api.applyTransactionAsync({
+      remove: rowIds,
     });
   }, []);
 
@@ -113,6 +108,8 @@ export default React.forwardRef(function AGTable(
   const handlePageChange = (pageNumber) => {
     gridRef.current.api.paginationGoToPage(pageNumber);
   };
+
+  const handleGetRowId = useCallback((params) => params.data.__rowId, []);
 
   return (
     <Box
@@ -133,7 +130,12 @@ export default React.forwardRef(function AGTable(
         headerHeight={36}
         defaultColDef={defaultColDef}
         columnDefs={columns || undefined}
-        rowData={rows || undefined}
+        getRowId={handleGetRowId}
+        rowData={
+          rows
+            ? rows.map((row, rowIdx) => ({ ...row, __rowId: rowIdx }))
+            : undefined
+        }
         suppressLoadingOverlay
         asyncTransactionWaitMillis={100}
         pagination={true}
