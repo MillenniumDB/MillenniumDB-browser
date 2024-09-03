@@ -29,6 +29,7 @@ export default function Query() {
   const agTableRef = useRef(null);
   const editorRef = useRef(null);
   const sessionRef = useRef(null);
+  const resultRef = useRef(null);
 
   const processRecordsInterval = useRef(null);
   const recordsBuffer = useRef([]);
@@ -64,9 +65,10 @@ export default function Query() {
     agTableRef.current.clearRows();
 
     const query = editorRef.current.getEditor().getValue();
-    const session = driverContext.getSession();
+    const session = driverContext.driver.session();
     sessionRef.current = session;
     const result = session.run(query);
+    resultRef.current = result;
 
     result.subscribe({
       onVariables: (variables) => {
@@ -120,6 +122,11 @@ export default function Query() {
     if (sessionRef.current) {
       sessionRef.current.close();
       sessionRef.current = null;
+    }
+
+    if (resultRef.current) {
+      driverContext.driver.cancel(resultRef.current)
+      resultRef.current = null;
     }
 
     if (processRecordsInterval.current) {

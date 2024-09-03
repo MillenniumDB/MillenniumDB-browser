@@ -185,6 +185,33 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by MQLParser#limitOffsetClauses.
+	enterLimitOffsetClauses(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#limitOffsetClauses.
+	exitLimitOffsetClauses(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#limitClause.
+	enterLimitClause(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#limitClause.
+	exitLimitClause(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#offsetClause.
+	enterOffsetClause(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#offsetClause.
+	exitOffsetClause(ctx) {
+	}
+
+
 	// Enter a parse tree produced by MQLParser#setItem.
 	enterSetItem(ctx) {
 	}

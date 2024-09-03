@@ -10,12 +10,12 @@ export const DriverContext = createContext({
 
 export default function DriverProvider({ children }) {
   const providerValue = {
-    _driver: MillenniumDB.driver(import.meta.env.VITE_MDB_SERVER_URL),
+    driver: MillenniumDB.driver(import.meta.env.VITE_MDB_SERVER_URL),
+    // This let us cache the catalog instead of fetching it every time
     _catalog: null,
-    getSession: () => providerValue._driver.session(),
     getCatalog: async () => {
       if (!providerValue._catalog) {
-        providerValue._catalog = await providerValue._driver.catalog();
+        providerValue._catalog = await providerValue.driver.catalog();
       }
       return providerValue._catalog;
     },
