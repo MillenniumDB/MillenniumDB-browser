@@ -45,7 +45,7 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
       debounce(async () => {
         // TODO: MDB text search
         setLoading(true);
-        const session = driverContext.getSession();
+        const session = driverContext.driver.session();
         try {
           const query = 'MATCH (?node) RETURN ?node LIMIT 50';
           const result = session.run(query);

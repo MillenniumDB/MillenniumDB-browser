@@ -52,8 +52,6 @@ export default function GraphView() {
       linkHighlightColor: theme.palette.secondary.main,
       nodeHoverColor: theme.palette.primary.light,
       linkHoverColor: theme.palette.secondary.light,
-      selectedColor: theme.palette.success.main,
-      selectedHoverColor: theme.palette.success.light,
       nonHoveredOpacity: 0.1,
     };
 
@@ -64,6 +62,7 @@ export default function GraphView() {
       .padStart(2, '0');
     settings.nodeNonHoveredColor = settings.nodeColor + nonHoveredOpacityHex;
     settings.linkNonHoveredColor = settings.linkColor + nonHoveredOpacityHex;
+    settings.textNonHoveredColor = settings.textColor + nonHoveredOpacityHex;
 
     return settings;
   }, [theme]);
@@ -217,29 +216,15 @@ export default function GraphView() {
       // Draw the shape of the node
       if (node.isEdge) {
         if (hoveredNodeId) {
-          if (isHovered) {
-            ctx.strokeStyle = isSelected
-              ? graphColorSettings.selectedHoverColor
-              : graphColorSettings.linkHoverColor;
-            ctx.lineWidth = graphSizeSettings.hoverlineWidth;
-            ctx.strokeRect(
-              x - graphSizeSettings.edgeSide / 2,
-              y - graphSizeSettings.edgeSide / 2,
-              graphSizeSettings.edgeSide,
-              graphSizeSettings.edgeSide
-            );
-            ctx.fillStyle = graphColorSettings.linkHighlightColor;
-          } else if (highlightNodeIds.has(node.id)) {
+          if (isHovered || highlightNodeIds.has(node.id)) {
             ctx.fillStyle = graphColorSettings.linkHighlightColor;
           } else {
             ctx.fillStyle = graphColorSettings.linkNonHoveredColor;
           }
+        } else if (isSelected) {
+          ctx.fillStyle = graphColorSettings.linkHighlightColor;
         } else {
           ctx.fillStyle = graphColorSettings.linkColor;
-        }
-
-        if (isSelected) {
-          ctx.fillStyle = graphColorSettings.selectedColor;
         }
 
         ctx.fillRect(
@@ -250,26 +235,15 @@ export default function GraphView() {
         );
       } else {
         if (hoveredNodeId) {
-          if (isHovered) {
-            ctx.strokeStyle = isSelected
-              ? graphColorSettings.selectedHoverColor
-              : graphColorSettings.nodeHoverColor;
-            ctx.lineWidth = graphSizeSettings.hoverlineWidth;
-            ctx.beginPath();
-            ctx.arc(x, y, graphSizeSettings.nodeRadius, 0, 2 * Math.PI);
-            ctx.stroke();
-            ctx.fillStyle = graphColorSettings.nodeHighlightColor;
-          } else if (highlightNodeIds.has(node.id)) {
+          if (isHovered || highlightNodeIds.has(node.id)) {
             ctx.fillStyle = graphColorSettings.nodeHighlightColor;
           } else {
-            ctx.fillStyle = graphColorSettings.linkNonHoveredColor;
+            ctx.fillStyle = graphColorSettings.nodeNonHoveredColor;
           }
+        } else if (isSelected) {
+          ctx.fillStyle = graphColorSettings.nodeHighlightColor;
         } else {
           ctx.fillStyle = graphColorSettings.nodeColor;
-        }
-
-        if (isSelected) {
-          ctx.fillStyle = graphColorSettings.selectedColor;
         }
 
         ctx.beginPath();
@@ -286,35 +260,39 @@ export default function GraphView() {
       ctx.textBaseline = 'middle';
 
       if (isSelected) {
-        ctx.fillStyle = graphColorSettings.selectedColor;
+        ctx.fillStyle = node.isEdge
+          ? graphColorSettings.linkHighlightColor
+          : graphColorSettings.nodeHighlightColor;
         fontSize = Math.max(
           graphSizeSettings.fontSize,
           graphSizeSettings.fontSize / globalScale
         );
       } else if (hoveredNodeId) {
-        if (isHovered) {
-          ctx.fillStyle = graphColorSettings.textColor;
+        ctx.fillStyle = graphColorSettings.textColor;
+        if (isHovered || isSelected) {
           fontSize = Math.max(
             graphSizeSettings.fontSize,
             graphSizeSettings.fontSize / globalScale
           );
-        } else {
+        } else if (highlightNodeIds.has(node.id)) {
           // Prevent drawing text when opacity is zero
           if (!opacityAtScale) {
             ctx.restore();
             return;
           }
 
-          if (highlightNodeIds.has(node.id)) {
-            // Calculate color at scale in hex
-            const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-              .toString(16)
-              .padStart(2, '0');
-            ctx.fillStyle =
-              graphColorSettings.textColor + textOpacityAtScaleHex;
-          } else {
-            ctx.fillStyle = graphColorSettings.textNonHoveredColor;
+          // Calculate color at scale in hex
+          const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
+            .toString(16)
+            .padStart(2, '0');
+          ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
+        } else {
+          if (!opacityAtScale) {
+            ctx.restore();
+            return;
           }
+
+          ctx.fillStyle = graphColorSettings.textNonHoveredColor;
         }
       } else {
         // Prevent drawing text when opacity is zero

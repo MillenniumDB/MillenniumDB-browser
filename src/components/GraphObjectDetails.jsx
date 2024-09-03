@@ -87,7 +87,7 @@ const GraphObjectDetails = React.memo(
         if (typeof value === 'object') {
           if (value.constructor === types.GraphNode) {
             setLoading(true);
-            const session = driverContext.getSession();
+            const session = driverContext.driver.session();
             try {
               const query = `DESCRIBE ${value.id}`;
               const result = session.run(query);
