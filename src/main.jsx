@@ -83,7 +83,7 @@ function App() {
 
             const { namedNode } = params;
 
-            const session = driverContext.getSession();
+            const session = driverContext.driver.session();
             try {
               const result = session.run(`DESCRIBE ${namedNode}`);
               const records = await result.records();
