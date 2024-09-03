@@ -1,8 +1,6 @@
 lexer grammar MQLLexer;
 
-channels {
-    WS_CHANNEL
-}
+channels { WS_CHANNEL }
 
 // KEYWORDS
 K_ACYCLIC: A C Y C L I C;
@@ -34,6 +32,7 @@ K_MANHATTAN: M A N H A T T A N;
 K_MATCH: M A T C H;
 K_MAX: M A X;
 K_MIN: M I N;
+K_OFFSET: O F F S E T;
 K_OPTIONAL: O P T I O N A L;
 K_ORDER: O R D E R;
 K_OR: O R;
@@ -55,6 +54,7 @@ K_TRAILS: T R A I L S;
 K_WALKS: W A L K S;
 K_WHERE: W H E R E;
 
+
 // Special cases: true and false are not a valid identifier
 TRUE_PROP: ':' 'true';
 FALSE_PROP: ':' 'false';
@@ -70,43 +70,48 @@ VARIABLE: '?' [A-Za-z] [A-Za-z0-9_]*;
 STRING: '"' ( ~'"' | '\\"')* '"';
 
 UNSIGNED_INTEGER: DIGIT+;
-UNSIGNED_FLOAT: DIGIT+ '.' DIGIT+;
+UNSIGNED_FLOAT: DIGIT+ '.' DIGIT*
+              | '.' DIGIT+;
+UNSIGNED_SCIENTIFIC_NOTATION: DIGIT+ '.' DIGIT* EXPONENT
+                            | '.' DIGIT+ EXPONENT
+                            | DIGIT+ EXPONENT;
 
 NAME: [A-Za-z] [A-Za-z0-9_]*;
 
 // SYMBOLS
-LEQ: '<=';
-GEQ: '>=';
-EQ: '==';
-NEQ: '!=';
+LEQ:                                 '<=';
+GEQ:                                 '>=';
+EQ:                                  '==';
+NEQ:                                 '!=';
 
-LT: '<';
-GT: '>';
-SINGLE_EQ: '=';
-PATH_SEQUENCE: '/';
-PATH_ALTERNATIVE: '|';
-PATH_NEGATION: '^';
-STAR: '*';
-PERCENT: '%';
-QUESTION_MARK: '?';
-PLUS: '+';
-MINUS: '-';
-L_PAR: '(';
-R_PAR: ')';
-LCURLY_BRACKET: '{';
-RCURLY_BRACKET: '}';
-LSQUARE_BRACKET: '[';
-RSQUARE_BRACKET: ']';
-COMMA: ',';
-COLON: ':';
+LT:                                  '<';
+GT:                                  '>';
+SINGLE_EQ:                           '=';
+PATH_SEQUENCE:                       '/';
+PATH_ALTERNATIVE:                    '|';
+PATH_NEGATION:                       '^';
+STAR:                                '*';
+PERCENT:                             '%';
+QUESTION_MARK:                       '?';
+PLUS:                                '+';
+MINUS:                               '-';
+L_PAR:                               '(';
+R_PAR:                               ')';
+LCURLY_BRACKET:                      '{';
+RCURLY_BRACKET:                      '}';
+LSQUARE_BRACKET:                     '[';
+RSQUARE_BRACKET:                     ']';
+COMMA:                               ',';
+COLON:                               ':';
 
 WHITE_SPACE: [ \t\r\n]+ -> channel(WS_CHANNEL);
-SINGLE_LINE_COMMENT:
-    '//' ~[\r\n]* (('\r'? '\n') | EOF) -> channel(HIDDEN);
+SINGLE_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> channel(HIDDEN);
 
-UNRECOGNIZED: .;
+UNRECOGNIZED: . ;
 
 fragment DIGIT: [0-9];
+
+fragment EXPONENT : ('e'|'E') ('+' | '-')? DIGIT+;
 
 fragment A: [aA];
 fragment B: [bB];
