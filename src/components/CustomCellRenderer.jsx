@@ -6,7 +6,7 @@ import { types } from 'millenniumdb-driver';
 import { Fragment } from 'react';
 import { JSONStringifyObject } from '../utils/GraphObjectUtils';
 
-function PathNode({ value, color, targetBlank }) {
+function PathNode({ value, color, onObjectClick, onIriClick }) {
   if (value === null || value === undefined) {
     return <Chip size="small" label="null" />;
   }
@@ -35,10 +35,7 @@ function PathNode({ value, color, targetBlank }) {
         case types.GraphNode: {
           const nodeId = value.toString();
           return (
-            <Link
-              href={`/node/${nodeId}`}
-              target={targetBlank ? '_blank' : undefined}
-            >
+            <Link onClick={() => onObjectClick(nodeId)}>
               <Chip color={color} size="small" label={nodeId} />
             </Link>
           );
@@ -46,7 +43,7 @@ function PathNode({ value, color, targetBlank }) {
         case types.IRI: {
           const iriStr = value.toString();
           return (
-            <Link href={iriStr} target={targetBlank ? '_blank' : undefined}>
+            <Link onClick={() => onIriClick(value)}>
               <Chip color={color} size="small" label={iriStr} />
             </Link>
           );
@@ -62,7 +59,7 @@ function PathNode({ value, color, targetBlank }) {
   }
 }
 
-export default function CustomCellRenderer(props, targetBlank = true) {
+export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
   const { value } = props;
 
   if (value === null || value === undefined) {
@@ -92,16 +89,12 @@ export default function CustomCellRenderer(props, targetBlank = true) {
         case types.GraphNode: {
           const nodeId = value.toString();
           return (
-            <Link
-              href={`/node/${nodeId}`}
-              target={targetBlank ? '_blank' : undefined}
-            >
+            <Link component="button" onClick={() => onObjectClick(value)}>
               {nodeId}
             </Link>
           );
         }
         case types.GraphPath: {
-          // TODO: Fix this
           return (
             <Box
               sx={{
@@ -115,7 +108,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
               <PathNode
                 color="primary"
                 value={value.start}
-                targetBlank={targetBlank}
+                onClick={() => onObjectClick(value.start)}
               />
               {value.segments.map((segment, segmentIdx) => {
                 return (
@@ -128,7 +121,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     <PathNode
                       color="secondary"
                       value={segment.type}
-                      targetBlank={targetBlank}
+                      onClick={() => onObjectClick(segment.type)}
                     />
                     {segment.reverse ? (
                       <HorizontalRuleIcon color="secondary" fontSize="small" />
@@ -138,7 +131,7 @@ export default function CustomCellRenderer(props, targetBlank = true) {
                     <PathNode
                       color="primary"
                       value={segment.to}
-                      targetBlank={targetBlank}
+                      onClick={() => onObjectClick(segment.to)}
                     />
                   </Fragment>
                 );
@@ -148,17 +141,17 @@ export default function CustomCellRenderer(props, targetBlank = true) {
         }
         case types.IRI: {
           const iriStr = value.toString();
-          return (
-            <Link href={iriStr} target="_blank">
-              {`<${iriStr}>`}
-            </Link>
-          );
+          return <Link onClick={() => onIriClick(value)}>{`<${iriStr}>`}</Link>;
         }
         case types.StringDatatype: {
           return (
             <>
               {`"${value.str}"^^`}
-              <Link href={value.datatype.toString()} target="_blank">
+              <Link
+                onClick={(e) => e.stopPropagation()}
+                href={value.datatype.toString()}
+                target="_blank"
+              >
                 {`<${value.datatype.toString()}>`}
               </Link>
             </>

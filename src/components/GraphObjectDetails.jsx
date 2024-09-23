@@ -1,3 +1,5 @@
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
   Button,
@@ -12,15 +14,24 @@ import {
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { types } from 'millenniumdb-driver';
+import { enqueueSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import {
-  graphObjectToTypeString,
   graphObjectToReactForceGraphNode,
+  graphObjectToTypeString,
 } from '../utils/GraphObjectUtils';
 import AGTable from './AGTable';
-import CloseIcon from '@mui/icons-material/Close';
-import { enqueueSnackbar } from 'notistack';
+
+const Actions = ({ rowAction }) => {
+  return (
+    <>
+      <Button variant="text" size="small" onClick={rowAction}>
+        Show
+      </Button>
+    </>
+  );
+};
 
 const GraphObjectDetailsSection = ({ title, children }) => {
   return (
@@ -46,25 +57,47 @@ const GraphObjectDetails = React.memo(
     const [loading, setLoading] = useState(false);
     const [isLiteral, setIsLiteral] = useState(false);
 
-    const addConnection = ({ from, to, type, edge }) => {
-      const source = graphObjectToReactForceGraphNode(from);
-      const target = graphObjectToReactForceGraphNode(to);
-      const edgeNode = graphObjectToReactForceGraphNode(edge);
-      edgeNode.isEdge = true;
-      addNodes([source, target, edgeNode]);
-      addLinks([
-        {
-          id: `${source.id}->${edgeNode.id}`,
-          source: source.id,
-          target: edgeNode.id,
-        },
-        {
-          id: `${edgeNode.id}->${target.id}`,
-          source: edgeNode.id,
-          target: target.id,
-        },
-      ]);
-    };
+    const addConnection = useCallback(
+      ({ from, to, type, edge }) => {
+        const source = graphObjectToReactForceGraphNode(from);
+        const target = graphObjectToReactForceGraphNode(to);
+        const edgeNode = graphObjectToReactForceGraphNode(edge);
+        edgeNode.isEdge = true;
+        edgeNode.label = type.toString();
+        addNodes([source, target, edgeNode]);
+        addLinks([
+          {
+            id: `${source.id}->${edgeNode.id}`,
+            source: source.id,
+            target: edgeNode.id,
+          },
+          {
+            id: `${edgeNode.id}->${target.id}`,
+            source: edgeNode.id,
+            target: target.id,
+          },
+        ]);
+      },
+      [addNodes, addLinks]
+    );
+
+    const addOutgoing = useCallback(
+      (to, type, edge) => {
+        if (selectedNode?.value) {
+          addConnection({ from: selectedNode.value, to, type, edge });
+        }
+      },
+      [selectedNode, addConnection]
+    );
+
+    const addIncoming = useCallback(
+      (from, type, edge) => {
+        if (selectedNode?.value) {
+          addConnection({ from, to: selectedNode.value, type, edge });
+        }
+      },
+      [selectedNode, addConnection]
+    );
 
     const handleShowInGraphView = useCallback(() => {
       addNodes([selectedNode]);
@@ -192,7 +225,9 @@ const GraphObjectDetails = React.memo(
               component="h5"
               sx={{ wordWrap: 'break-word' }}
             >
-              {selectedNode?.label || ''}
+              {selectedNode && selectedNode.isEdge
+                ? `${selectedNode.label} (${selectedNode.id})`
+                : selectedNode?.label || ''}
             </Typography>
             <Typography variant="body2" component="p" color="text.secondary">
               {selectedNode?.value !== undefined &&
@@ -243,8 +278,14 @@ const GraphObjectDetails = React.memo(
                         { field: 'key', headerName: 'key' },
                         { field: 'value', headerName: 'value' },
                       ]}
+                      onObjectClick={(value) =>
+                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+                      }
+                      onIriClick={(value) =>
+                        // Should never enter here
+                        window.open(value.toString(), '_blank')
+                      }
                       rows={properties}
-                      targetBlank={false}
                     />
                   )}
                 </Box>
@@ -261,16 +302,33 @@ const GraphObjectDetails = React.memo(
                         { field: 'type', headerName: 'type' },
                         { field: 'to', headerName: 'to' },
                         { field: 'edge', headerName: 'edge' },
+                        {
+                          field: '__actions',
+                          headerName: 'Actions',
+                          width: 100,
+                          cellRenderer: (props) => (
+                            <Actions rowAction={props.value.rowAction} />
+                          ),
+                          cellStyle: () => ({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }),
+                        },
                       ]}
-                      rows={outgoing}
-                      targetBlank={true}
-                      onRowClicked={(row) =>
-                        addConnection({
-                          from: selectedNode.value,
-                          to: row.data.to,
-                          type: row.data.type,
-                          edge: row.data.edge,
-                        })
+                      rows={outgoing.map((row) => ({
+                        ...row,
+                        __actions: {
+                          rowAction: () =>
+                            addOutgoing(row.to, row.type, row.edge),
+                        },
+                      }))}
+                      onObjectClick={(value) =>
+                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+                      }
+                      onIriClick={(value) =>
+                        // Should never enter here
+                        window.open(value.toString(), '_blank')
                       }
                     />
                   )}
@@ -288,16 +346,27 @@ const GraphObjectDetails = React.memo(
                         { field: 'type', headerName: 'type' },
                         { field: 'from', headerName: 'from' },
                         { field: 'edge', headerName: 'edge' },
+                        {
+                          field: '__actions',
+                          headerName: 'Actions',
+                          cellRenderer: (props) => (
+                            <Actions rowAction={props.value.rowAction} />
+                          ),
+                        },
                       ]}
-                      rows={incoming}
-                      targetBlank={true}
-                      onRowClicked={(row) =>
-                        addConnection({
-                          from: row.data.from,
-                          to: selectedNode.value,
-                          type: row.data.type,
-                          edge: row.data.edge,
-                        })
+                      rows={incoming.map((row) => ({
+                        ...row,
+                        __actions: {
+                          rowAction: () =>
+                            addIncoming(row.from, row.type, row.edge),
+                        },
+                      }))}
+                      onObjectClick={(value) =>
+                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+                      }
+                      onIriClick={(value) =>
+                        // Should never enter here
+                        window.open(value.toString(), '_blank')
                       }
                     />
                   )}

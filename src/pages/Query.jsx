@@ -1,7 +1,7 @@
 import { useTheme } from '@emotion/react';
 import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useSearchParams } from 'react-router-dom';
 import Actions from '../components/Actions';
@@ -125,7 +125,7 @@ export default function Query() {
     }
 
     if (resultRef.current) {
-      driverContext.driver.cancel(resultRef.current)
+      driverContext.driver.cancel(resultRef.current);
       resultRef.current = null;
     }
 
@@ -214,7 +214,13 @@ export default function Query() {
             running={running}
           />
           <Box sx={{ height: '90vh' }}>
-            <AGTable ref={agTableRef} targetBlank={true} />
+            <AGTable
+              ref={agTableRef}
+              onObjectClick={(value) =>
+                window.open(`#/node/${value.toString()}`, '_blank')
+              }
+              onIriClick={(value) => window.open(value.toString(), '_blank')}
+            />
           </Box>
         </Stack>
       </Container>

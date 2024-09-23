@@ -2,12 +2,15 @@ import { Box, Chip, Container, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLoaderData, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import AGTable from '../components/AGTable';
 
 const TABLE_HEIGHT_PX = 500;
 
 function PropertiesTable({ rows }) {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
       <AGTable
@@ -16,16 +19,24 @@ function PropertiesTable({ rows }) {
           { field: 'value', headerName: 'value' },
         ]}
         rows={rows}
-        targetBlank={false}
+        onObjectClick={(value) => navigate(`/node/${value.toString()}`)}
+        onIriClick={(value) => window.open(value.toString(), '_blank')}
       />
     </Box>
   );
 }
 
 function ConnectionsTable({ columns, rows }) {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
-      <AGTable columns={columns} rows={rows} targetBlank={false} />
+      <AGTable
+        columns={columns}
+        rows={rows}
+        onObjectClick={(value) => navigate(`/node/${value.toString()}`)}
+        onIriClick={(value) => window.open(value.toString(), '_blank')}
+      />
     </Box>
   );
 }
