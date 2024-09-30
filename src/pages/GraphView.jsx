@@ -8,8 +8,11 @@ import GraphObjectDetails from '../components/GraphObjectDetails';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
 import { Helmet } from 'react-helmet';
+import { useLoaderData } from 'react-router-dom';
 
 export default function GraphView() {
+  const modelString = useLoaderData();
+
   const [graphData, setGraphData] = useState({
     nodes: [],
     links: [],
@@ -453,8 +456,9 @@ export default function GraphView() {
           overflow: 'hidden',
         })}
       >
-        <GraphSearchBar setSelectedNode={setSelectedNode} />
+        <GraphSearchBar modelString={modelString} setSelectedNode={setSelectedNode} />
         <GraphObjectDetails
+          modelString={modelString}
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
           addNodes={addNodes}

@@ -16,6 +16,5 @@
 
 .ag-cell, .ag-cell-value {
   height: 100%;
-  display: flex;
-  align-items: center;
+  display: block;
 }

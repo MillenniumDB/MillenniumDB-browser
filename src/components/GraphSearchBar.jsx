@@ -10,7 +10,7 @@ import {
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { enqueueSnackbar } from 'notistack';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import {
   graphObjectToReactForceGraphNode,
@@ -18,11 +18,21 @@ import {
   graphObjectToTypeString,
 } from '../utils/GraphObjectUtils';
 
-const GraphSearchBar = React.memo(({ setSelectedNode }) => {
+const GraphSearchBar = React.memo(({ modelString, setSelectedNode }) => {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const textSearchQuery = useMemo(() => {
+    switch (modelString) {
+      case 'rdf':
+        return 'SELECT ?node WHERE { ?node ?p ?o . } LIMIT 50';
+      case 'quad':
+        return 'MATCH (?node) RETURN ?node LIMIT 50';
+      default:
+        throw new Error('Invalid model string');
+    }
+  }, [modelString]);
 
   const driverContext = useDriverContext();
 
@@ -47,8 +57,7 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
         setLoading(true);
         const session = driverContext.driver.session();
         try {
-          const query = 'MATCH (?node) RETURN ?node LIMIT 50';
-          const result = session.run(query);
+          const result = session.run(textSearchQuery);
           const records = await result.records();
           const options = records.map((record) => {
             const graphObject = record.get('node');
@@ -66,7 +75,7 @@ const GraphSearchBar = React.memo(({ setSelectedNode }) => {
           setOptions(options);
         } catch (error) {
           enqueueSnackbar({
-            message: error.message,
+            message: error,
             variant: 'error',
           });
         } finally {

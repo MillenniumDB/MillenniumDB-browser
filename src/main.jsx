@@ -74,6 +74,15 @@ function App() {
           element: <Query />,
         },
         {
+          loader: async () => {
+            try {
+              const catalog = await driverContext.getCatalog();
+              return catalog.getModelString();
+            } catch (error) {
+              throw new Response(error.toString(), { status: 500 });
+            }
+          },
+          errorElement: <CatalogError />,
           path: '/graph',
           element: <GraphView />,
         },
