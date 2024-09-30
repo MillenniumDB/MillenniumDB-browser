@@ -139,6 +139,14 @@ export default function GraphView() {
   };
 
   const handleRenderFramePre = (ctx, globalScale) => {
+    if (!showGrid) return;
+
+    const graph = graphRef.current;
+    if (!graph) return;
+
+    const zoomTransform = zoomTransformRef.current;
+    if (!zoomTransform) return;
+
     // Set the opacity given the current scale
     const maxFadeAtGlobalScale = 0.45;
     const minFadeAtGlobalScale = 0.6;
@@ -153,13 +161,7 @@ export default function GraphView() {
       )
     );
 
-    if (!showGrid) return;
-
     // Handle grid drawing
-    const graph = graphRef.current;
-    const zoomTransform = zoomTransformRef.current;
-    if (!graph || !zoomTransform) return;
-
     ctx.save();
     const { gridSize } = graphSizeSettings;
     const { gridColor } = graphColorSettings;
@@ -309,7 +311,7 @@ export default function GraphView() {
       }
 
       ctx.font = `${fontSize}px "Roboto"`;
-      const yOffset = graphSizeSettings.nodeRadius + fontSize * 1.75;
+      const yOffset = graphSizeSettings.nodeRadius + fontSize;
       ctx.fillText(node.label, x, y + yOffset);
 
       ctx.restore();

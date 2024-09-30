@@ -225,15 +225,24 @@ const GraphObjectDetails = React.memo(
               component="h5"
               sx={{ wordWrap: 'break-word' }}
             >
-              {selectedNode && selectedNode.isEdge
-                ? `${selectedNode.label} (${selectedNode.id})`
-                : selectedNode?.label || ''}
+              {selectedNode &&
+                (selectedNode.isEdge
+                  ? selectedNode.id
+                  : selectedNode.label || null)}
             </Typography>
             <Typography variant="body2" component="p" color="text.secondary">
               {selectedNode?.value !== undefined &&
                 graphObjectToTypeString(selectedNode.value)}
             </Typography>
-            {labels.length ? (
+            {selectedNode?.isEdge ? (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, pt: 1 }}>
+                <Chip
+                  size="small"
+                  color="secondary"
+                  label={selectedNode.label}
+                />
+              </Box>
+            ) : labels.length ? (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, pt: 1 }}>
                 {labels.map((label, labelIdx) => (
                   <Chip
