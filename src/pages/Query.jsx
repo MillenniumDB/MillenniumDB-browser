@@ -217,7 +217,7 @@ export default function Query() {
             <AGTable
               ref={agTableRef}
               onObjectClick={(value) =>
-                window.open(`#/node/${value.toString()}`, '_blank')
+                window.open(`#/node/${typeof value === 'string' ? `"${value}"` : value.toString()}`, '_blank')
               }
               onIriClick={(value) => window.open(value.toString(), '_blank')}
             />
