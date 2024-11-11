@@ -70,10 +70,22 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
     case 'number':
     case 'bigint':
     case 'boolean': {
-      return <>{value.toString()}</>;
+      return (
+        <Link component="button" onClick={() => onObjectClick(value)}>
+          {value.toString()}
+        </Link>
+      );
     }
     case 'string': {
-      return <>{`"${value}"`}</>;
+      if (onObjectClick) {
+        return (
+          <Link component="button" onClick={() => onObjectClick(value)}>
+            {`"${value}"`}
+          </Link>
+        );
+      } else {
+        return <>{`"${value}"`}</>;
+      }
     }
     case 'object': {
       switch (value.constructor) {
@@ -84,7 +96,15 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
         case types.SimpleDate:
         case types.StringLang:
         case types.Time: {
-          return <>{value.toString()}</>;
+          if (onObjectClick) {
+            return (
+              <Link component="button" onClick={() => onObjectClick(value)}>
+                {value.toString()}
+              </Link>
+            );
+          } else {
+            return <>{value.toString()}</>;
+          }
         }
         case types.GraphNode: {
           const nodeId = value.toString();

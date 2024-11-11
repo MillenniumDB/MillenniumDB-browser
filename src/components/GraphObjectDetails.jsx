@@ -19,6 +19,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import {
   graphObjectToReactForceGraphNode,
+  graphObjectToString,
   graphObjectToTypeString,
 } from '../utils/GraphObjectUtils';
 import AGTable from './AGTable';
@@ -309,7 +310,6 @@ const QuadGraphObjectDetails = React.memo(
     const [outgoing, setOutgoing] = useState([]);
     const [incoming, setIncoming] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [isLiteral, setIsLiteral] = useState(false);
 
     const addConnection = useCallback(
       ({ from, to, type, edge }) => {
@@ -360,56 +360,50 @@ const QuadGraphObjectDetails = React.memo(
     const describe = useCallback(
       async (selectedNode) => {
         const { value } = selectedNode;
+        const query = `DESCRIBE ${graphObjectToString(value)}`;
 
-        setIsLiteral(
-          !typeof value === 'object' ||
-            ![
-              types.GraphNode,
-              types.GraphAnon,
-              types.GraphEdge,
-              types.IRI,
-            ].includes(value.constructor)
-        );
-
-        if (typeof value === 'object') {
-          if (value.constructor === types.GraphNode) {
-            setLoading(true);
-            const session = driverContext.driver.session();
-            try {
-              const query = `DESCRIBE ${value.id}`;
-              const result = session.run(query);
-              const records = await result.records();
-              const describeResult = records[0].toObject();
-              setLabels(describeResult.labels);
-              setProperties(
-                Object.keys(describeResult.properties).map((key) => ({
-                  key,
-                  value: describeResult.properties[key],
-                }))
-              );
-              setOutgoing(
-                describeResult.outgoing.map(({ type, edge, to }) => ({
+        if (value?.constructor !== types.GraphEdge) {
+          setLoading(true);
+          const session = driverContext.driver.session();
+          try {
+            const result = session.run(query);
+            const records = await result.records();
+            const describeResult = records[0].toObject();
+            setLabels(describeResult.labels);
+            setProperties(
+              Object.keys(describeResult.properties).map((key) => ({
+                key,
+                value: describeResult.properties[key],
+              }))
+            );
+            setOutgoing(
+              describeResult.outgoing.map(({ type, edge, to }) => {
+                edge.label = type.toString();
+                return {
                   type,
                   to,
                   edge,
-                }))
-              );
-              setIncoming(
-                describeResult.incoming.map(({ type, edge, from }) => ({
+                };
+              })
+            );
+            setIncoming(
+              describeResult.incoming.map(({ type, edge, from }) => {
+                edge.label = type.toString();
+                return {
                   type,
                   from,
                   edge,
-                }))
-              );
-            } catch (error) {
-              enqueueSnackbar({
-                message: error,
-                variant: 'error',
-              });
-            } finally {
-              session.close();
-              setLoading(false);
-            }
+                };
+              })
+            );
+          } catch (error) {
+            enqueueSnackbar({
+              message: error,
+              variant: 'error',
+            });
+          } finally {
+            session.close();
+            setLoading(false);
           }
         }
       },
@@ -527,108 +521,115 @@ const QuadGraphObjectDetails = React.memo(
               </Button>
             </Box>
           </Box>
-          {!isLiteral && (
-            <>
-              <Divider />
+          <>
+            <Divider />
 
-              <GraphObjectDetailsSection title="Properties">
-                <Box sx={{ height: 400 }}>
-                  {loading ? (
-                    <Skeleton variant="rectangular" height="inherit" />
-                  ) : (
-                    <AGTable
-                      columns={[
-                        { field: 'key', headerName: 'key' },
-                        { field: 'value', headerName: 'value' },
-                      ]}
-                      onObjectClick={(value) =>
-                        setSelectedNode(graphObjectToReactForceGraphNode(value))
-                      }
-                      rows={properties}
-                    />
-                  )}
-                </Box>
-              </GraphObjectDetailsSection>
-              <Divider />
+            <GraphObjectDetailsSection title="Properties">
+              <Box sx={{ height: 400 }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height="inherit" />
+                ) : (
+                  <AGTable
+                    columns={[
+                      { field: 'key', headerName: 'key' },
+                      { field: 'value', headerName: 'value' },
+                    ]}
+                    rows={properties}
+                  />
+                )}
+              </Box>
+            </GraphObjectDetailsSection>
+            <Divider />
 
-              <GraphObjectDetailsSection title="Outgoing">
-                <Box sx={{ height: 400 }}>
-                  {loading ? (
-                    <Skeleton variant="rectangular" height="inherit" />
-                  ) : (
-                    <AGTable
-                      columns={[
-                        { field: 'type', headerName: 'type' },
-                        { field: 'to', headerName: 'to' },
-                        { field: 'edge', headerName: 'edge' },
-                        {
-                          field: '__actions',
-                          headerName: 'Actions',
-                          width: 100,
-                          cellRenderer: (props) => (
-                            <Actions rowAction={props.value.rowAction} />
-                          ),
-                          cellStyle: () => ({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }),
-                        },
-                      ]}
-                      rows={outgoing.map((row) => ({
-                        ...row,
-                        __actions: {
-                          rowAction: () =>
-                            addOutgoing(row.to, row.type, row.edge),
-                        },
-                      }))}
-                      onObjectClick={(value) =>
-                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+            <GraphObjectDetailsSection title="Outgoing">
+              <Box sx={{ height: 400 }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height="inherit" />
+                ) : (
+                  <AGTable
+                    columns={[
+                      { field: 'type', headerName: 'type' },
+                      { field: 'to', headerName: 'to' },
+                      { field: 'edge', headerName: 'edge' },
+                      {
+                        field: '__actions',
+                        headerName: 'Actions',
+                        width: 100,
+                        cellRenderer: (props) => (
+                          <Actions rowAction={props.value.rowAction} />
+                        ),
+                        cellStyle: () => ({
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }),
+                      },
+                    ]}
+                    rows={outgoing.map((row) => ({
+                      ...row,
+                      __actions: {
+                        rowAction: () =>
+                          addOutgoing(row.to, row.type, row.edge),
+                      },
+                    }))}
+                    onObjectClick={(value) => {
+                      const graphNode = graphObjectToReactForceGraphNode(value);
+                      if (value.constructor === types.GraphEdge) {
+                        graphNode.isEdge = true;
+                        graphNode.label = value.label;
                       }
-                    />
-                  )}
-                </Box>
-              </GraphObjectDetailsSection>
-              <Divider />
+                      setSelectedNode(graphNode)
+                      }
+                    }
+                  />
+                )}
+              </Box>
+            </GraphObjectDetailsSection>
+            <Divider />
 
-              <GraphObjectDetailsSection title="Incoming">
-                <Box sx={{ height: 400 }}>
-                  {loading ? (
-                    <Skeleton variant="rectangular" height="inherit" />
-                  ) : (
-                    <AGTable
-                      columns={[
-                        { field: 'type', headerName: 'type' },
-                        { field: 'from', headerName: 'from' },
-                        { field: 'edge', headerName: 'edge' },
-                        {
-                          field: '__actions',
-                          headerName: 'Actions',
-                          cellRenderer: (props) => (
-                            <Actions rowAction={props.value.rowAction} />
-                          ),
-                        },
-                      ]}
-                      rows={incoming.map((row) => ({
-                        ...row,
-                        __actions: {
-                          rowAction: () =>
-                            addIncoming(row.from, row.type, row.edge),
-                        },
-                      }))}
-                      onObjectClick={(value) =>
-                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+            <GraphObjectDetailsSection title="Incoming">
+              <Box sx={{ height: 400 }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height="inherit" />
+                ) : (
+                  <AGTable
+                    columns={[
+                      { field: 'type', headerName: 'type' },
+                      { field: 'from', headerName: 'from' },
+                      { field: 'edge', headerName: 'edge' },
+                      {
+                        field: '__actions',
+                        headerName: 'Actions',
+                        cellRenderer: (props) => (
+                          <Actions rowAction={props.value.rowAction} />
+                        ),
+                      },
+                    ]}
+                    rows={incoming.map((row) => ({
+                      ...row,
+                      __actions: {
+                        rowAction: () =>
+                          addIncoming(row.from, row.type, row.edge),
+                      },
+                    }))}
+                    onObjectClick={(value) => {
+                      const graphNode = graphObjectToReactForceGraphNode(value);
+                      if (value.constructor === types.GraphEdge) {
+                        graphNode.isEdge = true;
+                        graphNode.label = value.label;
                       }
-                      onIriClick={(value) =>
-                        // Should never enter here
-                        window.open(value.toString(), '_blank')
+                      setSelectedNode(graphNode)
                       }
-                    />
-                  )}
-                </Box>
-              </GraphObjectDetailsSection>
-            </>
-          )}
+                    }
+                    onIriClick={(value) =>
+                      // Should never enter here
+                      window.open(value.toString(), '_blank')
+                    }
+                  />
+                )}
+              </Box>
+            </GraphObjectDetailsSection>
+          </>
         </Box>
       </Drawer>
     );
