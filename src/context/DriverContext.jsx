@@ -2,7 +2,7 @@ import MillenniumDB from 'millenniumdb-driver';
 import { createContext, useContext, useEffect } from 'react';
 
 export const DriverContext = createContext({
-  _driver: null,
+  driver: null,
   _catalog: null,
   getSession: () => {},
   getCatalog: () => {},

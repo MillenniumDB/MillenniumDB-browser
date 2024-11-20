@@ -10,59 +10,74 @@ import {
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { enqueueSnackbar } from 'notistack';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import {
   graphObjectToReactForceGraphNode,
-  graphObjectToString,
   graphObjectToTypeString,
 } from '../utils/GraphObjectUtils';
 
-const GraphSearchBar = React.memo(({ modelString, setSelectedNode }) => {
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const transformInputToRegex = (input) => {
+  const words = input.trim().split(/\s+/).map(escapeRegex);
+  const regexPattern = words.map((word) => `${word}`).join('.*');
+  return regexPattern;
+};
+
+const getSearchQuery = (modelString, input) => {
+  const regexPattern = transformInputToRegex(input);
+  switch (modelString) {
+    case 'rdf':
+      return `SELECT ?node ?o WHERE { ?node xsd:label ?o . FILTER regex(?o, "${regexPattern}", "i")} LIMIT 50`;
+    case 'quad':
+      return `MATCH (?node) WHERE REGEX(?node.label, "${regexPattern}", "i") RETURN ?node, ?node.label LIMIT 50`;
+    default:
+      throw new Error('Invalid model string');
+  }
+};
+
+const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode }) => {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
+  const [debouncedInputValue, setDebouncedInputValue] = useState('');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const textSearchQuery = useMemo(() => {
-    switch (modelString) {
-      case 'rdf':
-        return 'SELECT ?node WHERE { ?node ?p ?o . } LIMIT 50';
-      case 'quad':
-        return 'MATCH (?node) RETURN ?node LIMIT 50';
-      default:
-        throw new Error('Invalid model string');
-    }
-  }, [modelString]);
 
   const driverContext = useDriverContext();
 
+  const modelStringRef = useRef(modelString);
+  const driverContextRef = useRef(driverContext);
+
+  useEffect(() => {
+    modelStringRef.current = modelString;
+    driverContextRef.current = driverContext;
+  }, [modelString, driverContext]);
+
   const handleOnChange = (_event, newValue) => {
-    setOptions(newValue ? [newValue, ...options] : options);
     setValue(newValue);
 
     if (newValue !== null) {
-      setInputValue('');
       setSelectedNode(newValue.node);
     }
   };
 
-  const handleOnInputChange = (event, newInputValue) => {
+  const handleOnInputChange = (_event, newInputValue) => {
     setInputValue(newInputValue);
   };
 
-  const textSearch = useCallback(
-    (text) => {
-      debounce(async () => {
-        // TODO: MDB text search
-        setLoading(true);
-        const session = driverContext.driver.session();
+  const fetchOptions = useMemo(
+    () =>
+      debounce(async (input, callback) => {
+        const query = getSearchQuery(modelStringRef.current, input);
+        const session = driverContextRef.current.driver.session();
         try {
-          const result = session.run(textSearchQuery);
+          const result = await session.run(query);
           const records = await result.records();
-          const options = records.map((record) => {
+          const newOptions = records.map((record) => {
             const graphObject = record.get('node');
             const node = graphObjectToReactForceGraphNode(graphObject);
-            const label = graphObjectToString(graphObject);
+            const label = record.get('node.label');
             const id = node.id;
             const type = graphObjectToTypeString(graphObject);
             return {
@@ -72,39 +87,50 @@ const GraphSearchBar = React.memo(({ modelString, setSelectedNode }) => {
               node,
             };
           });
-          setOptions(options);
+          callback(newOptions);
         } catch (error) {
           enqueueSnackbar({
-            message: error,
+            message: error.message || 'Error in search',
             variant: 'error',
           });
+          callback([]);
         } finally {
           session.close();
-          setLoading(false);
         }
-      }, 500)();
-    },
-    [driverContext]
+      }, 500),
+    []
   );
 
   useEffect(() => {
-    if (!inputValue) {
-      setOptions([]);
-      setValue(null);
-      return;
-    }
-
     let active = true;
 
-    // Search for nodes
-    if (active) {
-      textSearch(inputValue);
+    if (inputValue === '') {
+      fetchOptions.clear();
+      setLoading(false);
+      setDebouncedInputValue(inputValue);
+      setOptions([]);
+      return undefined;
     }
+
+    setLoading(true);
+    fetchOptions(inputValue, (newOptions) => {
+      if (active) {
+        setDebouncedInputValue(inputValue);
+        setOptions(newOptions);
+      }
+      setLoading(false);
+    });
 
     return () => {
       active = false;
     };
-  }, [inputValue, textSearch]);
+  }, [inputValue, fetchOptions]);
+
+  useEffect(() => {
+    if (value && (selectedNode !== value.node)) {
+      setValue(null);
+    }
+  }, [selectedNode, value]);
 
   return (
     <Box
@@ -140,7 +166,7 @@ const GraphSearchBar = React.memo(({ modelString, setSelectedNode }) => {
         isOptionEqualToValue={(option, value) => option.id === value.id}
         autoComplete
         includeInputInList
-        filterSelectedOptions
+        disableClearable
         fullWidth
         renderInput={(params) => (
           <TextField
@@ -166,7 +192,7 @@ const GraphSearchBar = React.memo(({ modelString, setSelectedNode }) => {
         renderOption={(props, option) => {
           const { key, ...optionProps } = props;
 
-          const matches = match(option.label, inputValue);
+          const matches = match(option.label, debouncedInputValue, { insideWords: true, requireMatchAll: true });
           const parts = parse(option.label, matches);
           return (
             <li key={key} {...optionProps}>
