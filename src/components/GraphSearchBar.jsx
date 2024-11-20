@@ -10,7 +10,7 @@ import {
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
 import { enqueueSnackbar } from 'notistack';
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import {
   graphObjectToReactForceGraphNode,
@@ -46,14 +46,6 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
 
   const driverContext = useDriverContext();
 
-  const modelStringRef = useRef(modelString);
-  const driverContextRef = useRef(driverContext);
-
-  useEffect(() => {
-    modelStringRef.current = modelString;
-    driverContextRef.current = driverContext;
-  }, [modelString, driverContext]);
-
   const handleOnChange = (_event, newValue) => {
     setValue(newValue);
 
@@ -68,9 +60,9 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
 
   const fetchOptions = useMemo(
     () =>
-      debounce(async (input, callback) => {
-        const query = getSearchQuery(modelStringRef.current, input);
-        const session = driverContextRef.current.driver.session();
+      debounce(async (input, modelString, driverContext, callback) => {
+        const query = getSearchQuery(modelString, input);
+        const session = driverContext.driver.session();
         try {
           const result = await session.run(query);
           const records = await result.records();
@@ -113,18 +105,18 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
     }
 
     setLoading(true);
-    fetchOptions(inputValue, (newOptions) => {
+    fetchOptions(inputValue, modelString, driverContext, (newOptions) => {
       if (active) {
         setDebouncedInputValue(inputValue);
         setOptions(newOptions);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
       active = false;
     };
-  }, [inputValue, fetchOptions]);
+  }, [inputValue, modelString, driverContext, fetchOptions]);
 
   useEffect(() => {
     if (value && (selectedNode !== value.node)) {
