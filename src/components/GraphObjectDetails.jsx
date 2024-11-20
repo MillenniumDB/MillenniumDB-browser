@@ -1,5 +1,6 @@
-import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import {
   Box,
   Button,
@@ -300,7 +301,15 @@ const RDFGraphObjectDetails = React.memo(
 );
 
 const QuadGraphObjectDetails = React.memo(
-  ({ selectedNode, setSelectedNode, addNodes, addLinks }) => {
+  ({
+    selectedNode,
+    setSelectedNode,
+    addNodes,
+    addLinks,
+    removeConnection,
+    removeNodeAndConnections,
+    isNodeShown
+  }) => {
     const driverContext = useDriverContext();
 
     const scrollableAreaRef = useRef(null);
@@ -354,15 +363,29 @@ const QuadGraphObjectDetails = React.memo(
     );
 
     const handleShowInGraphView = useCallback(() => {
+      const value = selectedNode.value;
+      if (selectedNode.isEdge) {
+        addConnection({ from: value.from, to: value.to, type: value.type, edge: value });
+        return;
+      }
       addNodes([selectedNode]);
-    }, [addNodes, selectedNode]);
+    }, [addNodes, selectedNode, addConnection]);
+
+    const handleHideInGraphView = useCallback(() => {
+      const value = selectedNode.value;
+      if (selectedNode.isEdge) {
+        removeConnection({ from: value.from, to: value.to, edge: value });
+        return;
+      }
+      removeNodeAndConnections(selectedNode);
+    }, [selectedNode, removeConnection, removeNodeAndConnections]);
 
     const describe = useCallback(
       async (selectedNode) => {
         const { value } = selectedNode;
         const query = `DESCRIBE ${graphObjectToString(value)}`;
 
-        if (value?.constructor !== types.GraphEdge) {
+        if (!selectedNode.isEdge) {
           setLoading(true);
           const session = driverContext.driver.session();
           try {
@@ -378,7 +401,9 @@ const QuadGraphObjectDetails = React.memo(
             );
             setOutgoing(
               describeResult.outgoing.map(({ type, edge, to }) => {
-                edge.label = type.toString();
+                edge.type = type.toString();
+                edge.from = selectedNode.value;
+                edge.to = to;
                 return {
                   type,
                   to,
@@ -388,7 +413,9 @@ const QuadGraphObjectDetails = React.memo(
             );
             setIncoming(
               describeResult.incoming.map(({ type, edge, from }) => {
-                edge.label = type.toString();
+                edge.type = type.toString();
+                edge.from = from;
+                edge.to = selectedNode.value;
                 return {
                   type,
                   from,
@@ -512,13 +539,25 @@ const QuadGraphObjectDetails = React.memo(
                 alignItems: 'center',
               }}
             >
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleShowInGraphView}
-              >
-                Show in GraphView
-              </Button>
+              {selectedNode && isNodeShown(selectedNode)? (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleHideInGraphView}
+                  startIcon={<VisibilityOffIcon />}
+                >
+                  Hide from GraphView
+                </Button>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleShowInGraphView}
+                  startIcon={<VisibilityIcon />}
+                >
+                  Show in GraphView
+                </Button>
+              )}
             </Box>
           </Box>
           <>
@@ -576,7 +615,7 @@ const QuadGraphObjectDetails = React.memo(
                       const graphNode = graphObjectToReactForceGraphNode(value);
                       if (value.constructor === types.GraphEdge) {
                         graphNode.isEdge = true;
-                        graphNode.label = value.label;
+                        graphNode.label = value.type;
                       }
                       setSelectedNode(graphNode)
                       }
@@ -616,7 +655,7 @@ const QuadGraphObjectDetails = React.memo(
                       const graphNode = graphObjectToReactForceGraphNode(value);
                       if (value.constructor === types.GraphEdge) {
                         graphNode.isEdge = true;
-                        graphNode.label = value.label;
+                        graphNode.label = value.type;
                       }
                       setSelectedNode(graphNode)
                       }
@@ -642,6 +681,9 @@ const GraphObjectDetails = ({
   setSelectedNode,
   addNodes,
   addLinks,
+  removeConnection,
+  removeNodeAndConnections,
+  isNodeShown,
 }) => {
   return modelString === 'rdf' ? (
     <RDFGraphObjectDetails
@@ -656,6 +698,9 @@ const GraphObjectDetails = ({
       setSelectedNode={setSelectedNode}
       addNodes={addNodes}
       addLinks={addLinks}
+      removeConnection={removeConnection}
+      removeNodeAndConnections={removeNodeAndConnections}
+      isNodeShown={isNodeShown}
     />
   );
 };

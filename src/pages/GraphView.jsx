@@ -1,5 +1,6 @@
 import { useTheme } from '@emotion/react';
-import { Box } from '@mui/material';
+import { Box, Tooltip, IconButton } from '@mui/material';
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
@@ -7,6 +8,7 @@ import { useResizeDetector } from 'react-resize-detector';
 import GraphObjectDetails from '../components/GraphObjectDetails';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
+import { graphObjectToReactForceGraphNode } from '../utils/GraphObjectUtils';
 import { Helmet } from 'react-helmet';
 import { useLoaderData } from 'react-router-dom';
 
@@ -436,6 +438,107 @@ export default function GraphView() {
     });
   }, []);
 
+  const removeNode = useCallback((node) => {
+    setGraphData((prevGraphData) => {
+      const updatedNodes = prevGraphData.nodes.filter(
+        (n) => n.id !== node.id
+      );
+
+      const updatedNodeToNeighbors = new Map(
+        [...prevGraphData.nodeToNeighbors].filter(
+          ([nodeId]) => nodeId !== node.id
+        )
+      );
+
+      return {
+        ...prevGraphData,
+        nodes: updatedNodes,
+        nodeToNeighbors: updatedNodeToNeighbors,
+      };
+    });
+  }, []);
+
+  const removeLinks = useCallback((links) => {
+    setGraphData((prevGraphData) => {
+      const linkIdsToRemove = new Set(links.map((link) => link.id));
+
+      const updatedLinks = prevGraphData.links.filter(
+        (link) => !linkIdsToRemove.has(link.id)
+      );
+
+      links.forEach(({ id, source, target }) => {
+        const sourceNeighbors = prevGraphData.nodeToNeighbors.get(source);
+        if (sourceNeighbors) {
+          sourceNeighbors.forEach((neighbor) => {
+            if (neighbor[0] === id && neighbor[1] === target) {
+              sourceNeighbors.delete(neighbor);
+              return;
+            }
+          });
+        }
+
+        const targetNeighbors = prevGraphData.nodeToNeighbors.get(target);
+        if (targetNeighbors) {
+          targetNeighbors.forEach((neighbor) => {
+            if (neighbor[0] === id && neighbor[1] === source) {
+              targetNeighbors.delete(neighbor);
+              return;
+            }
+          });
+        }
+      });
+
+      return {
+        ...prevGraphData,
+        links: updatedLinks,
+      };
+    });
+  }, []);
+
+  const removeConnection = useCallback(
+    ({ from, to, edge }) => {
+      const source = graphObjectToReactForceGraphNode(from);
+      const target = graphObjectToReactForceGraphNode(to);
+      const edgeNode = graphObjectToReactForceGraphNode(edge);
+      removeNode(edgeNode);
+      removeLinks([
+        {
+          id: `${source.id}->${edgeNode.id}`,
+          source: source.id,
+          target: edgeNode.id,
+        },
+        {
+          id: `${edgeNode.id}->${target.id}`,
+          source: edgeNode.id,
+          target: target.id,
+        },
+      ]);
+    },
+    [removeNode, removeLinks]
+  );
+
+  const removeNodeAndConnections = useCallback((node) => {
+    const neighbors = graphData.nodeToNeighbors.get(node.id);
+    neighbors.forEach(([linkId, neighborId]) => {
+      const edgeNode = graphData.nodes.find((n) => n.id === neighborId);
+      const value = edgeNode.value;
+      removeConnection({ from: value.from, to: value.to, edge: value });
+    });
+    removeNode(node);
+  }, [graphData, removeConnection, removeNode]);
+
+  const isNodeShown = useCallback((node) => {
+    return graphData.nodes.some((graphNode) => graphNode.id === node.id);
+  }, [graphData.nodes]);
+
+  const clearAll = useCallback(() => {
+    setGraphData({
+      nodes: [],
+      links: [],
+      nodeToNeighbors: new Map(),
+    });
+  }, []);
+
   return (
     <>
       <Helmet title={`GraphView | MillenniumDB`} />
@@ -456,14 +559,38 @@ export default function GraphView() {
           overflow: 'hidden',
         })}
       >
-        <GraphSearchBar modelString={modelString} setSelectedNode={setSelectedNode} />
+        <GraphSearchBar
+          modelString={modelString}
+          selectedNode={selectedNode}
+          setSelectedNode={setSelectedNode}
+        />
         <GraphObjectDetails
           modelString={modelString}
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
           addNodes={addNodes}
           addLinks={addLinks}
+          removeConnection={removeConnection}
+          removeNodeAndConnections={removeNodeAndConnections}
+          isNodeShown={isNodeShown}
         />
+        <Box
+          sx={(theme) => ({
+            position: 'absolute',
+            zIndex: theme.zIndex.fab + 1,
+            top: 66,
+            right: 16,
+            [`${theme.breakpoints.down('md')}`]: {
+              top: 88,
+            },
+          })}
+        >
+          <Tooltip title="Clear All" placement="left">
+            <IconButton size="large" onClick={() => clearAll()}>
+              <CleaningServicesIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <GraphSettings
           graphForceLinkDistance={graphForceLinkDistance}
           setGraphForceLinkDistance={setGraphLinkDistance}
