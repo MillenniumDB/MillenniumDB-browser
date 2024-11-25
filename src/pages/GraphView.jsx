@@ -438,6 +438,23 @@ export default function GraphView() {
     });
   }, []);
 
+  const addConnection = useCallback((edge) => {
+    const { source, target } = edge;
+    addNodes([source, target, edge]);
+    addLinks([
+      {
+        id: `${source.id}->${edge.id}`,
+        source: source.id,
+        target: edge.id,
+      },
+      {
+        id: `${edge.id}->${target.id}`,
+        source: edge.id,
+        target: target.id,
+      },
+    ]);
+  }, [addNodes, addLinks]);
+
   const removeNode = useCallback((node) => {
     setGraphData((prevGraphData) => {
       const updatedNodes = prevGraphData.nodes.filter(
@@ -496,20 +513,18 @@ export default function GraphView() {
   }, []);
 
   const removeConnection = useCallback(
-    ({ from, to, edge }) => {
-      const source = graphObjectToReactForceGraphNode(from);
-      const target = graphObjectToReactForceGraphNode(to);
-      const edgeNode = graphObjectToReactForceGraphNode(edge);
-      removeNode(edgeNode);
+    (edge) => {
+      const { source, target } = edge;
+      removeNode(edge);
       removeLinks([
         {
-          id: `${source.id}->${edgeNode.id}`,
+          id: `${source.id}->${edge.id}`,
           source: source.id,
-          target: edgeNode.id,
+          target: edge.id,
         },
         {
-          id: `${edgeNode.id}->${target.id}`,
-          source: edgeNode.id,
+          id: `${edge.id}->${target.id}`,
+          source: edge.id,
           target: target.id,
         },
       ]);
@@ -519,15 +534,14 @@ export default function GraphView() {
 
   const removeNodeAndConnections = useCallback((node) => {
     const neighbors = graphData.nodeToNeighbors.get(node.id);
-    neighbors.forEach(([linkId, neighborId]) => {
-      const edgeNode = graphData.nodes.find((n) => n.id === neighborId);
-      const value = edgeNode.value;
-      removeConnection({ from: value.from, to: value.to, edge: value });
+    neighbors.forEach(([_linkId, neighborId]) => {
+      const edge = graphData.nodes.find((n) => n.id === neighborId);
+      removeConnection(edge);
     });
     removeNode(node);
   }, [graphData, removeConnection, removeNode]);
 
-  const isNodeShown = useCallback((node) => {
+  const isNodeInGraphView = useCallback((node) => {
     return graphData.nodes.some((graphNode) => graphNode.id === node.id);
   }, [graphData.nodes]);
 
@@ -569,10 +583,10 @@ export default function GraphView() {
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
           addNodes={addNodes}
-          addLinks={addLinks}
+          addConnection={addConnection}
           removeConnection={removeConnection}
           removeNodeAndConnections={removeNodeAndConnections}
-          isNodeShown={isNodeShown}
+          isNodeInGraphView={isNodeInGraphView}
         />
         <Box
           sx={(theme) => ({
