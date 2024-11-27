@@ -1,6 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import {
   Box,
   Button,
@@ -11,6 +12,7 @@ import {
   Skeleton,
   Toolbar,
   Typography,
+  Link
 } from '@mui/material';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
@@ -320,7 +322,7 @@ const QuadGraphObjectDetails = React.memo(
     const [properties, setProperties] = useState([]);
     const [outgoing, setOutgoing] = useState([]);
     const [incoming, setIncoming] = useState([]);
-    const [edgeNodes, setEdgeNodes] = useState([]);
+    const [edgeNodes, setEdgeNodes] = useState({});
     const [loading, setLoading] = useState(false);
 
     const handleShowInGraphView = useCallback(() => {
@@ -388,7 +390,7 @@ const QuadGraphObjectDetails = React.memo(
             selectedNode.label = describeResult.type.toString();
             selectedNode.source = graphObjectToReactForceGraphNode(describeResult.from);
             selectedNode.target = graphObjectToReactForceGraphNode(describeResult.to);
-            setEdgeNodes([{ from: describeResult.from, to: describeResult.to }]);
+            setEdgeNodes({ from: describeResult.from, to: describeResult.to });
           } else {
             setLabels(describeResult.labels);
             setOutgoing(
@@ -543,6 +545,33 @@ const QuadGraphObjectDetails = React.memo(
 
           <Divider />
 
+          {selectedNode?.isEdge && (
+            <>
+              <GraphObjectDetailsSection title="Connection">
+              <Box
+                sx={{
+                  '& > *': {
+                    verticalAlign: 'middle',
+                  },
+                }}
+              >
+                <Link onClick={() =>
+                  setSelectedNode(graphObjectToReactForceGraphNode(edgeNodes.from))
+                }>
+                  <Chip size="small" color="primary" label={edgeNodes.from.toString()} />
+                </Link>
+                <ArrowForwardIcon color="secondary" fontSize="small" />
+                <Link onClick={() =>
+                  setSelectedNode(graphObjectToReactForceGraphNode(edgeNodes.to))
+                }>
+                  <Chip size="small" color="primary" label={edgeNodes.to.toString()} />
+                </Link>
+              </Box>
+            </GraphObjectDetailsSection>
+            <Divider />
+            </>
+          )}
+
           <GraphObjectDetailsSection title="Properties">
             <Box sx={{ height: 400 }}>
               {loading ? (
@@ -560,26 +589,7 @@ const QuadGraphObjectDetails = React.memo(
           </GraphObjectDetailsSection>
           <Divider />
 
-          {selectedNode?.isEdge ? (
-            <GraphObjectDetailsSection title="Nodes">
-              <Box sx={{ height: 400 }}>
-                {loading ? (
-                  <Skeleton variant="rectangular" height="inherit" />
-                ) : (
-                  <AGTable
-                    columns={[
-                      { field: 'from', headerName: 'from' },
-                      { field: 'to', headerName: 'to' },
-                    ]}
-                    rows={edgeNodes}
-                    onObjectClick={(value) => {
-                      setSelectedNode(graphObjectToReactForceGraphNode(value))
-                    }}
-                  />
-                )}
-              </Box>
-            </GraphObjectDetailsSection>
-          ) : (
+          {!selectedNode?.isEdge && (
             <>
               <GraphObjectDetailsSection title="Outgoing">
                 <Box sx={{ height: 400 }}>

@@ -87,7 +87,7 @@ function App() {
           element: <GraphView />,
         },
         {
-          path: '/node/:namedNode',
+          path: '/object/:objectId',
           element: <Node />,
           errorElement: <NodeError />,
           loader: async ({ params }) => {
@@ -96,11 +96,11 @@ function App() {
               return redirect('/');
             }
 
-            const { namedNode } = params;
+            const { objectId } = params;
 
             const session = driverContext.driver.session();
             try {
-              const result = session.run(`DESCRIBE ${namedNode}`);
+              const result = session.run(`DESCRIBE ${objectId}`);
               const records = await result.records();
               if (records.length > 0) {
                 return records[0].toObject();
@@ -111,7 +111,7 @@ function App() {
               session.close();
             }
 
-            throw new Response(`Node "${namedNode}" not found`, {
+            throw new Response(`Object ${objectId} not found`, {
               status: 404,
             });
           },

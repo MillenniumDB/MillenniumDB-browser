@@ -10,6 +10,8 @@ import Editor from '../components/Editor';
 import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
 import examples from '../data/examples';
+import { types } from 'millenniumdb-driver';
+import { graphObjectToString } from '../utils/GraphObjectUtils';
 
 const ADD_ROWS_DELAY_MS = 100;
 
@@ -216,9 +218,10 @@ export default function Query() {
           <Box sx={{ height: '90vh' }}>
             <AGTable
               ref={agTableRef}
-              onObjectClick={(value) =>
-                window.open(`#/node/${typeof value === 'string' ? `"${value}"` : value.toString()}`, '_blank')
-              }
+              onObjectClick={(value) => {
+                console.log('Object clicked:', value);
+                window.open(`#/object/${graphObjectToString(value)}`, '_blank')
+              }}
               onIriClick={(value) => window.open(value.toString(), '_blank')}
             />
           </Box>

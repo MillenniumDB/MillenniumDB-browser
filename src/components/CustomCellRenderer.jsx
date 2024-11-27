@@ -92,13 +92,23 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
         case types.DateTime:
         case types.Decimal:
         case types.GraphAnon:
-        case types.GraphEdge:
         case types.SimpleDate:
         case types.StringLang:
         case types.Time: {
           if (onObjectClick) {
             return (
               <Link component="button" onClick={() => onObjectClick(value)}>
+                {value.toString()}
+              </Link>
+            );
+          } else {
+            return <>{value.toString()}</>;
+          }
+        }
+        case types.GraphEdge: {
+          if (onObjectClick) {
+            return (
+              <Link component="button" color="secondary" onClick={() => onObjectClick(value)}>
                 {value.toString()}
               </Link>
             );
@@ -128,7 +138,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
               <PathNode
                 color="primary"
                 value={value.start}
-                onClick={() => onObjectClick(value.start)}
+                onObjectClick={() => onObjectClick(value.start)}
               />
               {value.segments.map((segment, segmentIdx) => {
                 return (
@@ -141,7 +151,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
                     <PathNode
                       color="secondary"
                       value={segment.type}
-                      onClick={() => onObjectClick(segment.type)}
+                      onObjectClick={() => onObjectClick(segment.type)}
                     />
                     {segment.reverse ? (
                       <HorizontalRuleIcon color="secondary" fontSize="small" />
@@ -151,7 +161,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
                     <PathNode
                       color="primary"
                       value={segment.to}
-                      onClick={() => onObjectClick(segment.to)}
+                      onObjectClick={() => onObjectClick(segment.to)}
                     />
                   </Fragment>
                 );
