@@ -47,18 +47,17 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
   const driverContext = useDriverContext();
 
   const handleOnChange = (_event, newValue) => {
-    setValue(newValue);
-
     if (newValue !== null) {
       setSelectedNode(newValue.node);
     }
   };
 
-  const handleOnInputChange = (_event, newInputValue) => {
+  const handleOnInputChange = (_event, newInputValue, reason) => {
+    if (reason === "reset") return;
     setInputValue(newInputValue);
   };
 
-  const fetchOptions = useMemo(
+  const searchNodes = useMemo(
     () =>
       debounce(async (input, modelString, driverContext, callback) => {
         const query = getSearchQuery(modelString, input);
@@ -97,7 +96,7 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
     let active = true;
 
     if (inputValue === '') {
-      fetchOptions.clear();
+      searchNodes.clear();
       setLoading(false);
       setDebouncedInputValue(inputValue);
       setOptions([]);
@@ -105,7 +104,7 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
     }
 
     setLoading(true);
-    fetchOptions(inputValue, modelString, driverContext, (newOptions) => {
+    searchNodes(inputValue, modelString, driverContext, (newOptions) => {
       if (active) {
         setDebouncedInputValue(inputValue);
         setOptions(newOptions);
@@ -116,13 +115,19 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
     return () => {
       active = false;
     };
-  }, [inputValue, modelString, driverContext, fetchOptions]);
+  }, [inputValue, modelString, driverContext, searchNodes]);
 
   useEffect(() => {
-    if (value && (selectedNode !== value.node)) {
+    if (selectedNode) {
+      setValue({
+        id: selectedNode.id,
+        label: selectedNode.label,
+      });
+    } else {
       setValue(null);
+      setInputValue('');
     }
-  }, [selectedNode, value]);
+  }, [selectedNode]);
 
   return (
     <Box
@@ -150,15 +155,16 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
         filterOptions={(x) => x}
         options={options}
         value={value}
+        inputValue={inputValue}
         loading={loading}
         loadingText="Searching..."
         noOptionsText="No results"
         onChange={handleOnChange}
         onInputChange={handleOnInputChange}
         isOptionEqualToValue={(option, value) => option.id === value.id}
+        freeSolo
         autoComplete
         includeInputInList
-        disableClearable
         fullWidth
         renderInput={(params) => (
           <TextField
