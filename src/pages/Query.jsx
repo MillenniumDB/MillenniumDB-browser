@@ -10,7 +10,6 @@ import Editor from '../components/Editor';
 import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
 import examples from '../data/examples';
-import { types } from 'millenniumdb-driver';
 import { graphObjectToString } from '../utils/GraphObjectUtils';
 
 const ADD_ROWS_DELAY_MS = 100;
