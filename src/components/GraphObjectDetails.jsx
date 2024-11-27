@@ -545,7 +545,7 @@ const QuadGraphObjectDetails = React.memo(
 
           <Divider />
 
-          {selectedNode?.isEdge && (
+          {selectedNode?.isEdge && edgeNodes.from && edgeNodes.to && (
             <>
               <GraphObjectDetailsSection title="Connection">
               <Box
