@@ -70,22 +70,10 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
     case 'number':
     case 'bigint':
     case 'boolean': {
-      return (
-        <Link component="button" onClick={() => onObjectClick(value)}>
-          {value.toString()}
-        </Link>
-      );
+      return <>{value.toString()}</>;
     }
     case 'string': {
-      if (onObjectClick) {
-        return (
-          <Link component="button" onClick={() => onObjectClick(value)}>
-            {`"${value}"`}
-          </Link>
-        );
-      } else {
-        return <>{`"${value}"`}</>;
-      }
+      return <>{`"${value}"`}</>;
     }
     case 'object': {
       switch (value.constructor) {
@@ -95,32 +83,20 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
         case types.SimpleDate:
         case types.StringLang:
         case types.Time: {
-          if (onObjectClick) {
-            return (
-              <Link component="button" onClick={() => onObjectClick(value)}>
-                {value.toString()}
-              </Link>
-            );
-          } else {
-            return <>{value.toString()}</>;
-          }
-        }
-        case types.GraphEdge: {
-          if (onObjectClick) {
-            return (
-              <Link component="button" color="secondary" onClick={() => onObjectClick(value)}>
-                {value.toString()}
-              </Link>
-            );
-          } else {
-            return <>{value.toString()}</>;
-          }
+          return <>{value.toString()}</>;
         }
         case types.GraphNode: {
           const nodeId = value.toString();
           return (
             <Link component="button" onClick={() => onObjectClick(value)}>
               {nodeId}
+            </Link>
+          );
+        }
+        case types.GraphEdge: {
+          return (
+            <Link component="button" color="secondary" onClick={() => onObjectClick(value)}>
+              {value.toString()}
             </Link>
           );
         }

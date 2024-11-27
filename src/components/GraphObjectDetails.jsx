@@ -550,9 +550,7 @@ const QuadGraphObjectDetails = React.memo(
               <GraphObjectDetailsSection title="Connection">
               <Box
                 sx={{
-                  '& > *': {
-                    verticalAlign: 'middle',
-                  },
+                  '& > *': { verticalAlign: 'middle' },
                 }}
               >
                 <Link onClick={() =>
@@ -583,6 +581,9 @@ const QuadGraphObjectDetails = React.memo(
                     { field: 'value', headerName: 'value' },
                   ]}
                   rows={properties}
+                  onObjectClick={(value) =>
+                    setSelectedNode(graphObjectToReactForceGraphNode(value))
+                  }
                 />
               )}
             </Box>
