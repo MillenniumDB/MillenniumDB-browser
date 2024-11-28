@@ -68,12 +68,75 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by MQLParser#projectSimilarity.
-	enterProjectSimilarity(ctx) {
+	// Enter a parse tree produced by MQLParser#tensorStoreQuery.
+	enterTensorStoreQuery(ctx) {
 	}
 
-	// Exit a parse tree produced by MQLParser#projectSimilarity.
-	exitProjectSimilarity(ctx) {
+	// Exit a parse tree produced by MQLParser#tensorStoreQuery.
+	exitTensorStoreQuery(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#createTensorStore.
+	enterCreateTensorStore(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#createTensorStore.
+	exitCreateTensorStore(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#insertTensors.
+	enterInsertTensors(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#insertTensors.
+	exitInsertTensors(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#insertTensorsTuple.
+	enterInsertTensorsTuple(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#insertTensorsTuple.
+	exitInsertTensorsTuple(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#deleteTensors.
+	enterDeleteTensors(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#deleteTensors.
+	exitDeleteTensors(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#tensor.
+	enterTensor(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#tensor.
+	exitTensor(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#tensorDistance.
+	enterTensorDistance(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#tensorDistance.
+	exitTensorDistance(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#tensorDistanceReference.
+	enterTensorDistanceReference(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#tensorDistanceReference.
+	exitTensorDistanceReference(ctx) {
 	}
 
 
@@ -230,6 +293,24 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by MQLParser#returnItemExpr.
+	enterReturnItemExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#returnItemExpr.
+	exitReturnItemExpr(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#alias.
+	enterAlias(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#alias.
+	exitAlias(ctx) {
+	}
+
+
 	// Enter a parse tree produced by MQLParser#aggregateFunc.
 	enterAggregateFunc(ctx) {
 	}
@@ -266,6 +347,15 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by MQLParser#orderByItemExpr.
+	enterOrderByItemExpr(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#orderByItemExpr.
+	exitOrderByItemExpr(ctx) {
+	}
+
+
 	// Enter a parse tree produced by MQLParser#groupByItem.
 	enterGroupByItem(ctx) {
 	}
@@ -290,33 +380,6 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 
 	// Exit a parse tree produced by MQLParser#optionalPattern.
 	exitOptionalPattern(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#similaritySearch.
-	enterSimilaritySearch(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#similaritySearch.
-	exitSimilaritySearch(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#bruteSimilaritySearch.
-	enterBruteSimilaritySearch(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#bruteSimilaritySearch.
-	exitBruteSimilaritySearch(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#tensor.
-	enterTensor(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#tensor.
-	exitTensor(ctx) {
 	}
 
 
@@ -632,6 +695,15 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 
 	// Exit a parse tree produced by MQLParser#exprValue.
 	exitExprValue(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#exprFixedNodeInside.
+	enterExprFixedNodeInside(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#exprFixedNodeInside.
+	exitExprFixedNodeInside(ctx) {
 	}
 
 

@@ -42,18 +42,23 @@ function antlr4TokenToMonacoToken(token) {
     case MQLLexer.K_ANY:
     case MQLLexer.K_AVG:
     case MQLLexer.K_ALL:
+    case MQLLexer.K_AS:
     case MQLLexer.K_ASC:
     case MQLLexer.K_BY:
     case MQLLexer.K_BOOL:
     case MQLLexer.K_COUNT:
+    case MQLLexer.K_CREATE:
     case MQLLexer.K_DESCRIBE:
     case MQLLexer.K_DESC:
+    case MQLLexer.K_DIMENSIONS:
     case MQLLexer.K_DISTINCT:
     case MQLLexer.K_EDGE:
     case MQLLexer.K_EUCLIDEAN:
+    case MQLLexer.K_FROM:
     case MQLLexer.K_INCOMING:
     case MQLLexer.K_INSERT:
     case MQLLexer.K_INTEGER:
+    case MQLLexer.K_INTO:
     case MQLLexer.K_IS:
     case MQLLexer.K_FLOAT:
     case MQLLexer.K_GROUP:
@@ -64,11 +69,11 @@ function antlr4TokenToMonacoToken(token) {
     case MQLLexer.K_MATCH:
     case MQLLexer.K_MAX:
     case MQLLexer.K_MIN:
+    case MQLLexer.K_OBJECTS:
     case MQLLexer.K_OPTIONAL:
     case MQLLexer.K_ORDER:
     case MQLLexer.K_OR:
     case MQLLexer.K_OUTGOING:
-    case MQLLexer.K_PROJECT_SIMILARITY:
     case MQLLexer.K_PROPERTIES:
     case MQLLexer.K_PROPERTY:
     case MQLLexer.K_NOT:
@@ -77,10 +82,13 @@ function antlr4TokenToMonacoToken(token) {
     case MQLLexer.K_SIMPLE:
     case MQLLexer.K_RETURN:
     case MQLLexer.K_SET:
-    case MQLLexer.K_SIMILARITY_SEARCH:
     case MQLLexer.K_SUM:
+    case MQLLexer.K_STORE:
     case MQLLexer.K_STRING:
+    case MQLLexer.K_TENSOR:
+    case MQLLexer.K_TENSOR_DISTANCE:
     case MQLLexer.K_TRAILS:
+    case MQLLexer.K_VALUES:
     case MQLLexer.K_WALKS:
     case MQLLexer.K_WHERE:
       return 'keyword';
