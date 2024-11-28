@@ -1,6 +1,6 @@
 import { useTheme } from '@emotion/react';
 import { Box, Tooltip, IconButton } from '@mui/material';
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import DeleteIcon from '@mui/icons-material/Delete';
 import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
@@ -588,23 +588,6 @@ export default function GraphView() {
           removeNodeAndConnections={removeNodeAndConnections}
           isNodeInGraphView={isNodeInGraphView}
         />
-        <Box
-          sx={(theme) => ({
-            position: 'absolute',
-            zIndex: theme.zIndex.fab + 1,
-            top: 66,
-            right: 16,
-            [`${theme.breakpoints.down('md')}`]: {
-              top: 88,
-            },
-          })}
-        >
-          <Tooltip title="Clear All" placement="left">
-            <IconButton size="large" onClick={() => clearAll()}>
-              <CleaningServicesIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
         <GraphSettings
           graphForceLinkDistance={graphForceLinkDistance}
           setGraphForceLinkDistance={setGraphLinkDistance}
@@ -615,6 +598,23 @@ export default function GraphView() {
           showGrid={showGrid}
           setShowGrid={setShowGrid}
         />
+        <Box
+          sx={(theme) => ({
+            position: 'absolute',
+            zIndex: theme.zIndex.fab + 1,
+            top: 66,
+            right: 16,
+            [`${theme.breakpoints.down('md')}`]: {
+              top: 138,
+            },
+          })}
+        >
+          <Tooltip title="Clear All" placement="left">
+            <IconButton size="large" onClick={() => clearAll()}>
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <ForceGraph2D
           ref={graphRef}
           graphData={graphData}

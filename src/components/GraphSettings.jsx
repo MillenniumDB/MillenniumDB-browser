@@ -79,7 +79,7 @@ const GraphSettings = React.memo(
       <Box
         sx={(theme) => ({
           position: 'absolute',
-          zIndex: theme.zIndex.fab + 1,
+          zIndex: theme.zIndex.fab + 2,
           top: 16,
           right: 16,
           [`${theme.breakpoints.down('md')}`]: {
