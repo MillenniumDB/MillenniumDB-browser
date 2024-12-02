@@ -94,7 +94,7 @@ export default function Navbar() {
                 vertical: 'top',
                 horizontal: 'left',
               }}
-              open={anchorElNav}
+              open={Boolean(anchorElNav)}
               onClose={handleCloseNavMenu}
               sx={{ display: { xs: 'block', md: 'none' } }}
             >

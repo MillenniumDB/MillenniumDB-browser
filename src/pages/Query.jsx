@@ -88,12 +88,10 @@ export default function Query() {
       },
       onSuccess: (summary) => {
         const {
-          resultCount,
           optimizerDurationMs,
           parserDurationMs,
           executionDurationMs,
         } = summary;
-        stopQuery();
         const totalDurationMs =
           Number(optimizerDurationMs) +
           Number(parserDurationMs) +
@@ -104,10 +102,37 @@ export default function Query() {
         } else {
           durationString = `${totalDurationMs} ms`;
         }
-        enqueueSnackbar({
-          message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
-          variant: 'success',
-        });
+        if (summary.update) {
+          const formatUpdates = (updateData, type) => {
+            const updates = Object.entries(updateData)
+              .filter(([_key, value]) => value > 0n)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(', ');
+            return updates
+              ? `Query executed successfully (${type} updated in ${durationString}): ${updates}.`
+              : `Query executed successfully (${type} updated in ${durationString}, no changes).`;
+          };
+
+          let message;
+          if (summary.graphUpdateData !== null) {
+            message = formatUpdates(summary.graphUpdateData, 'Graph data');
+          } else if (summary.tensorUpdateData !== null) {
+            message = formatUpdates(summary.tensorUpdateData, 'Tensor data');
+          } else {
+            message = `Query executed successfully (Updated data in ${durationString}).`;
+          }
+          enqueueSnackbar({
+            message,
+            variant: 'success',
+          });
+        } else {
+          const { resultCount } = summary;
+          enqueueSnackbar({
+            message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
+            variant: 'success',
+          });
+        }
+        stopQuery();
       },
       onError: (error) => {
         stopQuery();

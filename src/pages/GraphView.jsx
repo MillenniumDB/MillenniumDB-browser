@@ -8,7 +8,6 @@ import { useResizeDetector } from 'react-resize-detector';
 import GraphObjectDetails from '../components/GraphObjectDetails';
 import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
-import { graphObjectToReactForceGraphNode } from '../utils/GraphObjectUtils';
 import { Helmet } from 'react-helmet';
 import { useLoaderData } from 'react-router-dom';
 
