@@ -130,7 +130,7 @@ export default function Node() {
               }}>
                 <Chip size="small" color="primary" label={description?.edgeNodes.from.toString()} />
               </Link>
-              <ArrowForwardIcon color="secondary" fontSize="small" />
+              <ArrowForwardIcon fontSize="small" />
               <Link component="button" onClick={(e) => {
                 navigate(`/object/${graphObjectToString(description?.edgeNodes.to)}`)
               }}>

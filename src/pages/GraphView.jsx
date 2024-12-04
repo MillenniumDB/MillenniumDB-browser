@@ -10,6 +10,7 @@ import GraphSearchBar from '../components/GraphSearchBar';
 import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
 import { Helmet } from 'react-helmet';
 import { useLoaderData } from 'react-router-dom';
+import { types } from 'millenniumdb-driver';
 
 export default function GraphView() {
   const modelString = useLoaderData();
@@ -395,7 +396,9 @@ export default function GraphView() {
 
   const addNodes = useCallback((nodes) => {
     setGraphData((prevGraphData) => {
-      const newNodes = nodes.filter(
+      const uniqueNodesMap = new Map(nodes.map((node) => [node.id, node]));
+      const uniqueNodes = Array.from(uniqueNodesMap.values());
+      const newNodes = uniqueNodes.filter(
         (node) => !prevGraphData.nodes.find((n) => n.id === node.id)
       );
 
@@ -442,12 +445,12 @@ export default function GraphView() {
     addNodes([source, target, edge]);
     addLinks([
       {
-        id: `${source.id}->${edge.id}`,
+        id: `${source.id}-${edge.id}->${target.id}-1`,
         source: source.id,
         target: edge.id,
       },
       {
-        id: `${edge.id}->${target.id}`,
+        id: `${source.id}-${edge.id}->${target.id}-2`,
         source: edge.id,
         target: target.id,
       },
@@ -511,25 +514,22 @@ export default function GraphView() {
     });
   }, []);
 
-  const removeConnection = useCallback(
-    (edge) => {
-      const { source, target } = edge;
-      removeNode(edge);
-      removeLinks([
-        {
-          id: `${source.id}->${edge.id}`,
-          source: source.id,
-          target: edge.id,
-        },
-        {
-          id: `${edge.id}->${target.id}`,
-          source: edge.id,
-          target: target.id,
-        },
-      ]);
-    },
-    [removeNode, removeLinks]
-  );
+  const removeConnection = useCallback((edge) => {
+    const { source, target } = edge;
+    removeNode(edge);
+    removeLinks([
+      {
+        id: `${source.id}-${edge.id}->${target.id}-1`,
+        source: source.id,
+        target: edge.id,
+      },
+      {
+        id: `${source.id}-${edge.id}->${target.id}-2`,
+        source: edge.id,
+        target: target.id,
+      },
+    ]);
+  }, [removeNode, removeLinks]);
 
   const removeNodeAndConnections = useCallback((node) => {
     const neighbors = graphData.nodeToNeighbors.get(node.id);
@@ -540,8 +540,19 @@ export default function GraphView() {
     removeNode(node);
   }, [graphData, removeConnection, removeNode]);
 
+  const removeConnectionAndNeighbors = useCallback((edge) => {
+    const { source, target } = edge;
+    if (graphData.nodeToNeighbors.get(source.id).size === 1) {
+      removeNode(source);
+    }
+    if (graphData.nodeToNeighbors.get(target.id).size === 1) {
+      removeNode(target);
+    }
+    removeConnection(edge);
+  }, [graphData, removeConnection, removeNode]);
+
   const isNodeInGraphView = useCallback((node) => {
-    return graphData.nodes.some((graphNode) => graphNode.id === node.id);
+    return graphData.nodes.some((graphNode) => graphNode.id === node?.id);
   }, [graphData.nodes]);
 
   const clearAll = useCallback(() => {
@@ -583,8 +594,8 @@ export default function GraphView() {
           setSelectedNode={setSelectedNode}
           addNodes={addNodes}
           addConnection={addConnection}
-          removeConnection={removeConnection}
           removeNodeAndConnections={removeNodeAndConnections}
+          removeConnectionAndNeighbors={removeConnectionAndNeighbors}
           isNodeInGraphView={isNodeInGraphView}
         />
         <GraphSettings

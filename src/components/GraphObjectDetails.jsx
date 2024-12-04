@@ -2,6 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LinkIcon from '@mui/icons-material/Link';
 import {
   Box,
   Button,
@@ -49,83 +50,85 @@ const GraphObjectDetailsSection = ({ title, children }) => {
 };
 
 const RDFGraphObjectDetails = React.memo(
-  ({ selectedNode, setSelectedNode, addNodes, addConnection }) => {
+  ({
+    selectedNode,
+    setSelectedNode,
+    addNodes,
+    addConnection,
+    removeNodeAndConnections,
+    removeConnectionAndNeighbors,
+    isNodeInGraphView
+  }) => {
     const driverContext = useDriverContext();
 
     const scrollableAreaRef = useRef(null);
 
     const [outgoing, setOutgoing] = useState([]);
     const [incoming, setIncoming] = useState([]);
+    const [isLiteral, setIsLiteral] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // TODO: fix addConnection for RDF in GraphView
-
-    // const addConnection = useCallback(
-    //   ({ subject, predicate, object }) => {
-    //     const subjectNode = graphObjectToReactForceGraphNode(subject);
-    //     const predicateNode = graphObjectToReactForceGraphNode(predicate);
-    //     const objectNode = graphObjectToReactForceGraphNode(object);
-    //     predicateNode.isEdge = true;
-    //     predicateNode.id = `${subjectNode.id}-${predicateNode.id}-${objectNode.id}`;
-    //     addNodes([subjectNode, predicateNode, objectNode]);
-    //     addLinks([
-    //       {
-    //         id: `${subjectNode.id}-${predicateNode.id}->${objectNode.id}-1`,
-    //         source: subjectNode.id,
-    //         target: predicateNode.id,
-    //       },
-    //       {
-    //         id: `${subjectNode.id}-${predicateNode.id}->${objectNode.id}-2`,
-    //         source: predicateNode.id,
-    //         target: objectNode.id,
-    //       },
-    //     ]);
-    //   },
-    //   [addNodes, addLinks]
-    // );
-
-    const addOutgoing = useCallback(
-      (predicate, object) => {
-        if (selectedNode?.value) {
-          addConnection({ subject: selectedNode.value, predicate, object });
-        }
-      },
-      [selectedNode, addConnection]
-    );
-
-    const addIncoming = useCallback(
-      (predicate, subject) => {
-        if (selectedNode?.value) {
-          addConnection({ subject, predicate, object: selectedNode.value });
-        }
-      },
-      [selectedNode, addConnection]
-    );
-
     const handleShowInGraphView = useCallback(() => {
-      addNodes([selectedNode]);
-    }, [addNodes, selectedNode]);
+      if (selectedNode.isEdge) {
+        addConnection(selectedNode);
+      } else {
+        addNodes([selectedNode]);
+      }
+    }, [addNodes, selectedNode, addConnection]);
 
-    const describe = useCallback(
+    const handleHideInGraphView = useCallback(() => {
+      if (selectedNode.isEdge) {
+        removeConnectionAndNeighbors(selectedNode);
+      } else {
+        removeNodeAndConnections(selectedNode);
+      }
+    }, [selectedNode, removeConnectionAndNeighbors, removeNodeAndConnections]);
+
+    const handleOpenIri = useCallback(() => {
+      window.open(selectedNode.value.toString(), '_blank');
+    }, [selectedNode]);
+
+    const createPredicateNode = useCallback((predicate, subject, object) => {
+      const predicateNode = graphObjectToReactForceGraphNode(predicate);
+      predicateNode.isEdge = true;
+      const source = graphObjectToReactForceGraphNode(subject);
+      const target = graphObjectToReactForceGraphNode(object);
+      predicateNode.source = source;
+      predicateNode.target = target;
+      predicateNode.id = `${source.id}-${predicateNode.id}->${target.id}`;
+      return predicateNode;
+    }, []);
+
+    const addOutgoing = useCallback((object, predicate) => {
+      if (selectedNode) {
+        const predicateNode = createPredicateNode(predicate, selectedNode.value, object);
+        addConnection(predicateNode);
+      }
+    }, [selectedNode, createPredicateNode, addConnection]);
+
+    const addIncoming = useCallback((subject, predicate) => {
+      if (selectedNode) {
+        const predicateNode = createPredicateNode(predicate, subject, selectedNode.value);
+        addConnection(predicateNode);
+      }
+    }, [selectedNode, createPredicateNode, addConnection]);
+
+    const describeIRI = useCallback(
       async (selectedNode) => {
         const { value } = selectedNode;
 
         const session = driverContext.driver.session();
         try {
-          if (typeof value === 'object') {
-            if (value.constructor === types.IRI) {
-              setLoading(true);
-              const queryOutgoing = `SELECT ?predicate ?object WHERE { <${value.toString()}> ?predicate ?object . }`;
-              const resultOutgoing = session.run(queryOutgoing);
-              const recordsOutgoing = await resultOutgoing.records();
-              setOutgoing(recordsOutgoing.map((record) => record.toObject()));
+          setLoading(true);
+          const queryOutgoing = `SELECT ?predicate ?object WHERE { <${value.toString()}> ?predicate ?object . }`;
+          const resultOutgoing = session.run(queryOutgoing);
+          const recordsOutgoing = await resultOutgoing.records();
+          setOutgoing(recordsOutgoing.map((record) => record.toObject()));
 
-              const queryIncoming = `SELECT ?subject ?predicate WHERE { ?subject ?predicate <${value.toString()}> . }`;
-              const resultIncoming = session.run(queryIncoming);
-              const recordsIncoming = await resultIncoming.records();
-              setIncoming(recordsIncoming.map((record) => record.toObject()));
-            }
-          }
+          const queryIncoming = `SELECT ?subject ?predicate WHERE { ?subject ?predicate <${value.toString()}> . }`;
+          const resultIncoming = session.run(queryIncoming);
+          const recordsIncoming = await resultIncoming.records();
+          setIncoming(recordsIncoming.map((record) => record.toObject()));
         } catch (error) {
           enqueueSnackbar({
             message: error,
@@ -145,14 +148,20 @@ const RDFGraphObjectDetails = React.memo(
       setOutgoing([]);
       setIncoming([]);
 
-      if (active && selectedNode?.id) {
-        describe(selectedNode);
+      if (active && selectedNode) {
+        const { value } = selectedNode;
+        if (typeof value === 'object' && value.constructor === types.IRI) {
+          setIsLiteral(false);
+          describeIRI(selectedNode);
+        } else {
+          setIsLiteral(true);
+        }
       }
 
       return () => {
         active = false;
       };
-    }, [selectedNode, describe]);
+    }, [selectedNode, describeIRI]);
 
     useEffect(() => {
       const drawer = scrollableAreaRef.current;
@@ -214,90 +223,118 @@ const RDFGraphObjectDetails = React.memo(
                 display: 'flex',
                 justifyContent: 'flex-end',
                 alignItems: 'center',
+                gap: 1,
               }}
             >
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleShowInGraphView}
-              >
-                Show in GraphView
-              </Button>
+              {!isLiteral && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleOpenIri}
+                  startIcon={<LinkIcon />}
+                  color="primary"
+                >
+                  Open IRI
+                </Button>
+              )}
+              {isNodeInGraphView(selectedNode) ? (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleHideInGraphView}
+                  startIcon={<VisibilityOffIcon />}
+                  color="primary"
+                >
+                  Hide from GraphView
+                </Button>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleShowInGraphView}
+                  startIcon={<VisibilityIcon />}
+                  color="primary"
+                >
+                  Show in GraphView
+                </Button>
+              )}
             </Box>
           </Box>
-          <>
-            <Divider />
 
-            <GraphObjectDetailsSection title="Outgoing">
-              <Box sx={{ height: 400 }}>
-                {loading ? (
-                  <Skeleton variant="rectangular" height="inherit" />
-                ) : (
-                  <AGTable
-                    columns={[
-                      { field: 'predicate', headerName: 'Predicate' },
-                      { field: 'object', headerName: 'Object' },
-                      {
-                        field: '__actions',
-                        headerName: 'Actions',
-                        width: 100,
-                        cellRenderer: (props) => (
-                          <Actions rowAction={props.value.rowAction} />
-                        ),
-                        cellStyle: () => ({
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }),
-                      },
-                    ]}
-                    rows={outgoing.map((row) => ({
-                      ...row,
-                      __actions: {
-                        rowAction: () => addOutgoing(row.predicate, row.object),
-                      },
-                    }))}
-                    onIriClick={(value) =>
-                      setSelectedNode(graphObjectToReactForceGraphNode(value))
-                    }
-                  />
-                )}
-              </Box>
-            </GraphObjectDetailsSection>
-            <Divider />
+          {!isLiteral && (
+            <>
+              <Divider />
+              <GraphObjectDetailsSection title="Outgoing">
+                <Box sx={{ height: 400 }}>
+                  {loading ? (
+                    <Skeleton variant="rectangular" height="inherit" />
+                  ) : (
+                    <AGTable
+                      columns={[
+                        { field: 'predicate', headerName: 'Predicate' },
+                        { field: 'object', headerName: 'Object' },
+                        {
+                          field: '__actions',
+                          headerName: 'Actions',
+                          width: 100,
+                          cellRenderer: (props) => (
+                            <Actions rowAction={props.value.rowAction} />
+                          ),
+                          cellStyle: () => ({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }),
+                        },
+                      ]}
+                      rows={outgoing.map((row) => ({
+                        ...row,
+                        __actions: {
+                          rowAction: () => addOutgoing(row.object, row.predicate),
+                        },
+                      }))}
+                      onIriClick={(value) =>
+                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+                      }
+                    />
+                  )}
+                </Box>
+              </GraphObjectDetailsSection>
+              <Divider />
 
-            <GraphObjectDetailsSection title="Incoming">
-              <Box sx={{ height: 400 }}>
-                {loading ? (
-                  <Skeleton variant="rectangular" height="inherit" />
-                ) : (
-                  <AGTable
-                    columns={[
-                      { field: 'predicate', headerName: 'Predicate' },
-                      { field: 'subject', headerName: 'Subject' },
-                      {
-                        field: '__actions',
-                        headerName: 'Actions',
-                        cellRenderer: (props) => (
-                          <Actions rowAction={props.value.rowAction} />
-                        ),
-                      },
-                    ]}
-                    rows={incoming.map((row) => ({
-                      ...row,
-                      __actions: {
-                        rowAction: () =>
-                          addIncoming(row.predicate, row.subject),
-                      },
-                    }))}
-                    onIriClick={(value) =>
-                      setSelectedNode(graphObjectToReactForceGraphNode(value))
-                    }
-                  />
-                )}
-              </Box>
-            </GraphObjectDetailsSection>
-          </>
+              <GraphObjectDetailsSection title="Incoming">
+                <Box sx={{ height: 400 }}>
+                  {loading ? (
+                    <Skeleton variant="rectangular" height="inherit" />
+                  ) : (
+                    <AGTable
+                      columns={[
+                        { field: 'predicate', headerName: 'Predicate' },
+                        { field: 'subject', headerName: 'Subject' },
+                        {
+                          field: '__actions',
+                          headerName: 'Actions',
+                          cellRenderer: (props) => (
+                            <Actions rowAction={props.value.rowAction} />
+                          ),
+                        },
+                      ]}
+                      rows={incoming.map((row) => ({
+                        ...row,
+                        __actions: {
+                          rowAction: () =>
+                            addIncoming(row.subject, row.predicate),
+                        },
+                      }))}
+                      onIriClick={(value) =>
+                        setSelectedNode(graphObjectToReactForceGraphNode(value))
+                      }
+                    />
+                  )}
+                </Box>
+              </GraphObjectDetailsSection>
+            </>
+          )}
         </Box>
       </Drawer>
     );
@@ -310,8 +347,8 @@ const QuadGraphObjectDetails = React.memo(
     setSelectedNode,
     addNodes,
     addConnection,
-    removeConnection,
     removeNodeAndConnections,
+    removeConnectionAndNeighbors,
     isNodeInGraphView
   }) => {
     const driverContext = useDriverContext();
@@ -335,37 +372,34 @@ const QuadGraphObjectDetails = React.memo(
 
     const handleHideInGraphView = useCallback(() => {
       if (selectedNode.isEdge) {
-        removeConnection(selectedNode);
+        removeConnectionAndNeighbors(selectedNode);
       } else {
         removeNodeAndConnections(selectedNode);
       }
-    }, [selectedNode, removeConnection, removeNodeAndConnections]);
+    }, [selectedNode, removeConnectionAndNeighbors, removeNodeAndConnections]);
 
-    const addConnectionRowAction = useCallback((node, type, edge, outgoing) => {
+    const createEdgeNode = useCallback((edge, from, to, type) => {
       const edgeNode = graphObjectToReactForceGraphNode(edge);
       edgeNode.isEdge = true;
       edgeNode.label = type.toString();
-
-      if (outgoing) {
-        edgeNode.source = selectedNode;
-        edgeNode.target = graphObjectToReactForceGraphNode(node);
-      } else {
-        edgeNode.source = graphObjectToReactForceGraphNode(node);
-        edgeNode.target = selectedNode;
-      }
-
-      if (selectedNode) {
-        addConnection(edgeNode);
-      }
-    }, [selectedNode, addConnection]);
+      edgeNode.source = graphObjectToReactForceGraphNode(from);
+      edgeNode.target = graphObjectToReactForceGraphNode(to);
+      return edgeNode;
+    }, []);
 
     const addOutgoing = useCallback((to, type, edge) => {
-      addConnectionRowAction(to, type, edge, true);
-    }, [addConnectionRowAction]);
+      if (selectedNode) {
+        const edgeNode = createEdgeNode(edge, selectedNode.value, to, type);
+        addConnection(edgeNode);
+      }
+    }, [selectedNode, createEdgeNode, addConnection]);
 
     const addIncoming = useCallback((from, type, edge) => {
-      addConnectionRowAction(from, type, edge, false);
-    }, [addConnectionRowAction]);
+      if (selectedNode) {
+        const edgeNode = createEdgeNode(edge, from, selectedNode.value, type);
+        addConnection(edgeNode);
+      }
+    }, [selectedNode, createEdgeNode, addConnection]);
 
     const describe = useCallback(
       async (selectedNode) => {
@@ -519,13 +553,13 @@ const QuadGraphObjectDetails = React.memo(
                 alignItems: 'center',
               }}
             >
-              {selectedNode && (isNodeInGraphView(selectedNode) ? (
+              {isNodeInGraphView(selectedNode) ? (
                 <Button
                   variant="outlined"
                   size="small"
                   onClick={handleHideInGraphView}
                   startIcon={<VisibilityOffIcon />}
-                  color={selectedNode.isEdge ? "secondary" : "primary"}
+                  color={selectedNode?.isEdge ? "secondary" : "primary"}
                 >
                   Hide from GraphView
                 </Button>
@@ -535,11 +569,11 @@ const QuadGraphObjectDetails = React.memo(
                   size="small"
                   onClick={handleShowInGraphView}
                   startIcon={<VisibilityIcon />}
-                  color={selectedNode.isEdge ? "secondary" : "primary"}
+                  color={selectedNode?.isEdge ? "secondary" : "primary"}
                 >
                   Show in GraphView
                 </Button>
-              ))}
+              )}
             </Box>
           </Box>
 
@@ -558,7 +592,7 @@ const QuadGraphObjectDetails = React.memo(
                 }>
                   <Chip size="small" color="primary" label={edgeNodes.from.toString()} />
                 </Link>
-                <ArrowForwardIcon color="secondary" fontSize="small" />
+                <ArrowForwardIcon fontSize="small" />
                 <Link onClick={() =>
                   setSelectedNode(graphObjectToReactForceGraphNode(edgeNodes.to))
                 }>
@@ -682,8 +716,8 @@ const GraphObjectDetails = ({
   setSelectedNode,
   addNodes,
   addConnection,
-  removeConnection,
   removeNodeAndConnections,
+  removeConnectionAndNeighbors,
   isNodeInGraphView,
 }) => {
   return modelString === 'rdf' ? (
@@ -692,6 +726,9 @@ const GraphObjectDetails = ({
       setSelectedNode={setSelectedNode}
       addNodes={addNodes}
       addConnection={addConnection}
+      removeNodeAndConnections={removeNodeAndConnections}
+      removeConnectionAndNeighbors={removeConnectionAndNeighbors}
+      isNodeInGraphView={isNodeInGraphView}
     />
   ) : (
     <QuadGraphObjectDetails
@@ -699,8 +736,8 @@ const GraphObjectDetails = ({
       setSelectedNode={setSelectedNode}
       addNodes={addNodes}
       addConnection={addConnection}
-      removeConnection={removeConnection}
       removeNodeAndConnections={removeNodeAndConnections}
+      removeConnectionAndNeighbors={removeConnectionAndNeighbors}
       isNodeInGraphView={isNodeInGraphView}
     />
   );

@@ -29,9 +29,9 @@ const getSearchQuery = (modelString, input) => {
   const regexPattern = transformInputToRegex(input);
   switch (modelString) {
     case 'rdf':
-      return `SELECT ?node ?o WHERE { ?node xsd:label ?o . FILTER regex(?o, "${regexPattern}", "i")} LIMIT 50`;
+      return `SELECT ?node ?label WHERE { ?node xsd:label ?label . FILTER regex(?label, "${regexPattern}", "i")} LIMIT 50`;
     case 'quad':
-      return `MATCH (?node) WHERE REGEX(?node.label, "${regexPattern}", "i") RETURN ?node, ?node.label LIMIT 50`;
+      return `MATCH (?node) WHERE REGEX(?node.label, "${regexPattern}", "i") RETURN ?node, ?node.label AS ?label LIMIT 50`;
     default:
       throw new Error('Invalid model string');
   }
@@ -68,7 +68,7 @@ const GraphSearchBar = React.memo(({ modelString, selectedNode, setSelectedNode 
           const newOptions = records.map((record) => {
             const graphObject = record.get('node');
             const node = graphObjectToReactForceGraphNode(graphObject);
-            const label = record.get('node.label');
+            const label = record.get('label');
             const id = node.id;
             const type = graphObjectToTypeString(graphObject);
             return {

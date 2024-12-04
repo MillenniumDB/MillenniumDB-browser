@@ -105,12 +105,9 @@ export default function Query() {
         if (summary.update) {
           const formatUpdates = (updateData, type) => {
             const updates = Object.entries(updateData)
-              .filter(([_key, value]) => value > 0n)
               .map(([key, value]) => `${key}: ${value}`)
               .join(', ');
-            return updates
-              ? `Query executed successfully (${type} updated in ${durationString}): ${updates}.`
-              : `Query executed successfully (${type} updated in ${durationString}, no changes).`;
+            return `Query executed successfully (${type} updated in ${durationString}): ${updates}.`;
           };
 
           let message;
