@@ -117,7 +117,6 @@ function createSuggestions(range) {
 const SPARQLCompletionProvider = {
   provideCompletionItems: (model, position) => {
     const word = model.getWordUntilPosition(position);
-    console.log(word);
     const range = {
       startLineNumber: position.lineNumber,
       endLineNumber: position.lineNumber,

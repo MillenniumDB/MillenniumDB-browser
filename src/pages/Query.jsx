@@ -1,6 +1,7 @@
+import { useTheme } from '@emotion/react';
 import { Box, Container, Stack } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useSearchParams } from 'react-router-dom';
 import Actions from '../components/Actions';
@@ -8,15 +9,17 @@ import AGTable from '../components/AGTable';
 import Editor from '../components/Editor';
 import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
-import { useThemeContext } from '../context/ThemeContext';
 import examples from '../data/examples';
+import { graphObjectToString } from '../utils/GraphObjectUtils';
 
 const ADD_ROWS_DELAY_MS = 100;
 
 // TODO: WebWorker for queries could improve interface?
 export default function Query() {
   const driverContext = useDriverContext();
-  const themeContext = useThemeContext();
+
+  const theme = useTheme();
+
   const [searchParams] = useSearchParams();
   const query = useMemo(() => searchParams.get('query') || '', [searchParams]);
 
@@ -85,12 +88,10 @@ export default function Query() {
       },
       onSuccess: (summary) => {
         const {
-          resultCount,
           optimizerDurationMs,
           parserDurationMs,
           executionDurationMs,
         } = summary;
-        stopQuery();
         const totalDurationMs =
           Number(optimizerDurationMs) +
           Number(parserDurationMs) +
@@ -101,10 +102,34 @@ export default function Query() {
         } else {
           durationString = `${totalDurationMs} ms`;
         }
-        enqueueSnackbar({
-          message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
-          variant: 'success',
-        });
+        if (summary.update) {
+          const formatUpdates = (updateData, type) => {
+            const updates = Object.entries(updateData)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(', ');
+            return `Query executed successfully (${type} updated in ${durationString}): ${updates}.`;
+          };
+
+          let message;
+          if (summary.graphUpdateData !== null) {
+            message = formatUpdates(summary.graphUpdateData, 'Graph data');
+          } else if (summary.tensorUpdateData !== null) {
+            message = formatUpdates(summary.tensorUpdateData, 'Tensor data');
+          } else {
+            message = `Query executed successfully (Updated data in ${durationString}).`;
+          }
+          enqueueSnackbar({
+            message,
+            variant: 'success',
+          });
+        } else {
+          const { resultCount } = summary;
+          enqueueSnackbar({
+            message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
+            variant: 'success',
+          });
+        }
+        stopQuery();
       },
       onError: (error) => {
         stopQuery();
@@ -123,7 +148,7 @@ export default function Query() {
     }
 
     if (resultRef.current) {
-      driverContext.driver.cancel(resultRef.current)
+      driverContext.driver.cancel(resultRef.current);
       resultRef.current = null;
     }
 
@@ -197,9 +222,10 @@ export default function Query() {
               width: '100%',
               minHeight: '400px',
               border: 1,
-              borderColor: themeContext.darkMode
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.12)',
+              borderColor:
+                theme.palette.mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.12)',
             }}
             query={query || getDefaultQuery()}
             language={language}
@@ -211,7 +237,14 @@ export default function Query() {
             running={running}
           />
           <Box sx={{ height: '90vh' }}>
-            <AGTable ref={agTableRef} targetBlank={true} />
+            <AGTable
+              ref={agTableRef}
+              onObjectClick={(value) => {
+                console.log('Object clicked:', value);
+                window.open(`#/object/${graphObjectToString(value)}`, '_blank')
+              }}
+              onIriClick={(value) => window.open(value.toString(), '_blank')}
+            />
           </Box>
         </Stack>
       </Container>

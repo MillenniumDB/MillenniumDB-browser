@@ -17,13 +17,15 @@ import {
 } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import DriverProvider, { useDriverContext } from './context/DriverContext';
-import ThemeProvider from './context/ThemeContext';
+import DarkModeProvider from './context/DarkModeContext';
 import { setupLanguages } from './monaco/setup';
 import CatalogError from './pages/CatalogError';
+import GraphView from './pages/GraphView';
 import Node from './pages/Node';
 import NodeError from './pages/NodeError';
 import Query from './pages/Query';
 import './styles/ag-grid.css';
+import './styles/react-force-graph.css';
 
 setupLanguages();
 
@@ -72,7 +74,20 @@ function App() {
           element: <Query />,
         },
         {
-          path: '/node/:namedNode',
+          loader: async () => {
+            try {
+              const catalog = await driverContext.getCatalog();
+              return catalog.getModelString();
+            } catch (error) {
+              throw new Response(error.toString(), { status: 500 });
+            }
+          },
+          errorElement: <CatalogError />,
+          path: '/graph',
+          element: <GraphView />,
+        },
+        {
+          path: '/object/:objectId',
           element: <Node />,
           errorElement: <NodeError />,
           loader: async ({ params }) => {
@@ -81,11 +96,11 @@ function App() {
               return redirect('/');
             }
 
-            const { namedNode } = params;
+            const { objectId } = params;
 
             const session = driverContext.driver.session();
             try {
-              const result = session.run(`DESCRIBE ${namedNode}`);
+              const result = session.run(`DESCRIBE ${objectId}`);
               const records = await result.records();
               if (records.length > 0) {
                 return records[0].toObject();
@@ -96,7 +111,7 @@ function App() {
               session.close();
             }
 
-            throw new Response(`Node "${namedNode}" not found`, {
+            throw new Response(`Object ${objectId} not found`, {
               status: 404,
             });
           },
@@ -126,7 +141,7 @@ function Main() {
           { charSet: 'utf-8' },
         ]}
       />
-      <ThemeProvider>
+      <DarkModeProvider>
         <CssBaseline />
         <SnackbarProvider
           Components={{
@@ -143,7 +158,7 @@ function Main() {
         <DriverProvider>
           <App />
         </DriverProvider>
-      </ThemeProvider>
+      </DarkModeProvider>
     </>
   );
 }

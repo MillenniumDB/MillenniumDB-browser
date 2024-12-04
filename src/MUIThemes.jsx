@@ -1,8 +1,8 @@
 import { createTheme } from '@mui/material/styles';
-import { forwardRef } from 'react';
+import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-const LinkBehavior = forwardRef((props, ref) => {
+const LinkBehavior = React.forwardRef((props, ref) => {
   const { href, ...other } = props;
   return <RouterLink ref={ref} to={href} {...other} />;
 });
@@ -13,10 +13,10 @@ const common = {
       styleOverrides: {
         root: {
           button: {
-            borderRadius:0,
-          }
+            borderRadius: 0,
+          },
         },
-      }
+      },
     },
     MuiAlert: {
       styleOverrides: {
@@ -42,6 +42,27 @@ const common = {
         },
       },
     },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
     MuiLink: {
       defaultProps: {
         component: LinkBehavior,
@@ -50,6 +71,13 @@ const common = {
     MuiButtonBase: {
       defaultProps: {
         LinkComponent: LinkBehavior,
+      },
+    },
+    MuiSkeleton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
       },
     },
   },

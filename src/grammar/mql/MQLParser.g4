@@ -1,35 +1,97 @@
+
 parser grammar MQLParser;
 
 options {
 	tokenVocab = MQLLexer;
 }
 
-root: setStatement? (matchQuery | describeQuery | insertQuery) EOF;
+root: ((setStatement? matchQuery | describeQuery) | insertPatterns | tensorStoreQuery) EOF;
 
-matchQuery: matchStatement projectSimilarity? whereStatement? groupByStatement? orderByStatement? returnStatement;
+matchQuery: matchStatement /*callStatement**/ whereStatement? groupByStatement? orderByStatement? returnStatement;
 
-projectSimilarity:  K_PROJECT_SIMILARITY '(' VARIABLE ',' VARIABLE ',' STRING ',' (fixedNodeInside | tensor) ',' metricType ')';
+insertPatterns: K_INSERT insertLinearPattern (',' insertLinearPattern)*;
+
+insertLinearPattern: insertPlainNode (insertPlainEdge insertPlainNode)*;
+
+insertPlainNode: '(' insertPlainNodeInside? TYPE* properties?')';
+
+insertPlainNodeInside: identifier;
+
+insertPlainEdge: '<' '-' '[' TYPE properties? ']''-'
+|                '-' '[' TYPE properties? ']''-' '>'
+;
+
+tensorStoreQuery: createTensorStore | insertTensors | deleteTensors;
+
+createTensorStore: K_CREATE K_TENSOR K_STORE identifier K_DIMENSIONS UNSIGNED_INTEGER;
+
+// deleteTensorStore: K_DELETE K_TENSOR K_STORE identifier
+
+insertTensors: K_INSERT K_INTO K_TENSOR K_STORE identifier K_VALUES insertTensorsTuple (',' insertTensorsTuple)*;
+
+insertTensorsTuple: '(' fixedNodeInside ',' tensor ')';
+
+deleteTensors: K_DELETE K_FROM K_TENSOR K_STORE identifier K_OBJECTS '(' fixedNodeInside (',' fixedNodeInside)* ')';
+
+tensor: '[' numericValue (',' numericValue)* ']';
+
+tensorDistance: K_TENSOR_DISTANCE '(' identifier ',' conditionalOrExpr ',' tensorDistanceReference ',' metricType ')';
+
+tensorDistanceReference: conditionalOrExpr | tensor;
 
 metricType: K_ANGULAR | K_EUCLIDEAN | K_MANHATTAN;
+
+// callStatement: K_CALL procedure (K_YIELD returnItem (',' returnItem)* limitOffsetClauses?)?;
+
+// procedure: nearestNeighbors;
+
+// nearestNeighbors: K_NEAREST_NEIGHBORS '(' identifier ',' (node | tensor) ',' UNSIGNED_INTEGER ',' metricType ')';
+
+// updateStatements: (insertStatement | deleteStatement | updateSetStatement)+;
+
+// insertStatement: K_INSERT insertElement (',' insertElement)*;
+
+// deleteStatement: K_DELETE deleteElement (',' deleteElement)*;
+
+// deleteElement: (identifier) (TYPE|KEY)?
+// |              EDGE_ID KEY?
+// |              VARIABLE KEY?
+// |              K_LABELS '(' insertObj ')'
+// |              K_PROPERTIES '(' insertObj ')'
+// ;
+
+// insertObj: identifier|EDGE_ID|VARIABLE;
+
+// updateSetStatement: K_SET setElement (',' setElement)*;
+
+// setElement: K_PROPERTIES '(' insertObj ')' '=' insertProperties
+// |           K_LABELS '(' insertObj ')' '=' '{' TYPE (',' TYPE)* '}'
+// |           (identifier|VARIABLE) KEY '=' '{' TYPE (',' TYPE)* '}'
+// ;
+
+// insertElement: insertNode (insertEdge insertNode)*;
+
+// insertNode: '(' insertObj? TYPE* insertProperties?')';
+
+// insertEdge: '<' '-' '[' TYPE insertProperties? ']''-'
+// |           '-' '[' TYPE insertProperties? ']''-' '>'
+// ;
+
+// insertProperties: '{' insertProperty (',' insertProperty)* '}';
+
+
+// TODO: maybe allow expressions as values?
+// insertProperty2 is necessary when the property is written without spaces after the colon, example:
+// key:date("2001-02-03")
+// key        :date
+// identifier TYPE  '(' STRING ')';
+// insertProperty: identifier (':' value | TRUE_PROP | FALSE_PROP) # insertProperty1
+// |               identifier TYPE '(' STRING ')' # insertProperty2
+// ;
 
 describeQuery: K_DESCRIBE describeFlag* fixedNodeInside;
 
 describeFlag: ( K_LABELS | K_PROPERTIES| K_OUTGOING | K_INCOMING ) (K_LIMIT UNSIGNED_INTEGER)?;
-
-insertQuery: K_INSERT (insertLabelList | insertPropertyList | insertEdgeList);
-
-insertLabelList: K_LABEL insertLabelElement (',' insertLabelElement)*;
-
-insertPropertyList: K_PROPERTY insertPropertyElement (',' insertPropertyElement)*;
-
-insertEdgeList: K_EDGE insertEdgeElement (',' insertEdgeElement)*;
-
-insertLabelElement: '(' (identifier | ANON_ID) ',' STRING ')';
-
-insertPropertyElement: '(' fixedNodeInside ',' STRING ',' value ')';
-
-// FROM, TO, TYPE
-insertEdgeElement: '(' fixedNodeInside ',' fixedNodeInside ',' identifier ')';
 
 setStatement: K_SET setItem (',' setItem)*;
 
@@ -60,9 +122,12 @@ offsetClause
 setItem: VARIABLE '=' fixedNodeInside;
 
 returnItem: VARIABLE KEY? # returnItemVar
-|           aggregateFunc '(' VARIABLE KEY? ')' # returnItemAgg
-|           K_COUNT '(' K_DISTINCT? (VARIABLE KEY? | '*') ')' # returnItemCount
+|           aggregateFunc '(' VARIABLE KEY? ')' (alias)? # returnItemAgg
+|           K_COUNT '(' K_DISTINCT? (VARIABLE KEY? | '*') ')' (alias)? # returnItemCount
+|           conditionalOrExpr alias #returnItemExpr
 ;
+
+alias: K_AS VARIABLE;
 
 aggregateFunc: K_SUM
 |              K_MAX
@@ -73,6 +138,7 @@ aggregateFunc: K_SUM
 orderByItem: VARIABLE KEY? (K_ASC | K_DESC)? # orderByItemVar
 |            aggregateFunc '(' VARIABLE KEY? ')' (K_ASC | K_DESC)? # orderByItemAgg
 |            K_COUNT '(' K_DISTINCT? VARIABLE KEY? ')' (K_ASC | K_DESC)?  # orderByItemCount
+|            conditionalOrExpr (K_ASC | K_DESC)? # orderByItemExpr
 ;
 
 groupByItem: VARIABLE KEY?;
@@ -81,13 +147,9 @@ graphPattern: basicPattern optionalPattern*;
 
 optionalPattern: K_OPTIONAL '{' graphPattern '}';
 
-similaritySearch: K_SIMILARITY_SEARCH '(' VARIABLE ',' VARIABLE ',' STRING ',' (fixedNodeInside | tensor) ',' ('+' | '-')? UNSIGNED_INTEGER (',' ('+')? UNSIGNED_INTEGER)? ')';
-
-tensor: '[' numericValue (',' numericValue)* ']';
-
 basicPattern: linearPattern (',' linearPattern)*;
 
-linearPattern: (node ((edge | path) node)*) | similaritySearch;
+linearPattern: (node ((edge | path) node)*);
 
 path:'<=' '[' pathType? VARIABLE? pathAlternatives']' '='
 |    '=' '[' pathType? VARIABLE? pathAlternatives']' '=' '>'
@@ -133,7 +195,12 @@ properties: '{' property (',' property)* '}';
 // identifier TYPE  '(' STRING ')';
 property: identifier (':' value | TRUE_PROP | FALSE_PROP) # property1
 |         identifier TYPE '(' STRING ')' # property2
+|         identifier K_IS K_NOT? exprTypename (conditionalOrType)*# property3
+|         identifier  (op=('=='|'!='|'<'|'>'|'<='|'>=') value)# property4
 ;
+
+
+conditionalOrType: K_OR exprTypename;
 
 identifier: NAME | keyword;
 
@@ -158,17 +225,22 @@ additiveExpr: multiplicativeExpr (op+=('+'|'-') multiplicativeExpr)*;
 multiplicativeExpr: unaryExpr (op+=('*'|'/'|'%') unaryExpr)*;
 
 unaryExpr: K_NOT unaryExpr
+|          atomicExpr
 |          '+' unaryExpr
 |          '-' unaryExpr
-|          atomicExpr
 ;
 
 atomicExpr:  VARIABLE KEY? # exprVar
-|            valueExpr # exprValueExpr
+|            value # exprValue
+|            fixedNodeInside #exprFixedNodeInside
 |            '(' conditionalOrExpr ')' # exprParenthesis
+|            function #exprFunction
 ;
 
-valueExpr: UNSIGNED_INTEGER | UNSIGNED_FLOAT | STRING | boolValue | datatypeValue;
+function: regex
+|         tensorDistance;
+
+regex: K_REGEX '(' conditionalOrExpr ',' conditionalOrExpr (',' conditionalOrExpr)? ')';
 
 exprTypename: K_NULL
 |             K_STRING
@@ -179,50 +251,61 @@ exprTypename: K_NULL
 
 // it excludes keywords true and false
 keyword: K_ACYCLIC
-| 	     K_AND
-|        K_ANGULAR
-| 	     K_ANY
-|        K_ALL
-| 	     K_AVG
-| 	     K_ASC
-| 	     K_BY
-| 	     K_BOOL
-| 	     K_COUNT
-| 	     K_DESCRIBE
-| 	     K_DESC
-| 	     K_DISTINCT
-| 	     K_EDGE
-|        K_EUCLIDEAN
-| 	     K_INCOMING
-| 	     K_INSERT
-| 	     K_INTEGER
-| 	     K_IS
-| 	     K_FLOAT
-| 	     K_GROUP
-| 	     K_LABELS
-| 	     K_LABEL
-| 	     K_LIMIT
-|        K_MANHATTAN
-| 	     K_MATCH
-| 	     K_MAX
-| 	     K_MIN
-| 	     K_OFFSET
-| 	     K_OPTIONAL
-| 	     K_ORDER
-| 	     K_OR
-| 	     K_OUTGOING
-| 	     K_PROPERTIES
-| 	     K_PROPERTY
-| 	     K_NOT
-| 	     K_NULL
-| 	     K_SHORTEST
-| 	     K_SIMPLE
-| 	     K_RETURN
-| 	     K_SET
-|		 K_SIMILARITY_SEARCH
-| 	     K_SUM
-| 	     K_STRING
-| 	     K_TRAILS
-| 	     K_WALKS
-| 	     K_WHERE
+| K_AND
+| K_ANGULAR
+| K_ANY
+| K_AS
+| K_AVG
+| K_ALL
+| K_ASC
+| K_BY
+| K_BOOL
+| K_COUNT
+| K_CREATE
+| K_DELETE
+| K_DESCRIBE
+| K_DESC
+| K_DIMENSIONS
+| K_DISTINCT
+| K_EDGE
+| K_EUCLIDEAN
+| K_FROM
+| K_INCOMING
+| K_INSERT
+| K_INTEGER
+| K_INTO
+| K_IS
+| K_FLOAT
+| K_GROUP
+| K_LABELS
+| K_LABEL
+| K_LIMIT
+| K_MANHATTAN
+| K_MATCH
+| K_MAX
+| K_MIN
+| K_OBJECTS
+| K_OFFSET
+| K_OPTIONAL
+| K_ORDER
+| K_OR
+| K_OUTGOING
+| K_PROPERTIES
+| K_PROPERTY
+| K_NOT
+| K_NULL
+| K_SHORTEST
+| K_SIMPLE
+| K_TENSOR_DISTANCE
+| K_REGEX
+| K_RETURN
+| K_SET
+| K_SUM
+| K_STRING
+| K_STORE
+| K_TENSOR
+| K_TRAILS
+| K_VALUES
+| K_WALKS
+| K_WHERE
 ;
