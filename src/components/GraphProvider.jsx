@@ -1,20 +1,12 @@
 import { useTheme } from '@emotion/react';
-import { Box, Tooltip, IconButton } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import * as d3Force from 'd3-force';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import { useCallback, useEffect, useMemo, useRef, useState, createContext, useContext } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
-import GraphObjectDetails from '../components/GraphObjectDetails';
-import GraphSearchBar from '../components/GraphSearchBar';
-import GraphSettings, { FORCE_RANGES } from '../components/GraphSettings';
-import { Helmet } from 'react-helmet';
-import { useLoaderData } from 'react-router-dom';
-import { types } from 'millenniumdb-driver';
+import { FORCE_RANGES } from './GraphOptions';
 
-export default function GraphView() {
-  const modelString = useLoaderData();
+const GraphContext = createContext();
 
+export function GraphProvider({ children }) {
   const [graphData, setGraphData] = useState({
     nodes: [],
     links: [],
@@ -564,101 +556,43 @@ export default function GraphView() {
   }, []);
 
   return (
-    <>
-      <Helmet title={`GraphView | MillenniumDB`} />
-      <Box
-        ref={ref}
-        sx={(theme) => ({
-          height: 'calc(100vh - 56px)',
-          [`${theme.breakpoints.up('sm')}`]: {
-            height: 'calc(100vh - 64px)',
-          },
-          [`${theme.breakpoints.up('xs')}`]: {
-            '@media (orientation: landscape)': {
-              height: 'calc(100vh - 48px)',
-            },
-          },
-          width: '100vw',
-          position: 'relative',
-          overflow: 'hidden',
-        })}
-      >
-        <GraphSearchBar
-          modelString={modelString}
-          selectedNode={selectedNode}
-          setSelectedNode={setSelectedNode}
-        />
-        <GraphObjectDetails
-          modelString={modelString}
-          selectedNode={selectedNode}
-          setSelectedNode={setSelectedNode}
-          addNodes={addNodes}
-          addConnection={addConnection}
-          removeNodeAndConnections={removeNodeAndConnections}
-          removeConnectionAndNeighbors={removeConnectionAndNeighbors}
-          isNodeInGraphView={isNodeInGraphView}
-        />
-        <GraphSettings
-          graphForceLinkDistance={graphForceLinkDistance}
-          setGraphForceLinkDistance={setGraphLinkDistance}
-          graphForceChargeStrength={graphForceChargeStrength}
-          setGraphForceChargeStrength={setGraphForceChargeStrength}
-          graphForceLinkStrength={graphForceLinkStrength}
-          setGraphForceLinkStrength={setGraphForceLinkStrength}
-          showGrid={showGrid}
-          setShowGrid={setShowGrid}
-        />
-        <Box
-          sx={(theme) => ({
-            position: 'absolute',
-            zIndex: theme.zIndex.fab + 1,
-            top: 66,
-            right: 16,
-            [`${theme.breakpoints.down('md')}`]: {
-              top: 138,
-            },
-          })}
-        >
-          <Tooltip title="Clear All" placement="left">
-            <IconButton size="large" onClick={() => clearAll()}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        <ForceGraph2D
-          ref={graphRef}
-          graphData={graphData}
-          width={width}
-          height={height}
-          backgroundColor={graphColorSettings.backgroundColor}
-          maxZoom={graphSizeSettings.maxZoom}
-          minZoom={graphSizeSettings.minZoom}
-          // Nodes
-          nodeRelSize={graphSizeSettings.nodeRelSize}
-          nodeVal={graphSizeSettings.nodeVal}
-          nodeColor={null}
-          nodeLabel={null}
-          nodeCanvasObject={NodeCanvasObject}
-          nodeCanvasObjectMode={() => 'replace'}
-          // Links
-          linkDirectionalArrowLength={(link) =>
-            link.source.isEdge ? graphSizeSettings.arrowSize : 0
-          }
-          linkDirectionalArrowRelPos={1}
-          linkColor={handleLinkColor}
-          linkWidth={graphSizeSettings.linkWidth}
-          // Events
-          onNodeHover={handleOnNodeHover}
-          onRenderFramePre={handleRenderFramePre}
-          onZoom={handleOnZoom}
-          onNodeClick={handleOnNodeClick}
-          onBackgroundClick={handleOnBackgroundClick}
-          // Performance
-          warmupTicks={0}
-          cooldownTicks={300}
-          autoPauseRedraw={true}
-        />
-      </Box>
-    </>
-  );
+    <GraphContext.Provider value={{
+      ref,
+      graphRef,
+      graphData,
+      width,
+      height,
+      graphColorSettings,
+      graphSizeSettings,
+      NodeCanvasObject,
+      handleLinkColor,
+      handleOnNodeHover,
+      handleRenderFramePre,
+      handleOnZoom,
+      handleOnNodeClick,
+      handleOnBackgroundClick,
+      selectedNode,
+      setSelectedNode,
+      addNodes,
+      addConnection,
+      removeNodeAndConnections,
+      removeConnectionAndNeighbors,
+      isNodeInGraphView,
+      graphForceLinkDistance,
+      setGraphLinkDistance,
+      graphForceChargeStrength,
+      setGraphForceChargeStrength,
+      graphForceLinkStrength,
+      setGraphForceLinkStrength,
+      showGrid,
+      setShowGrid,
+      clearAll
+    }}>
+      {children}
+    </GraphContext.Provider>
+  )
+}
+
+export function useGraph() {
+  return useContext(GraphContext);
 }
