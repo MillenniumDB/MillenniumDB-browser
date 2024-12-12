@@ -240,7 +240,6 @@ export default function Query() {
             <AGTable
               ref={agTableRef}
               onObjectClick={(value) => {
-                console.log('Object clicked:', value);
                 window.open(`#/object/${graphObjectToString(value)}`, '_blank')
               }}
               onIriClick={(value) => window.open(value.toString(), '_blank')}
