@@ -40,7 +40,7 @@ export default function Paths() {
 
   const driverContext = useDriverContext();
 
-  const [pathMaxDepth, setPathMaxDepth] = useState(0);
+  const [pathMaxDepth, setPathMaxDepth] = useState(2);
   const [inputNodes, setInputNodes] = useState([]);
 
   const addPath = useCallback((path) => {
@@ -115,10 +115,10 @@ export default function Paths() {
           const nodeIds = inputNodes.map((node) => node.id);
           const endingNodesIds = nodeIds.filter((id) => id !== startingNode.id);
 
-          const visitedNodes = new Set();
+          const visitedNodes = {};
           const nodesQueue = [];
 
-          visitedNodes.add(startingNode.id);
+          visitedNodes[startingNode.id] = { incoming: true, outgoing: true};
           nodesQueue.push({ nodeObject: startingNode, path: [], depth: 0 });
 
           while (nodesQueue.length > 0) {
@@ -128,26 +128,42 @@ export default function Paths() {
             incomingConnections.forEach((connection) => {
               if (endingNodesIds.includes(connection.from.id)) {
                 addPath([...node.path, connection]);
+                return;
               }
-              else if (!visitedNodes.has(connection.from.id) && node.depth < pathMaxDepth) {
-                nodesQueue.push({
-                  nodeObject: connection.from,
-                  path: [...node.path, connection],
-                  depth: node.depth + 1
-                });
+              if (node.depth < pathMaxDepth) {
+                if (!visitedNodes[connection.from.id]?.incoming) {
+                  nodesQueue.push({
+                    nodeObject: connection.from,
+                    path: [...node.path, connection],
+                    depth: node.depth + 1
+                  });
+                }
+                if (!visitedNodes[connection.from.id]) {
+                  visitedNodes[connection.from.id] = { incoming: true, outgoing: false };
+                } else {
+                  visitedNodes[connection.from.id].incoming = true;
+                }
               }
             });
             const outgoingConnections = await getOutgoing(session, node.nodeObject);
             outgoingConnections.forEach((connection) => {
               if (endingNodesIds.includes(connection.to.id)) {
                 addPath([...node.path, connection]);
+                return;
               }
-              else if (!visitedNodes.has(connection.to.id) && node.depth < pathMaxDepth) {
-                nodesQueue.push({
-                  nodeObject: connection.to,
-                  path: [...node.path, connection],
-                  depth: node.depth + 1
-                });
+              if (node.depth < pathMaxDepth) {
+                if (!visitedNodes[connection.to.id]?.outgoing) {
+                  nodesQueue.push({
+                    nodeObject: connection.to,
+                    path: [...node.path, connection],
+                    depth: node.depth + 1
+                  });
+                }
+                if (!visitedNodes[connection.to.id]) {
+                  visitedNodes[connection.to.id] = { incoming: false, outgoing: true };
+                } else {
+                  visitedNodes[connection.to.id].outgoing = true;
+                }
               }
             });
           }
