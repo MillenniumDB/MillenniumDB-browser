@@ -31,7 +31,7 @@ const getSearchQuery = (modelString, input) => {
   const regexPattern = transformInputToRegex(input);
   switch (modelString) {
     case 'rdf':
-      return `SELECT ?node ?label WHERE { ?node xsd:label ?label . FILTER regex(?label, "${regexPattern}", "i")} LIMIT 50`;
+      return `SELECT ?node ?label WHERE { ?node rdfs:label ?label . FILTER regex(?label, "${regexPattern}", "i")} LIMIT 50`;
     case 'quad':
       return `MATCH (?node) WHERE REGEX(?node.label, "${regexPattern}", "i") RETURN ?node, ?node.label AS ?label LIMIT 50`;
     default:
@@ -188,7 +188,7 @@ const NodeSearchBar = React.memo(
             const newOptions = records.map((record) => {
               const node = record.get('node');
               const graphNode = graphObjectToReactForceGraphNode(node);
-              const label = record.get('label');
+              const label = record.get('label').toString();
               const id = node.id;
               const type = graphObjectToTypeString(node);
               return {
