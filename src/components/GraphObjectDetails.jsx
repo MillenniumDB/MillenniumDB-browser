@@ -21,6 +21,7 @@ import { types } from 'millenniumdb-driver';
 import { enqueueSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
+import { useLoaderData } from 'react-router-dom';
 import {
   graphObjectToReactForceGraphNode,
   graphObjectToString,
@@ -199,11 +200,7 @@ const RDFGraphObjectDetails = React.memo(
         </Box>
         <Divider />
         <Box ref={scrollableAreaRef} sx={{ overflow: 'scroll' }}>
-          <Box
-            sx={{
-              p: 2,
-            }}
-          >
+          <Box sx={{ p: 2 }}>
             <Typography
               variant="h5"
               component="h5"
@@ -504,11 +501,7 @@ const QuadGraphObjectDetails = React.memo(
         </Box>
         <Divider />
         <Box ref={scrollableAreaRef} sx={{ overflow: 'scroll' }}>
-          <Box
-            sx={{
-              p: 2,
-            }}
-          >
+          <Box sx={{ p: 2 }}>
             <Typography
               variant="h5"
               component="h5"
@@ -711,7 +704,6 @@ const QuadGraphObjectDetails = React.memo(
 );
 
 const GraphObjectDetails = ({
-  modelString,
   selectedNode,
   setSelectedNode,
   addNodes,
@@ -720,6 +712,8 @@ const GraphObjectDetails = ({
   removeConnectionAndNeighbors,
   isNodeInGraphView,
 }) => {
+  const modelString = useLoaderData();
+
   return modelString === 'rdf' ? (
     <RDFGraphObjectDetails
       selectedNode={selectedNode}

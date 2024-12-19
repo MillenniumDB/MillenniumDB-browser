@@ -1,15 +1,12 @@
 import { Box } from '@mui/material';
 import ForceGraph2D from 'react-force-graph-2d';
 import GraphObjectDetails from '../components/GraphObjectDetails';
-import GraphSearchBar from '../components/GraphSearchBar';
+import { GraphSearchBar } from '../components/NodeSearchBar';
 import GraphOptions from '../components/GraphOptions';
 import { Helmet } from 'react-helmet';
-import { useLoaderData } from 'react-router-dom';
 import { useGraph } from '../components/GraphProvider';
 
 export default function Graph() {
-  const modelString = useLoaderData();
-
   const {
     ref,
     graphRef,
@@ -64,12 +61,10 @@ export default function Graph() {
         })}
       >
         <GraphSearchBar
-          modelString={modelString}
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
         />
         <GraphObjectDetails
-          modelString={modelString}
           selectedNode={selectedNode}
           setSelectedNode={setSelectedNode}
           addNodes={addNodes}
@@ -88,6 +83,7 @@ export default function Graph() {
           showGrid={showGrid}
           setShowGrid={setShowGrid}
           clearAll={clearAll}
+          moveOnBreakpoint={true}
         />
         <ForceGraph2D
           ref={graphRef}

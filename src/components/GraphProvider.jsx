@@ -3,6 +3,7 @@ import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState, createContext, useContext } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 import { FORCE_RANGES } from './GraphOptions';
+import { use } from 'react';
 
 const GraphContext = createContext();
 
@@ -20,6 +21,7 @@ export function GraphProvider({ children }) {
   const graphRef = useRef(null);
 
   const [selectedNode, setSelectedNode] = useState(null);
+  const [highlightedNodes, setHighlightedNodes] = useState(new Set());
   const [opacityAtScale, setOpacityAtScale] = useState(0);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
@@ -210,7 +212,7 @@ export function GraphProvider({ children }) {
 
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
-      const isSelected = selectedNode?.id === node.id;
+      const isSelected = highlightedNodes.has(node.id);
 
       // Draw the shape of the node
       if (node.isEdge) {
@@ -319,7 +321,7 @@ export function GraphProvider({ children }) {
       graphColorSettings,
       graphSizeSettings,
       opacityAtScale,
-      selectedNode?.id,
+      highlightedNodes,
     ]
   );
 
@@ -385,6 +387,14 @@ export function GraphProvider({ children }) {
       graph.d3ReheatSimulation();
     }
   }, [graphForceChargeStrength, graphRef]);
+
+  useEffect(() => {
+    if (selectedNode) {
+      setHighlightedNodes(new Set([selectedNode.id]));
+    } else {
+      setHighlightedNodes(new Set());
+    }
+  }, [selectedNode]);
 
   const addNodes = useCallback((nodes) => {
     setGraphData((prevGraphData) => {
@@ -573,6 +583,8 @@ export function GraphProvider({ children }) {
       handleOnBackgroundClick,
       selectedNode,
       setSelectedNode,
+      highlightedNodes,
+      setHighlightedNodes,
       addNodes,
       addConnection,
       removeNodeAndConnections,

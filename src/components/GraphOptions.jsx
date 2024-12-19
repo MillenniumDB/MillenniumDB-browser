@@ -74,6 +74,7 @@ const GraphOptions = React.memo(
     showGrid,
     setShowGrid,
     clearAll,
+    moveOnBreakpoint = false,
   }) => {
     const [showSettings, setShowSettings] = useState(false);
 
@@ -82,12 +83,17 @@ const GraphOptions = React.memo(
         <Box
           sx={(theme) => ({
             position: 'absolute',
-            zIndex: theme.zIndex.fab + 2,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            zIndex: theme.zIndex.fab + 1,
             top: 16,
             right: 16,
-            [`${theme.breakpoints.down('md')}`]: {
-              top: 88,
-            },
+            ...(moveOnBreakpoint && {
+              [`${theme.breakpoints.down('md')}`]: {
+                top: 88,
+              },
+            }),
           })}
         >
           {!showSettings && (
@@ -105,6 +111,7 @@ const GraphOptions = React.memo(
                 userSelect: 'none',
                 overflowX: 'hidden',
                 overflowY: 'scroll',
+                zIndex: theme.zIndex.fab + 2,
                 maxHeight: 'calc(100vh - 98px)',
                 [`${theme.breakpoints.down('md')}`]: {
                   maxHeight: 'calc(100vh - 168px)',
@@ -183,26 +190,16 @@ const GraphOptions = React.memo(
               </AccordionSetting>
             </Box>
           )}
-        </Box>
 
-        <Box
-        sx={(theme) => ({
-          position: 'absolute',
-          zIndex: theme.zIndex.fab + 1,
-          top: 66,
-          right: 16,
-          [`${theme.breakpoints.down('md')}`]: {
-            top: 138,
-          },
-        })}
-      >
-        <Tooltip title="Clear All" placement="left">
-          <IconButton size="large" onClick={() => clearAll()}>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </>
+          <Box sx={{ position: "absolute", right: 0, mt: 7 }}>
+            <Tooltip title="Clear All" placement="left">
+              <IconButton size="large" onClick={() => clearAll()}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+      </>
     );
   }
 );
