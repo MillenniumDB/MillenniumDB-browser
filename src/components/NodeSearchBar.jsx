@@ -20,6 +20,7 @@ import {
 } from '../utils/GraphObjectUtils';
 
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegexForSPARQL = (str) => str.replace(/\\/g, '\\\\');
 
 const transformInputToRegex = (input) => {
   const words = input.trim().split(/\s+/).map(escapeRegex);
@@ -28,9 +29,10 @@ const transformInputToRegex = (input) => {
 };
 
 const getSearchQuery = (modelString, input) => {
-  const regexPattern = transformInputToRegex(input);
+  let regexPattern = transformInputToRegex(input);
   switch (modelString) {
     case 'rdf':
+      regexPattern = escapeRegexForSPARQL(regexPattern);
       return `SELECT ?node ?label WHERE { ?node rdfs:label ?label . FILTER regex(?label, "${regexPattern}", "i")} LIMIT 50`;
     case 'quad':
       return `MATCH (?node) WHERE REGEX(?node.label, "${regexPattern}", "i") RETURN ?node, ?node.label AS ?label LIMIT 50`;
@@ -54,7 +56,7 @@ export const GraphSearchBar = React.memo(({ selectedNode, setSelectedNode }) => 
     if (selectedNode) {
       setValue({
         id: selectedNode.id,
-        label: selectedNode.label,
+        label: '',
       });
     } else {
       setValue(null);
@@ -102,7 +104,9 @@ export const PathsSearchBar = React.memo(({ inputNodes, setInputNodes }) => {
     if (newValue?.node) {
       newValue.node.labelProperty = newValue.label;
       newValue.node.type = newValue.type;
+      newValue.node.id = newValue.id;
       setInputNodes((prevNodes) => [...prevNodes, newValue.node]);
+      setInputValue('');
     }
   };
 
@@ -170,11 +174,7 @@ const NodeSearchBar = React.memo(
     const modelString = useLoaderData();
 
     const handleOnInputChange = (_event, newInputValue, reason) => {
-      if (reason === "reset") {
-        setInputValue('');
-      } else {
-        setInputValue(newInputValue);
-      }
+      setInputValue(newInputValue);
     };
 
     const searchNodes = useMemo(
@@ -189,7 +189,7 @@ const NodeSearchBar = React.memo(
               const node = record.get('node');
               const graphNode = graphObjectToReactForceGraphNode(node);
               const label = record.get('label').toString();
-              const id = node.id;
+              const id = node.id ? node.id : node.toString();
               const type = graphObjectToTypeString(node);
               return {
                 id,

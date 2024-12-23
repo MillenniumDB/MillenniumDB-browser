@@ -15,9 +15,11 @@ import {
 } from '@mui/material';
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { useDriverContext } from '../context/DriverContext';
+import { useLoaderData } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
 import { PathsSearchBar } from './NodeSearchBar';
 import { graphObjectToReactForceGraphNode } from '../utils/GraphObjectUtils';
+import { types } from 'millenniumdb-driver';
 
 const sliderMarks = [
   { value: 0, label: '1' },
@@ -43,6 +45,7 @@ const PathsSearch = React.memo(
     const scrollableAreaRef = useRef(null);
     const stopSearchRef = useRef(stopSearch);
     const driverContext = useDriverContext();
+    const modelString = useLoaderData();
 
     useEffect(() => {
       stopSearchRef.current = stopSearch;
@@ -61,9 +64,12 @@ const PathsSearch = React.memo(
         edgeNode.source = graphObjectToReactForceGraphNode(connection.from);
         edgeNode.target = graphObjectToReactForceGraphNode(connection.to);
         edgeNode.label = connection.type.toString();
+        if (modelString === 'rdf') {
+          edgeNode.id = `${edgeNode.source.id}-${edgeNode.id}->${edgeNode.target.id}`;
+        }
         addConnection(edgeNode);
       });
-    }, [addConnection]);
+    }, [addConnection, modelString]);
 
     const checkPathLoop = useCallback((path) => {
       const nodeIds = new Set();
@@ -79,27 +85,56 @@ const PathsSearch = React.memo(
 
     const getConnections = useCallback(
       async (session, node) => {
-        const incomingQuery = `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN *`
+        let incomingQuery;
+        if (modelString === 'rdf') {
+          incomingQuery = node.constructor === types.IRI ? (
+            `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . }`
+          ) : (
+            `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . }`
+          );
+        } else {
+          incomingQuery = `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN *`;
+        }
         const incomingResult = session.run(incomingQuery);
         const incomingRecords = await incomingResult.records();
         const incomingConnections = incomingRecords.map((record) => {
           const edge = record.get('edge');
-          edge.type = record.get('type');
+          edge.type = modelString === 'rdf' ? edge : record.get('type');
+          let visitedNode = record.get('from');
+          if (typeof visitedNode === 'object') {
+            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
+          } else {
+            visitedNode = { id: graphObjectToReactForceGraphNode(visitedNode).id }
+          }
           return {
-            visitedNode: record.get('from'),
+            visitedNode,
             edge,
             incoming: false,
           };
         });
 
-        const outgoingQuery = `MATCH (${node.id})-[?edge :?type]->(?to) RETURN *`
+        if (modelString === 'rdf' && node.constructor !== types.IRI) {
+          return incomingConnections;
+        }
+
+        const outgoingQuery = modelString === 'rdf' ? (
+          `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . }`
+        ) : (
+          `MATCH (${node.id})-[?edge :?type]->(?to) RETURN *`
+        );
         const outgoingResult = session.run(outgoingQuery);
         const outgoingRecords = await outgoingResult.records();
         const outgoingConnections = outgoingRecords.map((record) => {
           const edge = record.get('edge');
-          edge.type = record.get('type');
+          edge.type = modelString === 'rdf' ? edge : record.get('type');
+          let visitedNode = record.get('to');
+          if (typeof visitedNode === 'object') {
+            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
+          } else {
+            visitedNode = { id: graphObjectToReactForceGraphNode(visitedNode).id }
+          }
           return {
-            visitedNode: record.get('to'),
+            visitedNode,
             edge,
             incoming: true,
           };
@@ -107,7 +142,7 @@ const PathsSearch = React.memo(
 
         return [...incomingConnections, ...outgoingConnections];
       },
-      []
+      [modelString]
     );
 
     const mergePaths = useCallback((queueObject, visitedObject) => {
@@ -215,7 +250,7 @@ const PathsSearch = React.memo(
           }
         } catch (error) {
           enqueueSnackbar({
-            message: error.message,
+            message: error,
             variant: 'error',
           });
         } finally {
