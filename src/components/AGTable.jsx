@@ -78,6 +78,7 @@ export default React.forwardRef(function AGTable(
       minWidth: 100,
       sortable: false,
       cellDataType: false,
+      lockVisible: true,
       cellRenderer: (props) =>
         CustomCellRenderer(props, onObjectClick, onIriClick),
     }),
