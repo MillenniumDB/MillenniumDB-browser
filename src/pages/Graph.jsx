@@ -107,6 +107,7 @@ export default function Graph() {
           linkDirectionalArrowRelPos={1}
           linkColor={handleLinkColor}
           linkWidth={graphSizeSettings.linkWidth}
+          linkCurvature="curvature"
           // Events
           onNodeHover={handleOnNodeHover}
           onRenderFramePre={handleRenderFramePre}
