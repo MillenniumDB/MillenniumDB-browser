@@ -18,7 +18,7 @@ import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
 import { PathsSearchBar } from './NodeSearchBar';
-import { graphObjectToReactForceGraphNode } from '../utils/GraphObjectUtils';
+import { graphObjectToReactForceGraphNode, graphObjectToString } from '../utils/GraphObjectUtils';
 import { types } from 'millenniumdb-driver';
 
 const sliderMarks = [
@@ -62,10 +62,15 @@ const PathsSearch = React.memo(
         const edgeNode = graphObjectToReactForceGraphNode(connection.edge);
         edgeNode.isEdge = true;
         edgeNode.source = graphObjectToReactForceGraphNode(connection.from);
-        edgeNode.target = graphObjectToReactForceGraphNode(connection.to);
         edgeNode.label = connection.type.toString();
         if (modelString === 'rdf') {
+          edgeNode.target = connection.to.constructor === types.IRI ? (
+            graphObjectToReactForceGraphNode(connection.to)
+          ) : graphObjectToReactForceGraphNode(connection.to.value);
           edgeNode.id = `${edgeNode.source.id}-${edgeNode.id}->${edgeNode.target.id}`;
+        }
+        else {
+          edgeNode.target = graphObjectToReactForceGraphNode(connection.to);
         }
         addConnection(edgeNode);
       });
@@ -75,6 +80,9 @@ const PathsSearch = React.memo(
       const nodeIds = new Set();
       for (const connection of path) {
         if (nodeIds.has(connection.from.id) && nodeIds.has(connection.to.id)) {
+          return true;
+        }
+        if (connection.from.id === connection.to.id) {
           return true;
         }
         nodeIds.add(connection.from.id);
@@ -104,7 +112,7 @@ const PathsSearch = React.memo(
           if (typeof visitedNode === 'object') {
             visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
           } else {
-            visitedNode = { id: graphObjectToReactForceGraphNode(visitedNode).id }
+            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode }
           }
           return {
             visitedNode,
@@ -131,7 +139,7 @@ const PathsSearch = React.memo(
           if (typeof visitedNode === 'object') {
             visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
           } else {
-            visitedNode = { id: graphObjectToReactForceGraphNode(visitedNode).id }
+            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode }
           }
           return {
             visitedNode,
