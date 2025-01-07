@@ -13,6 +13,7 @@ import {
   Box,
   Menu,
   MenuItem,
+  Card,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useNavigation } from 'react-router-dom';
@@ -97,40 +98,43 @@ export default function Navbar() {
               open={Boolean(anchorElNav)}
               onClose={handleCloseNavMenu}
               sx={{ display: { xs: 'block', md: 'none' } }}
+              elevation={0}
             >
-              <MenuItem>
-                <Typography sx={{ textAlign: 'center' }}>
-                  <Link
-                    href="/"
-                    sx={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={handleCloseNavMenu}
-                  >
-                    Query
-                  </Link>
-                </Typography>
-              </MenuItem>
-              <MenuItem>
-                <Typography sx={{ textAlign: 'center' }}>
-                  <Link
-                    href="/graph"
-                    sx={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={handleCloseNavMenu}
-                  >
-                    Graph
-                  </Link>
-                </Typography>
-              </MenuItem>
-              <MenuItem>
-                <Typography sx={{ textAlign: 'center' }}>
-                  <Link
-                    href="/paths"
-                    sx={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={handleCloseNavMenu}
-                  >
-                    Paths
-                  </Link>
-                </Typography>
-              </MenuItem>
+              <Card variant="outlined" sx={{ my: -1, py: 1 }}>
+                <MenuItem>
+                  <Typography sx={{ textAlign: 'center' }}>
+                    <Link
+                      href="/"
+                      sx={{ textDecoration: 'none', color: 'inherit' }}
+                      onClick={handleCloseNavMenu}
+                    >
+                      Query
+                    </Link>
+                  </Typography>
+                </MenuItem>
+                <MenuItem>
+                  <Typography sx={{ textAlign: 'center' }}>
+                    <Link
+                      href="/graph"
+                      sx={{ textDecoration: 'none', color: 'inherit' }}
+                      onClick={handleCloseNavMenu}
+                    >
+                      Graph
+                    </Link>
+                  </Typography>
+                </MenuItem>
+                <MenuItem>
+                  <Typography sx={{ textAlign: 'center' }}>
+                    <Link
+                      href="/paths"
+                      sx={{ textDecoration: 'none', color: 'inherit' }}
+                      onClick={handleCloseNavMenu}
+                    >
+                      Paths
+                    </Link>
+                  </Typography>
+                </MenuItem>
+              </Card>
             </Menu>
           </Box>
 

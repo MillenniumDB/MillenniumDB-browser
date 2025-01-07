@@ -140,36 +140,45 @@ const GraphOptions = React.memo(
                 <Typography gutterBottom variant="body2">
                   Link Distance
                 </Typography>
-                <Slider
-                  valueLabelDisplay="auto"
-                  min={FORCE_RANGES.linkDistance.min}
-                  max={FORCE_RANGES.linkDistance.max}
-                  step={FORCE_RANGES.linkDistance.step}
-                  value={graphForceLinkDistance}
-                  onChange={(_, value) => setGraphForceLinkDistance(value)}
-                />
+                <Box sx={{ px: 1 }}>
+                  <Slider
+                    valueLabelDisplay="auto"
+                    size="small"
+                    min={FORCE_RANGES.linkDistance.min}
+                    max={FORCE_RANGES.linkDistance.max}
+                    step={FORCE_RANGES.linkDistance.step}
+                    value={graphForceLinkDistance}
+                    onChange={(_, value) => setGraphForceLinkDistance(value)}
+                  />
+                </Box>
                 <Typography gutterBottom variant="body2">
                   Link Force
                 </Typography>
-                <Slider
-                  valueLabelDisplay="auto"
-                  min={FORCE_RANGES.linkStrength.min}
-                  max={FORCE_RANGES.linkStrength.max}
-                  step={FORCE_RANGES.linkStrength.step}
-                  value={graphForceLinkStrength}
-                  onChange={(_, value) => setGraphForceLinkStrength(value)}
-                />
+                <Box sx={{ px: 1 }}>
+                  <Slider
+                    valueLabelDisplay="auto"
+                    size="small"
+                    min={FORCE_RANGES.linkStrength.min}
+                    max={FORCE_RANGES.linkStrength.max}
+                    step={FORCE_RANGES.linkStrength.step}
+                    value={graphForceLinkStrength}
+                    onChange={(_, value) => setGraphForceLinkStrength(value)}
+                  />
+                </Box>
                 <Typography gutterBottom variant="body2">
                   Repel Force
                 </Typography>
-                <Slider
-                  valueLabelDisplay="auto"
-                  min={FORCE_RANGES.chargeStrength.min}
-                  max={FORCE_RANGES.chargeStrength.max}
-                  step={FORCE_RANGES.chargeStrength.step}
-                  value={graphForceChargeStrength}
-                  onChange={(_, value) => setGraphForceChargeStrength(value)}
-                />
+                <Box sx={{ px: 1 }}>
+                  <Slider
+                    valueLabelDisplay="auto"
+                    size="small"
+                    min={FORCE_RANGES.chargeStrength.min}
+                    max={FORCE_RANGES.chargeStrength.max}
+                    step={FORCE_RANGES.chargeStrength.step}
+                    value={graphForceChargeStrength}
+                    onChange={(_, value) => setGraphForceChargeStrength(value)}
+                  />
+                </Box>
               </AccordionSetting>
               <AccordionSetting title="Style">
                 <Box

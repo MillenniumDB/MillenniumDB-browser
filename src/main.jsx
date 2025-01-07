@@ -28,6 +28,7 @@ import Query from './pages/Query';
 import './styles/ag-grid.css';
 import './styles/react-force-graph.css';
 import { GraphProvider } from './components/GraphProvider';
+import { UserProvider } from './context/UserContext';
 
 setupLanguages();
 
@@ -179,7 +180,9 @@ function Main() {
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         />
         <DriverProvider>
-          <App />
+          <UserProvider>
+            <App />
+          </UserProvider>
         </DriverProvider>
       </DarkModeProvider>
     </>
