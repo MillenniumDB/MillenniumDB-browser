@@ -3,7 +3,6 @@ import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState, createContext, useContext } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 import { FORCE_RANGES } from './GraphOptions';
-import { use } from 'react';
 
 const GraphContext = createContext();
 
@@ -450,11 +449,13 @@ export function GraphProvider({ children }) {
         id: `${source.id}-${edge.id}->${target.id}-1`,
         source: source.id,
         target: edge.id,
+        curvature: source.id === target.id ? 0.6 : 0,
       },
       {
         id: `${source.id}-${edge.id}->${target.id}-2`,
         source: edge.id,
         target: target.id,
+        curvature: source.id === target.id ? 0.6 : 0,
       },
     ]);
   }, [addNodes, addLinks]);
