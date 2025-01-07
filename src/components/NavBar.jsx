@@ -120,6 +120,17 @@ export default function Navbar() {
                   </Link>
                 </Typography>
               </MenuItem>
+              <MenuItem>
+                <Typography sx={{ textAlign: 'center' }}>
+                  <Link
+                    href="/paths"
+                    sx={{ textDecoration: 'none', color: 'inherit' }}
+                    onClick={handleCloseNavMenu}
+                  >
+                    Paths
+                  </Link>
+                </Typography>
+              </MenuItem>
             </Menu>
           </Box>
 
@@ -153,6 +164,14 @@ export default function Navbar() {
                 sx={{ m: 2, textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
               >
                 Graph
+              </Link>
+            </Typography>
+            <Typography noWrap>
+              <Link
+                href="/paths"
+                sx={{ m: 2, textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
+              >
+                Paths
               </Link>
             </Typography>
           </Box>

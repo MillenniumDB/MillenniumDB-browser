@@ -20,12 +20,14 @@ import DriverProvider, { useDriverContext } from './context/DriverContext';
 import DarkModeProvider from './context/DarkModeContext';
 import { setupLanguages } from './monaco/setup';
 import CatalogError from './pages/CatalogError';
-import GraphView from './pages/GraphView';
+import Graph from './pages/Graph';
 import Node from './pages/Node';
 import NodeError from './pages/NodeError';
+import Paths from './pages/Paths';
 import Query from './pages/Query';
 import './styles/ag-grid.css';
 import './styles/react-force-graph.css';
+import { GraphProvider } from './components/GraphProvider';
 
 setupLanguages();
 
@@ -84,7 +86,28 @@ function App() {
           },
           errorElement: <CatalogError />,
           path: '/graph',
-          element: <GraphView />,
+          element: (
+            <GraphProvider key="graph">
+              <Graph />
+            </GraphProvider>
+          ),
+        },
+        {
+          loader: async () => {
+            try {
+              const catalog = await driverContext.getCatalog();
+              return catalog.getModelString();
+            } catch (error) {
+              throw new Response(error.toString(), { status: 500 });
+            }
+          },
+          errorElement: <CatalogError />,
+          path: '/paths',
+          element: (
+            <GraphProvider key="paths">
+              <Paths />
+            </GraphProvider>
+          ),
         },
         {
           path: '/object/:objectId',
