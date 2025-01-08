@@ -8,13 +8,7 @@ import {
   Typography,
   ToggleButton,
   Tooltip,
-  IconButton,
-  Menu,
-  FormControl,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Card,
+  Button,
 } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,14 +21,15 @@ import {
   graphObjectToTypeString,
 } from '../utils/GraphObjectUtils';
 import SquareIcon from '@mui/icons-material/Square';
-import ManageSearchIcon from '@mui/icons-material/ManageSearch';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TextIndexSelect from './TextIndexSelect';
 
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const escapeRegexSPARQL = (str) => escapeRegex(str).replace(/\\/g, '\\\\');
 const escapeQuotes = (str) => str.replace(/"/g, '\\"');
 const escapeQuotesSPARQL = (str) => str.replace(/"/g, '\\\\"');
 
-const getSearchQuery = (modelString, input, textIndex, regexSearch) => {
+const getSearchQuery = (modelString, input, textIndex, regexSearch, property) => {
   const inputString = modelString === 'rdf' ? escapeQuotesSPARQL(input) : escapeQuotes(input);
   switch (modelString) {
     case 'rdf':
@@ -48,7 +43,7 @@ const getSearchQuery = (modelString, input, textIndex, regexSearch) => {
         const regexPattern = regexSearch ? `${inputString}` : `^${escapeRegexSPARQL(inputString)}`;
         return (
           'SELECT ?node ?label\n' +
-          `WHERE { ?node rdfs:label ?label . FILTER regex(?label, "${regexPattern}", "i")}\n` +
+          `WHERE { ?node rdfs:${property} ?label . FILTER regex(?label, "${regexPattern}", "i")}\n` +
           'LIMIT 50'
         );
       }
@@ -64,8 +59,8 @@ const getSearchQuery = (modelString, input, textIndex, regexSearch) => {
         const regexPattern = regexSearch ? `${inputString}` : `^${escapeRegex(inputString)}`;
         return (
           'MATCH (?node)\n' +
-          `WHERE REGEX(?node.label, "${regexPattern}", "i")\n` +
-          'RETURN ?node, ?node.label AS ?label\n' +
+          `WHERE REGEX(?node.${property}, "${regexPattern}", "i")\n` +
+          `RETURN ?node, ?node.${property} AS ?label\n` +
           'LIMIT 50'
         );
       }
@@ -128,16 +123,21 @@ const GraphSearchBar = React.memo(({ selectedNode, setSelectedNode }) => {
   }, [selectedNode]);
 
   return (
-    <Box sx={{ position: "absolute", top: 16, width: "100%" }}>
-      <NodeSearchBar
-        value={value}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        options={options}
-        setOptions={setOptions}
-        handleOnChange={handleOnChange}
-      />
-    </Box>
+    <>
+      <Box sx={{ position: "absolute", top: 16, width: "100%" }}>
+        <NodeSearchBar
+          value={value}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          options={options}
+          setOptions={setOptions}
+          handleOnChange={handleOnChange}
+        />
+      </Box>
+      <Box sx={{ position: "absolute", top: 16, width: "100%" }}>
+        <TextIndexSelect />
+      </Box>
+    </>
   )
 });
 
@@ -171,17 +171,22 @@ const PathsSearchBar = React.memo(({ inputNodes, setInputNodes }) => {
   }, [options]);
 
   return (
-    <Box sx={{ position: "absolute", top: 80, width: "100%" }}>
-      <NodeSearchBar
-        value={value}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        handleOnChange={handleOnChange}
-        options={options}
-        setOptions={setOptions}
-        getOptionDisabled={getOptionDisabled}
-      />
-    </Box>
+    <>
+      <Box sx={{ position: "absolute", top: 80, width: "100%" }}>
+        <NodeSearchBar
+          value={value}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          handleOnChange={handleOnChange}
+          options={options}
+          setOptions={setOptions}
+          getOptionDisabled={getOptionDisabled}
+        />
+      </Box>
+      <Box sx={{ position: "absolute", top: 80, width: "100%" }}>
+        <TextIndexSelect />
+      </Box>
+    </>
   )
 });
 
@@ -196,28 +201,20 @@ const NodeSearchBar = React.memo(
     getOptionDisabled = () => false,
   }) => {
     const [loading, setLoading] = useState(false);
-    const [anchorElMenu, setAnchorElMenu] = useState(null);
-    const [textIndexes, setTextIndexes] = useState(null);
+    const [showPropertySearchBar, setShowPropertySearchBar] = useState(false);
 
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
     const {
       selectedTextIndex,
-      setSelectedTextIndex,
       regexSearch,
-      setRegexSearch
+      setRegexSearch,
+      propertySearchName,
+      setPropertySearchName,
     } = useUserContext();
 
     const handleOnInputChange = (_event, newInputValue) => {
       setInputValue(newInputValue);
-    };
-
-    const handleOpenRegexMenu = (event) => {
-      setAnchorElMenu(event.currentTarget);
-    };
-
-    const handleCloseRegexMenu = () => {
-      setAnchorElMenu(null);
     };
 
     const searchNodes = useMemo(() =>
@@ -226,11 +223,18 @@ const NodeSearchBar = React.memo(
           input,
           textIndex,
           regexSearch,
+          propertySearchName,
           modelString,
           driverContext,
           callback
         ) => {
-          const query = getSearchQuery(modelString, input, textIndex, regexSearch);
+          const query = getSearchQuery(
+            modelString,
+            input,
+            textIndex,
+            regexSearch,
+            propertySearchName
+          );
           console.log(query);
           const session = driverContext.driver.session();
           try {
@@ -282,6 +286,7 @@ const NodeSearchBar = React.memo(
           inputValue,
           selectedTextIndex,
           regexSearch,
+          propertySearchName,
           modelString,
           driverContext,
           (newOptions) => {
@@ -300,6 +305,7 @@ const NodeSearchBar = React.memo(
         inputValue,
         selectedTextIndex,
         regexSearch,
+        propertySearchName,
         modelString,
         driverContext,
         searchNodes,
@@ -307,42 +313,44 @@ const NodeSearchBar = React.memo(
       ]
     );
 
-    const getTextIndexNames = useCallback(async () => {
-      const catalog = await driverContext.getCatalog();
-      const textIndexNames = catalog.getMetadata().textIndexNames;
-      setTextIndexes(textIndexNames);
-      if (![...textIndexNames, ''].includes(selectedTextIndex)) {
-        setSelectedTextIndex(textIndexNames.length > 0 ? textIndexNames[0] : '');
-      }
-    }, [driverContext, selectedTextIndex, setSelectedTextIndex]);
-
     useEffect(() => {
-      getTextIndexNames();
-    }, [getTextIndexNames]);
+      setShowPropertySearchBar(false);
+    }, [selectedTextIndex]);
 
     return (
-      <Box
-        elevation={0}
-        sx={(theme) => ({
-          position: 'relative',
-          zIndex: theme.zIndex.drawer + 1,
-          left: 16,
-          width: 468,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          [`${theme.breakpoints.down('md')}`]: {
-            left: 0,
-            boxSizing: 'border-box',
-            width: 'calc(100% - 32px)',
-            mx: '16px',
-          },
-        })}
-      >
-        <Box sx={(theme) => ({
-          background: theme.palette.background.paper,
-          width: '100%',
-        })}>
+      <Box sx={(theme) => ({
+        position: 'relative',
+        zIndex: theme.zIndex.drawer + 1,
+        width: 424,
+        left: 16,
+        display: 'flex',
+        border: '1px solid',
+        borderColor: theme.palette.divider,
+        overflow: 'hidden',
+        height: showPropertySearchBar ? 114 : 58,
+        transition: 'height 0.3s ease',
+        background: theme.palette.background.paper,
+        [`${theme.breakpoints.down('md')}`]: {
+          left: 0,
+          boxSizing: 'border-box',
+          width: 'calc(100% - 76px)',
+          mx: '16px',
+        },
+      })}>
+        <Button
+          sx={{ minWidth: 36, ml: selectedTextIndex === '' ? 0 : -5, transition: '0.3s ease' }}
+          color="inherit"
+          onClick={() => setShowPropertySearchBar((prev) => !prev)}
+        >
+          <ExpandMoreIcon
+            sx={{
+              transition: 'transform 0.3s ease',
+              transform: showPropertySearchBar ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        </Button>
+
+        <Box sx={{ width: '100%' }}>
           <Autocomplete
             getOptionLabel={(option) => option.label}
             getOptionKey={(option) => option.id}
@@ -359,6 +367,7 @@ const NodeSearchBar = React.memo(
             autoComplete
             includeInputInList
             fullWidth
+            freeSolo
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -397,58 +406,23 @@ const NodeSearchBar = React.memo(
               );
             }}
           />
-        </Box>
 
-        <Tooltip title="Select Text Index">
-          <IconButton
-            sx={{ width: 36, height: 36}}
-            onClick={handleOpenRegexMenu}
+          <Box
+            component="form"
+            noValidate
+            autoComplete="off"
           >
-            <ManageSearchIcon />
-          </IconButton>
-        </Tooltip>
-        <Menu
-          anchorEl={anchorElMenu}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          keepMounted
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-          open={Boolean(anchorElMenu)}
-          onClose={handleCloseRegexMenu}
-          elevation={0}
-        >
-          <Card variant="outlined" sx={{ my: -1, py: 1 }}>
-            <FormControl sx={{ pl: 2, maxWidth: 200, overflowX: 'auto' }}>
-              <RadioGroup
-                onChange={(e) => {
-                  setSelectedTextIndex(e.target.value);
-                  setAnchorElMenu(null);
-                }}
-              >
-                {textIndexes && textIndexes.map((index) => (
-                  <FormControlLabel
-                    key={index}
-                    value={index}
-                    control={<Radio size='small'/>}
-                    label={index}
-                    checked={selectedTextIndex === index}
-                  />
-                ))}
-                <FormControlLabel
-                  value={''}
-                  control={<Radio size='small'/>}
-                  label={'None'}
-                  checked={selectedTextIndex === ''}
-                />
-              </RadioGroup>
-            </FormControl>
-          </Card>
-        </Menu>
+            <TextField
+              placeholder="Enter property for searching"
+              variant="outlined"
+              fullWidth
+              value={propertySearchName}
+              onChange={(event) => {
+                setPropertySearchName(event.target.value);
+              }}
+            />
+          </Box>
+        </Box>
       </Box>
     );
   }

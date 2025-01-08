@@ -5,6 +5,7 @@ const UserContext = createContext();
 export const UserProvider = ({ children }) => {
   const [selectedTextIndex, setSelectedTextIndex] = useState(null);
   const [regexSearch, setRegexSearch] = useState(false);
+  const [propertySearchName, setPropertySearchName] = useState('label');
 
   useEffect(() => {
     if (regexSearch) {
@@ -18,6 +19,8 @@ export const UserProvider = ({ children }) => {
       setSelectedTextIndex,
       regexSearch,
       setRegexSearch,
+      propertySearchName,
+      setPropertySearchName,
     }}>
       {children}
     </UserContext.Provider>
