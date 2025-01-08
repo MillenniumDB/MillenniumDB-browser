@@ -49,10 +49,11 @@ const Editor = React.forwardRef(({ language, query, ...props }, ref) => {
         minimap: { enabled: false },
         renderWhitespace: 'all',
         tabSize: 2,
-        fontSize: 20,
+        fontSize: 16,
         scrollbar: {
           alwaysConsumeMouseWheel: false,
         },
+        mouseWheelZoom: true,
       })
     );
 
