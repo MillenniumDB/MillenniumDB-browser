@@ -41,7 +41,7 @@ const Actions = ({ rowAction }) => {
 
 const GraphObjectDetailsSection = ({ title, children }) => {
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ py: 3, px: 2, position: "relative" }}>
       <Typography variant="body1" component="p" sx={{ pb: 2 }}>
         {title}
       </Typography>
@@ -181,11 +181,11 @@ const RDFGraphObjectDetails = React.memo(
           [`& .MuiDrawer-paper`]: {
             width: 'inherit',
             boxSizing: 'border-box',
+            overflow: 'hidden',
           },
           [`${theme.breakpoints.down('md')}`]: {
             width: '100vw',
           },
-          overflow: 'hidden',
         })}
       >
         <Toolbar sx={{ mb: '88px' }} />
@@ -262,6 +262,18 @@ const RDFGraphObjectDetails = React.memo(
             <>
               <Divider />
               <GraphObjectDetailsSection title="Outgoing">
+                <Button
+                  variant="outlined"
+                  sx={{ position: "absolute", right: 16, top: 16 }}
+                  disabled={outgoing.length === 0}
+                  onClick={() => {outgoing.map((connection) => addOutgoing(
+                        connection.to,
+                        connection.type,
+                        connection.edge
+                  ))}}
+                >
+                  Show All
+                </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
                     <Skeleton variant="rectangular" height="inherit" />
@@ -300,6 +312,18 @@ const RDFGraphObjectDetails = React.memo(
               <Divider />
 
               <GraphObjectDetailsSection title="Incoming">
+                <Button
+                  variant="outlined"
+                  sx={{ position: "absolute", right: 16, top: 16 }}
+                  disabled={incoming.length === 0}
+                  onClick={() => {incoming.map((connection) => addIncoming(
+                    connection.from,
+                    connection.type,
+                    connection.edge
+                  ))}}
+                >
+                  Show All
+                </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
                     <Skeleton variant="rectangular" height="inherit" />
@@ -482,11 +506,11 @@ const QuadGraphObjectDetails = React.memo(
           [`& .MuiDrawer-paper`]: {
             width: 'inherit',
             boxSizing: 'border-box',
+            overflow: 'hidden',
           },
           [`${theme.breakpoints.down('md')}`]: {
             width: '100vw',
           },
-          overflow: 'hidden',
         })}
       >
         <Toolbar sx={{ mb: '88px' }} />
@@ -620,6 +644,18 @@ const QuadGraphObjectDetails = React.memo(
           {!selectedNode?.isEdge && (
             <>
               <GraphObjectDetailsSection title="Outgoing">
+                <Button
+                  variant="outlined"
+                  sx={{ position: "absolute", right: 16, top: 16 }}
+                  disabled={outgoing.length === 0}
+                  onClick={() => {outgoing.map((connection) => addOutgoing(
+                        connection.to,
+                        connection.type,
+                        connection.edge
+                  ))}}
+                >
+                  Show All
+                </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
                     <Skeleton variant="rectangular" height="inherit" />
@@ -660,6 +696,18 @@ const QuadGraphObjectDetails = React.memo(
               <Divider />
 
               <GraphObjectDetailsSection title="Incoming">
+                <Button
+                  variant="outlined"
+                  sx={{ position: "absolute", right: 16, top: 16 }}
+                  disabled={incoming.length === 0}
+                  onClick={() => {incoming.map((connection) => addIncoming(
+                    connection.from,
+                    connection.type,
+                    connection.edge
+                  ))}}
+                >
+                  Show All
+                </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
                     <Skeleton variant="rectangular" height="inherit" />
