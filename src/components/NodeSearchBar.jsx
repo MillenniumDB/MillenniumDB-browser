@@ -43,7 +43,7 @@ const getSearchQuery = (modelString, input, textIndex, regexSearch, property) =>
         const regexPattern = regexSearch ? `${inputString}` : `^${escapeRegexSPARQL(inputString)}`;
         return (
           'SELECT ?node ?label\n' +
-          `WHERE { ?node rdfs:${property} ?label . FILTER regex(?label, "${regexPattern}", "i")}\n` +
+          `WHERE { ?node ${property} ?label . FILTER regex(?label, "${regexPattern}", "i")}\n` +
           'LIMIT 50'
         );
       }
