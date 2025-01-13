@@ -27,23 +27,24 @@ import TextIndexSelect from './TextIndexSelect';
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const escapeRegexSPARQL = (str) => escapeRegex(str).replace(/\\/g, '\\\\');
 const escapeQuotes = (str) => str.replace(/"/g, '\\"');
-const escapeQuotesSPARQL = (str) => str.replace(/"/g, '\\\\"');
+
+const defaultFilterOptions = () => true;
+const defaultGetOptionDisabled = () => false;
 
 const getSearchQuery = (modelString, input, textIndex, regexSearch, property) => {
-  const inputString = modelString === 'rdf' ? escapeQuotesSPARQL(input) : escapeQuotes(input);
   switch (modelString) {
     case 'rdf':
       if (textIndex) {
         return (
           'SELECT ?node ?label\n' +
-          `WHERE { ?node mdbfn:textSearch ("${textIndex}" "${inputString}" "prefix" ?label) . }\n` +
+          `WHERE { ?node mdbfn:textSearch ("${textIndex}" "${escapeQuotes(input)}" "prefix" ?label) . }\n` +
           'LIMIT 50'
         );
       } else {
-        const regexPattern = regexSearch ? `${inputString}` : `^${escapeRegexSPARQL(inputString)}`;
+        const regexPattern = regexSearch ? `${input}` : `^${escapeRegexSPARQL(input)}`;
         return (
           'SELECT ?node ?label\n' +
-          `WHERE { ?node ${property} ?label . FILTER regex(?label, "${regexPattern}", "i")}\n` +
+          `WHERE { ?node ${property} ?label . FILTER regex(?label, "${escapeQuotes(regexPattern)}", "i")}\n` +
           'LIMIT 50'
         );
       }
@@ -51,15 +52,15 @@ const getSearchQuery = (modelString, input, textIndex, regexSearch, property) =>
       if (textIndex) {
         return (
           'MATCH (?node)\n' +
-          `WHERE TEXT_SEARCH("${textIndex}", "${inputString}", prefix, ?node, ?label)\n` +
+          `WHERE TEXT_SEARCH("${textIndex}", "${escapeQuotes(input)}", prefix, ?node, ?label)\n` +
           'RETURN *\n' +
           'LIMIT 50'
         );
       } else {
-        const regexPattern = regexSearch ? `${inputString}` : `^${escapeRegex(inputString)}`;
+        const regexPattern = regexSearch ? `${input}` : `^${escapeRegex(input)}`;
         return (
           'MATCH (?node)\n' +
-          `WHERE REGEX(?node.${property}, "${regexPattern}", "i")\n` +
+          `WHERE REGEX(?node.${property}, "${escapeQuotes(regexPattern)}", "i")\n` +
           `RETURN ?node, ?node.${property} AS ?label\n` +
           'LIMIT 50'
         );
@@ -103,7 +104,6 @@ const regexToggleButton = ({ regexSearch, setRegexSearch }) => (
 const GraphSearchBar = React.memo(({ selectedNode, setSelectedNode }) => {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
-  const [options, setOptions] = useState([]);
 
   const handleOnChange = (_event, newValue) => {
     if (newValue?.graphNode) {
@@ -129,8 +129,6 @@ const GraphSearchBar = React.memo(({ selectedNode, setSelectedNode }) => {
           value={value}
           inputValue={inputValue}
           setInputValue={setInputValue}
-          options={options}
-          setOptions={setOptions}
           handleOnChange={handleOnChange}
         />
       </Box>
@@ -142,9 +140,10 @@ const GraphSearchBar = React.memo(({ selectedNode, setSelectedNode }) => {
 });
 
 const PathsSearchBar = React.memo(({ inputNodes, setInputNodes }) => {
+  const modelString = useLoaderData();
+
   const [value] = useState(null);
   const [inputValue, setInputValue] = useState('');
-  const [options, setOptions] = useState([]);
 
   const handleOnChange = (_event, newValue) => {
     if (newValue?.node) {
@@ -160,15 +159,13 @@ const PathsSearchBar = React.memo(({ inputNodes, setInputNodes }) => {
     return inputNodes.some((node) => node.id === option.id);
   }, [inputNodes]);
 
-  useEffect(() => {
-    const filteredOptions = options.filter(
-      (option) => (
-        option.node.constructor === types.GraphNode ||
-        option.node.constructor === types.IRI
-      )
-    );
-    setOptions(filteredOptions);
-  }, [options]);
+  const filterOptions = useCallback((option) => {
+    if (modelString === 'rdf') {
+      return true;
+    } else {
+      return option.node.constructor === types.GraphNode;
+    }
+  }, [modelString]);
 
   return (
     <>
@@ -178,9 +175,8 @@ const PathsSearchBar = React.memo(({ inputNodes, setInputNodes }) => {
           inputValue={inputValue}
           setInputValue={setInputValue}
           handleOnChange={handleOnChange}
-          options={options}
-          setOptions={setOptions}
           getOptionDisabled={getOptionDisabled}
+          filterOptions={filterOptions}
         />
       </Box>
       <Box sx={{ position: "absolute", top: 80, width: "100%" }}>
@@ -196,10 +192,10 @@ const NodeSearchBar = React.memo(
     inputValue,
     setInputValue,
     handleOnChange,
-    options,
-    setOptions,
-    getOptionDisabled = () => false,
+    getOptionDisabled = defaultGetOptionDisabled,
+    filterOptions = defaultFilterOptions,
   }) => {
+    const [options, setOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showPropertySearchBar, setShowPropertySearchBar] = useState(false);
 
@@ -224,6 +220,7 @@ const NodeSearchBar = React.memo(
           textIndex,
           regexSearch,
           propertySearchName,
+          filterOptions,
           modelString,
           driverContext,
           callback
@@ -235,7 +232,6 @@ const NodeSearchBar = React.memo(
             regexSearch,
             propertySearchName
           );
-          console.log(query);
           const session = driverContext.driver.session();
           try {
             const result = await session.run(query);
@@ -253,7 +249,7 @@ const NodeSearchBar = React.memo(
                 node,
                 graphNode
               };
-            });
+            }).filter(filterOptions);
             callback(newOptions);
           } catch (error) {
             enqueueSnackbar({
@@ -287,6 +283,7 @@ const NodeSearchBar = React.memo(
           selectedTextIndex,
           regexSearch,
           propertySearchName,
+          filterOptions,
           modelString,
           driverContext,
           (newOptions) => {
@@ -306,6 +303,7 @@ const NodeSearchBar = React.memo(
         selectedTextIndex,
         regexSearch,
         propertySearchName,
+        filterOptions,
         modelString,
         driverContext,
         searchNodes,
@@ -316,6 +314,10 @@ const NodeSearchBar = React.memo(
     useEffect(() => {
       setShowPropertySearchBar(false);
     }, [selectedTextIndex]);
+
+    useEffect(() => {
+      setPropertySearchName(modelString === 'rdf' ? 'rdfs:label' : 'label');
+    }, [modelString]);
 
     return (
       <Box sx={(theme) => ({

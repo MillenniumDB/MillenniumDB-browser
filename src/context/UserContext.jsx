@@ -1,16 +1,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useLoaderData } from 'react-router-dom';
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [selectedTextIndex, setSelectedTextIndex] = useState(null);
   const [regexSearch, setRegexSearch] = useState(false);
-  const modelString = useLoaderData();
-
-  const [propertySearchName, setPropertySearchName] = useState(
-    modelString === 'rdf' ? 'rdfs:label' : 'label'
-  );
+  const [propertySearchName, setPropertySearchName] = useState('');
 
   useEffect(() => {
     setRegexSearch(false);
