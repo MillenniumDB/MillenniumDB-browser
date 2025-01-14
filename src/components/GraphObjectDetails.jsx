@@ -267,9 +267,8 @@ const RDFGraphObjectDetails = React.memo(
                   sx={{ position: "absolute", right: 16, top: 16 }}
                   disabled={outgoing.length === 0}
                   onClick={() => {outgoing.map((connection) => addOutgoing(
-                        connection.to,
-                        connection.type,
-                        connection.edge
+                    connection.object,
+                    connection.predicate
                   ))}}
                 >
                   Show All
@@ -317,9 +316,8 @@ const RDFGraphObjectDetails = React.memo(
                   sx={{ position: "absolute", right: 16, top: 16 }}
                   disabled={incoming.length === 0}
                   onClick={() => {incoming.map((connection) => addIncoming(
-                    connection.from,
-                    connection.type,
-                    connection.edge
+                    connection.subject,
+                    connection.predicate
                   ))}}
                 >
                   Show All
