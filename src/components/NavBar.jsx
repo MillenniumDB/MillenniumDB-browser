@@ -50,7 +50,7 @@ export default function Navbar() {
         sx={{
           backgroundColor:
             theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          zIndex: (theme) => theme.zIndex.drawer + 2,
         }}
       >
         {loading && (
