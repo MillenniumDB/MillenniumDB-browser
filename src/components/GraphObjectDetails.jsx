@@ -266,12 +266,13 @@ const RDFGraphObjectDetails = React.memo(
                   variant="outlined"
                   sx={{ position: "absolute", right: 16, top: 16 }}
                   disabled={outgoing.length === 0}
-                  onClick={() => {outgoing.map((connection) => addOutgoing(
-                    connection.object,
-                    connection.predicate
-                  ))}}
+                  onClick={() => {
+                    outgoing.slice(0, 50).map((connection) =>
+                      addOutgoing(connection.object, connection.predicate)
+                    );
+                  }}
                 >
-                  Show All
+                  {outgoing.length <= 50 ? "Show All" : "Show First 50"}
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
@@ -315,12 +316,13 @@ const RDFGraphObjectDetails = React.memo(
                   variant="outlined"
                   sx={{ position: "absolute", right: 16, top: 16 }}
                   disabled={incoming.length === 0}
-                  onClick={() => {incoming.map((connection) => addIncoming(
-                    connection.subject,
-                    connection.predicate
-                  ))}}
+                  onClick={() => {
+                    incoming.slice(0, 50).map((connection) =>
+                      addIncoming(connection.subject, connection.predicate)
+                    );
+                  }}
                 >
-                  Show All
+                  {incoming.length <= 50 ? "Show All" : "Show First 50"}
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
@@ -646,13 +648,13 @@ const QuadGraphObjectDetails = React.memo(
                   variant="outlined"
                   sx={{ position: "absolute", right: 16, top: 16 }}
                   disabled={outgoing.length === 0}
-                  onClick={() => {outgoing.map((connection) => addOutgoing(
-                        connection.to,
-                        connection.type,
-                        connection.edge
-                  ))}}
+                  onClick={() => {
+                    outgoing.slice(0, 50).map((connection) =>
+                      addOutgoing(connection.to, connection.type, connection.edge)
+                    );
+                  }}
                 >
-                  Show All
+                  {outgoing.length <= 50 ? "Show All" : "Show First 50"}
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
@@ -698,13 +700,13 @@ const QuadGraphObjectDetails = React.memo(
                   variant="outlined"
                   sx={{ position: "absolute", right: 16, top: 16 }}
                   disabled={incoming.length === 0}
-                  onClick={() => {incoming.map((connection) => addIncoming(
-                    connection.from,
-                    connection.type,
-                    connection.edge
-                  ))}}
+                  onClick={() => {
+                    incoming.slice(0, 50).map((connection) =>
+                      addIncoming(connection.from, connection.type, connection.edge)
+                    );
+                  }}
                 >
-                  Show All
+                  {incoming.length <= 50 ? "Show All" : "Show First 50"}
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
