@@ -4,17 +4,16 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [selectedTextIndex, setSelectedTextIndex] = useState(null);
+  const [selectedSearchBy, setSelectedSearchBy] = useState(null);
   const [regexSearch, setRegexSearch] = useState(false);
   const [propertySearchName, setPropertySearchName] = useState('');
-
-  useEffect(() => {
-    setRegexSearch(false);
-  }, [selectedTextIndex]);
 
   return (
     <UserContext.Provider value={{
       selectedTextIndex,
       setSelectedTextIndex,
+      selectedSearchBy,
+      setSelectedSearchBy,
       regexSearch,
       setRegexSearch,
       propertySearchName,

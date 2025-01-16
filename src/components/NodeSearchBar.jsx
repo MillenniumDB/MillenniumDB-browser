@@ -31,22 +31,35 @@ const escapeQuotes = (str) => str.replace(/"/g, '\\"');
 const defaultFilterOptions = () => true;
 const defaultGetOptionDisabled = () => false;
 
-const getSearchQuery = (modelString, input, textIndex, regexSearch, property) => {
+const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, property) => {
   switch (modelString) {
     case 'rdf':
-      if (textIndex) {
+      if (textIndex !== null) {
         return (
           'SELECT ?node ?label\n' +
           `WHERE { ?node mdbfn:textSearch ("${textIndex}" "${escapeQuotes(input)}" "prefix" ?label) . }\n` +
           'LIMIT 50'
         );
-      } else {
+      } else if (searchBy === 'iri') {
+        return (
+          'SELECT ?node ?label\n' +
+          'WHERE {\n' +
+          `  <${input}> ?p ?o .\n` +
+          '  ?node ?p ?o .\n' +
+          `  FILTER(?node = <${input}>)\n` +
+          `  BIND(<${input}> AS ?label)\n` +
+          '}\n' +
+          'LIMIT 1'
+        );
+      } else if (searchBy === 'literal') {
         const regexPattern = regexSearch ? `${input}` : `^${escapeRegexSPARQL(input)}`;
         return (
           'SELECT ?node ?label\n' +
           `WHERE { ?node ${property} ?label . FILTER regex(?label, "${escapeQuotes(regexPattern)}", "i")}\n` +
           'LIMIT 50'
         );
+      } else {
+        throw new Error('Invalid search by');
       }
     case 'quad':
       if (textIndex) {
@@ -56,7 +69,7 @@ const getSearchQuery = (modelString, input, textIndex, regexSearch, property) =>
           'RETURN *\n' +
           'LIMIT 50'
         );
-      } else {
+      } else if (searchBy === 'literal'){
         const regexPattern = regexSearch ? `${input}` : `^${escapeRegex(input)}`;
         return (
           'MATCH (?node)\n' +
@@ -64,6 +77,8 @@ const getSearchQuery = (modelString, input, textIndex, regexSearch, property) =>
           `RETURN ?node, ?node.${property} AS ?label\n` +
           'LIMIT 50'
         );
+      } else {
+        throw new Error('Invalid search by');
       }
     default:
       throw new Error('Invalid model string');
@@ -203,6 +218,7 @@ const NodeSearchBar = React.memo(
     const modelString = useLoaderData();
     const {
       selectedTextIndex,
+      selectedSearchBy,
       regexSearch,
       setRegexSearch,
       propertySearchName,
@@ -218,6 +234,7 @@ const NodeSearchBar = React.memo(
         async (
           input,
           textIndex,
+          searchBy,
           regexSearch,
           propertySearchName,
           filterOptions,
@@ -229,9 +246,11 @@ const NodeSearchBar = React.memo(
             modelString,
             input,
             textIndex,
+            searchBy,
             regexSearch,
             propertySearchName
           );
+          console.log(query);
           const session = driverContext.driver.session();
           try {
             const result = await session.run(query);
@@ -281,6 +300,7 @@ const NodeSearchBar = React.memo(
         searchNodes(
           inputValue,
           selectedTextIndex,
+          selectedSearchBy,
           regexSearch,
           propertySearchName,
           filterOptions,
@@ -301,6 +321,7 @@ const NodeSearchBar = React.memo(
       [
         inputValue,
         selectedTextIndex,
+        selectedSearchBy,
         regexSearch,
         propertySearchName,
         filterOptions,
@@ -313,11 +334,11 @@ const NodeSearchBar = React.memo(
 
     useEffect(() => {
       setShowPropertySearchBar(false);
-    }, [selectedTextIndex]);
+    }, [selectedTextIndex, selectedSearchBy]);
 
     useEffect(() => {
       setPropertySearchName(modelString === 'rdf' ? 'rdfs:label' : 'label');
-    }, [modelString]);
+    }, [modelString, setPropertySearchName]);
 
     return (
       <Box sx={(theme) => ({
@@ -340,7 +361,7 @@ const NodeSearchBar = React.memo(
         },
       })}>
         <Button
-          sx={{ minWidth: 36, ml: selectedTextIndex === '' ? 0 : -5, transition: '0.3s ease' }}
+          sx={{ minWidth: 36, ml: selectedSearchBy === "literal" ? 0 : -5, transition: '0.3s ease' }}
           color="inherit"
           onClick={() => setShowPropertySearchBar((prev) => !prev)}
         >
@@ -385,7 +406,8 @@ const NodeSearchBar = React.memo(
                     <>
                       {loading ? <CircularProgress size={20} /> : null}
                       {/* {params.InputProps.endAdornment} */}
-                      {selectedTextIndex === '' && regexToggleButton({ regexSearch, setRegexSearch })}
+                      {selectedSearchBy === 'literal' && (
+                        regexToggleButton({ regexSearch, setRegexSearch }))}
                     </>
                   ),
                 }}
