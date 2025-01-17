@@ -85,10 +85,6 @@ const RDFGraphObjectDetails = React.memo(
       }
     }, [selectedNode, removeConnectionAndNeighbors, removeNodeAndConnections]);
 
-    const handleOpenIri = useCallback(() => {
-      window.open(selectedNode.value.toString(), '_blank');
-    }, [selectedNode]);
-
     const createPredicateNode = useCallback((predicate, subject, object) => {
       const predicateNode = graphObjectToReactForceGraphNode(predicate);
       predicateNode.isEdge = true;
@@ -227,11 +223,17 @@ const RDFGraphObjectDetails = React.memo(
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={handleOpenIri}
                   startIcon={<LinkIcon />}
                   color="primary"
                 >
-                  Open IRI
+                  <Link
+                    underline="none"
+                    href={selectedNode?.value.toString()}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Open IRI
+                  </Link>
                 </Button>
               )}
               {isNodeInGraphView(selectedNode) ? (
@@ -338,6 +340,11 @@ const RDFGraphObjectDetails = React.memo(
                           cellRenderer: (props) => (
                             <Actions rowAction={props.value.rowAction} />
                           ),
+                          cellStyle: () => ({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }),
                         },
                       ]}
                       rows={incoming.map((row) => ({
@@ -723,6 +730,11 @@ const QuadGraphObjectDetails = React.memo(
                           cellRenderer: (props) => (
                             <Actions rowAction={props.value.rowAction} />
                           ),
+                          cellStyle: () => ({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }),
                         },
                       ]}
                       rows={incoming.map((row) => ({
@@ -735,10 +747,6 @@ const QuadGraphObjectDetails = React.memo(
                       onObjectClick={(value) => {
                         setSelectedNode(graphObjectToReactForceGraphNode(value))
                       }}
-                      onIriClick={(value) =>
-                        // Should never enter here
-                        window.open(value.toString(), '_blank')
-                      }
                     />
                   )}
                 </Box>

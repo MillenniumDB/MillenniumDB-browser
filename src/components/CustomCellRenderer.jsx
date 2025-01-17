@@ -16,7 +16,7 @@ const NoMaxWidthTooltip = styled(({ className, ...props }) => (
   },
 });
 
-function PathNode({ value, color, onObjectClick, onIriClick }) {
+function PathNode({ value, color }) {
   if (value === null || value === undefined) {
     return <Chip size="small" label="null" />;
   }
@@ -45,7 +45,7 @@ function PathNode({ value, color, onObjectClick, onIriClick }) {
         case types.GraphNode: {
           const nodeId = value.toString();
           return (
-            <Link onClick={() => onObjectClick(nodeId)}>
+            <Link href={`/object/${nodeId}`} target="_blank" rel="noopener">
               <Chip color={color} size="small" label={nodeId} />
             </Link>
           );
@@ -53,7 +53,7 @@ function PathNode({ value, color, onObjectClick, onIriClick }) {
         case types.IRI: {
           const iriStr = value.toString();
           return (
-            <Link onClick={() => onIriClick(value)}>
+            <Link href={iriStr} target="_blank" rel="noopener">
               <Chip color={color} size="small" label={iriStr} />
             </Link>
           );
@@ -69,7 +69,7 @@ function PathNode({ value, color, onObjectClick, onIriClick }) {
   }
 }
 
-export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
+export default function CustomCellRenderer(props, onObjectClick, onIriClick, openInNewTab) {
   const { value } = props;
 
   const wrapper = useRef(null);
@@ -98,15 +98,38 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
           }
           case types.GraphNode: {
             const nodeId = value.toString();
+            if (onObjectClick) {
+              return setCellContent(
+                <Link onClick={() => onObjectClick(value)}>
+                  {nodeId}
+                </Link>
+              );
+            }
             return setCellContent(
-              <Link onClick={() => onObjectClick(value)}>
+              <Link
+                href={`/object/${nodeId}`}
+                target={openInNewTab ? "_blank" : undefined}
+                rel={openInNewTab ? "noopener" : undefined}
+              >
                 {nodeId}
               </Link>
             );
           }
           case types.GraphEdge: {
+            if (onObjectClick) {
+              return setCellContent(
+                <Link color="secondary" onClick={() => onObjectClick(value)}>
+                  {value.toString()}
+                </Link>
+              );
+            }
             return setCellContent(
-              <Link color="secondary" onClick={() => onObjectClick(value)}>
+              <Link
+                color="secondary"
+                href={`/object/${value.toString()}`}
+                target={openInNewTab ? "_blank" : undefined}
+                rel={openInNewTab ? "noopener" : undefined}
+              >
                 {value.toString()}
               </Link>
             );
@@ -122,11 +145,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
                   },
                 }}
               >
-                <PathNode
-                  color="primary"
-                  value={value.start}
-                  onObjectClick={() => onObjectClick(value.start)}
-                />
+                <PathNode color="primary" value={value.start} />
                 {value.segments.map((segment, segmentIdx) => {
                   return (
                     <Fragment key={segmentIdx}>
@@ -135,21 +154,13 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
                       ) : (
                         <HorizontalRuleIcon color="secondary" fontSize="small" />
                       )}
-                      <PathNode
-                        color="secondary"
-                        value={segment.type}
-                        onObjectClick={() => onObjectClick(segment.type)}
-                      />
+                      <PathNode color="secondary" value={segment.type}/>
                       {segment.reverse ? (
                         <HorizontalRuleIcon color="secondary" fontSize="small" />
                       ) : (
                         <ArrowForwardIcon color="secondary" fontSize="small" />
                       )}
-                      <PathNode
-                        color="primary"
-                        value={segment.to}
-                        onObjectClick={() => onObjectClick(segment.to)}
-                      />
+                      <PathNode color="primary" value={segment.to} />
                     </Fragment>
                   );
                 })}
@@ -158,7 +169,16 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
           }
           case types.IRI: {
             const iriStr = value.toString();
-            return setCellContent(<Link onClick={() => onIriClick(value)}>{`<${iriStr}>`}</Link>);
+            if (onIriClick) {
+              return setCellContent(
+                <Link onClick={() => onIriClick(value)}>{`<${iriStr}>`}</Link>
+              );
+            }
+            return setCellContent(
+              <Link href={iriStr} target="_blank" rel="noopener">
+                {`<${iriStr}>`}
+              </Link>
+            );
           }
           case types.StringDatatype: {
             return setCellContent(
@@ -183,7 +203,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
         return setCellContent(<>{'unknown'}</>);
       }
     }
-  }, [value, onObjectClick, onIriClick]);
+  }, [value, onObjectClick, onIriClick, openInNewTab]);
 
   const tooltipProps = {
     title: cellContent,
@@ -199,6 +219,10 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
       popper: { modifiers: [{ name: 'offset', options: { offset: [0, -14] } }] },
     },
   };
+
+  if (value === null || value === undefined) {
+    return cellContent;
+  }
 
   return value.constructor === types.GraphPath ? (
     <NoMaxWidthTooltip {...tooltipProps}>
