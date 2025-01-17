@@ -34,7 +34,7 @@ const defaultGetOptionDisabled = () => false;
 const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, property) => {
   switch (modelString) {
     case 'rdf':
-      if (textIndex !== null) {
+      if (textIndex) {
         return (
           'SELECT ?node ?label\n' +
           `WHERE { ?node mdbfn:textSearch ("${textIndex}" "${escapeQuotes(input)}" "prefix" ?label) . }\n` +
@@ -42,12 +42,10 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
         );
       } else if (searchBy === 'iri') {
         return (
-          'SELECT ?node ?label\n' +
+          'SELECT ?node\n' +
           'WHERE {\n' +
-          `  <${input}> ?p ?o .\n` +
-          '  ?node ?p ?o .\n' +
-          `  FILTER(?node = <${input}>)\n` +
-          `  BIND(<${input}> AS ?label)\n` +
+            `BIND(<${input}> AS ?node)\n` +
+            '?node ?p ?o .\n' +
           '}\n' +
           'LIMIT 1'
         );
@@ -250,7 +248,6 @@ const NodeSearchBar = React.memo(
             regexSearch,
             propertySearchName
           );
-          console.log(query);
           const session = driverContext.driver.session();
           try {
             const result = await session.run(query);
@@ -258,7 +255,11 @@ const NodeSearchBar = React.memo(
             const newOptions = records.map((record) => {
               const node = record.get('node');
               const graphNode = graphObjectToReactForceGraphNode(node);
-              const label = record.get('label').toString();
+              const label = record.has('label') ? (
+                record.get('label').toString()
+              ) : (
+                node.toString()
+              );
               const id = node.id ? node.id : node.toString();
               const type = graphObjectToTypeString(node);
               return {
