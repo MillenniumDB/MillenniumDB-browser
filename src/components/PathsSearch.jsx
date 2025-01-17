@@ -258,9 +258,12 @@ const PathsSearch = React.memo(
             }
             const queueObject = queue.shift();
             const connections = await getConnections(session, queueObject.node);
-            connections.forEach(({ visitedNode, edge, isIncoming }) => {
-              if (revisitedLastNode(queueObject, visitedNode)) {
+            for (const { visitedNode, edge, isIncoming } of connections) {
+              if (stopSearchRef.current) {
                 return;
+              }
+              if (revisitedLastNode(queueObject, visitedNode)) {
+                continue;
               }
               const newQueueObject = {
                 node: visitedNode,
@@ -272,13 +275,13 @@ const PathsSearch = React.memo(
               };
               checkAndMergePaths(newQueueObject, visited);
               if (reachedInputNode(visitedNode)) {
-                return;
+                continue;
               }
               addToVisited(visited, newQueueObject);
               if (queueObject.depth < Math.floor(pathMaxDepth / 2)) {
                 queue.push(newQueueObject);
               }
-            });
+            }
           }
         } catch (error) {
           enqueueSnackbar({
