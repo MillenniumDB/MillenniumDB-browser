@@ -44,10 +44,16 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
         return (
           'SELECT ?node\n' +
           'WHERE {\n' +
-            `BIND(<${input}> AS ?node)\n` +
-            '?node ?p ?o .\n' +
+          `  VALUES ?node { <${input}> }\n` +
+          '  {\n' +
+          '    ?node ?p ?o .\n' +
+          '  } UNION {\n' +
+          '    ?s ?node ?o .\n' +
+          '  } UNION {\n' +
+          '    ?s ?p ?node .\n' +
+          '  }\n' +
           '}\n' +
-          'LIMIT 1'
+          'LIMIT 1\n'
         );
       } else if (searchBy === 'literal') {
         const regexPattern = regexSearch ? `${input}` : `^${escapeRegexSPARQL(input)}`;
