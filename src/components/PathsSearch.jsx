@@ -44,52 +44,13 @@ const PathsSearch = React.memo(
 
     const scrollableAreaRef = useRef(null);
     const stopSearchRef = useRef(stopSearch);
+    const pathsCountRef = useRef(0);
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
 
     useEffect(() => {
       stopSearchRef.current = stopSearch;
     }, [stopSearch]);
-
-    const addInputNodes = useCallback(() => {
-      const graphNodes = inputNodes.map((node) => graphObjectToReactForceGraphNode(node));
-      addNodes(graphNodes);
-      setHighlightedNodes(new Set(inputNodes.map((node) => node.id)));
-    }, [inputNodes, addNodes, setHighlightedNodes]);
-
-    const addPath = useCallback((path) => {
-      path.forEach((connection) => {
-        const edgeNode = graphObjectToReactForceGraphNode(connection.edge);
-        edgeNode.isEdge = true;
-        edgeNode.source = graphObjectToReactForceGraphNode(connection.from);
-        edgeNode.label = connection.type.toString();
-        if (modelString === 'rdf') {
-          edgeNode.target = connection.to.constructor === types.IRI ? (
-            graphObjectToReactForceGraphNode(connection.to)
-          ) : graphObjectToReactForceGraphNode(connection.to.value);
-          edgeNode.id = `${edgeNode.source.id}-${edgeNode.id}->${edgeNode.target.id}`;
-        }
-        else {
-          edgeNode.target = graphObjectToReactForceGraphNode(connection.to);
-        }
-        addConnection(edgeNode);
-      });
-    }, [addConnection, modelString]);
-
-    const checkPathLoop = useCallback((path) => {
-      const nodeIds = new Set();
-      for (const connection of path) {
-        if (nodeIds.has(connection.from.id) && nodeIds.has(connection.to.id)) {
-          return true;
-        }
-        if (connection.from.id === connection.to.id) {
-          return true;
-        }
-        nodeIds.add(connection.from.id);
-        nodeIds.add(connection.to.id);
-      }
-      return false;
-    }, []);
 
     const getConnections = useCallback(
       async (session, node) => {
@@ -117,7 +78,7 @@ const PathsSearch = React.memo(
           return {
             visitedNode,
             edge,
-            incoming: false,
+            isIncoming: false,
           };
         });
 
@@ -144,7 +105,7 @@ const PathsSearch = React.memo(
           return {
             visitedNode,
             edge,
-            incoming: true,
+            isIncoming: true,
           };
         });
 
@@ -153,13 +114,58 @@ const PathsSearch = React.memo(
       [modelString]
     );
 
+    const addInputNodes = useCallback(() => {
+      const graphNodes = inputNodes.map((node) => graphObjectToReactForceGraphNode(node));
+      addNodes(graphNodes);
+      setHighlightedNodes(new Set(inputNodes.map((node) => node.id)));
+    }, [inputNodes, addNodes, setHighlightedNodes]);
+
+    const addPath = useCallback((path) => {
+      if (pathsCountRef.current > 50) {
+        setStopSearch(true);
+        return;
+      }
+      path.forEach((connection) => {
+        const edgeNode = graphObjectToReactForceGraphNode(connection.edge);
+        edgeNode.isEdge = true;
+        edgeNode.source = graphObjectToReactForceGraphNode(connection.from);
+        edgeNode.label = connection.type.toString();
+        if (modelString === 'rdf') {
+          edgeNode.target = connection.to.constructor === types.IRI ? (
+            graphObjectToReactForceGraphNode(connection.to)
+          ) : graphObjectToReactForceGraphNode(connection.to.value);
+          edgeNode.id = `${edgeNode.source.id}-${edgeNode.id}->${edgeNode.target.id}`;
+        }
+        else {
+          edgeNode.target = graphObjectToReactForceGraphNode(connection.to);
+        }
+        addConnection(edgeNode);
+      });
+      pathsCountRef.current += 1;
+    }, [addConnection, modelString]);
+
+    const checkPathLoop = useCallback((path) => {
+      const nodeIds = new Set();
+      for (const connection of path) {
+        if (nodeIds.has(connection.from.id) && nodeIds.has(connection.to.id)) {
+          return true;
+        }
+        if (connection.from.id === connection.to.id) {
+          return true;
+        }
+        nodeIds.add(connection.from.id);
+        nodeIds.add(connection.to.id);
+      }
+      return false;
+    }, []);
+
     const mergePaths = useCallback((queueObject, visitedObject) => {
       const path = [];
       [queueObject, visitedObject].forEach((object) => {
         let currentObject = object;
         while (currentObject.previousObject) {
           let connection;
-          if (currentObject.incoming) {
+          if (currentObject.isIncoming) {
             connection = {
               from: currentObject.previousObject.node,
               to: currentObject.node,
@@ -199,14 +205,34 @@ const PathsSearch = React.memo(
       });
     }, [inputNodes, mergePaths, pathMaxDepth]);
 
+    const revisitedLastNode = useCallback((queueObject, visitedNode) => {
+      if (queueObject.previousObject) {
+        return queueObject.previousObject.node.id === visitedNode.id;
+      }
+      return false;
+    }, []);
+
+    const reachedInputNode = useCallback((node) => {
+      return inputNodes.some((inputNode) => node.id === inputNode.id);
+    }, [inputNodes]);
+
+    const addToVisited = useCallback((visited, queueObject) => {
+      const key = `${queueObject.node.id},${queueObject.startingNode.id}`;
+      if (!visited[key]) {
+        visited[key] = [queueObject];
+      } else {
+        visited[key].push(queueObject);
+      }
+    }, []);
+
     const searchPaths = useCallback(
       async () => {
         clearAll();
         addInputNodes();
+        pathsCountRef.current = 0;
 
         const session = driverContext.driver.session();
         try {
-          console.time('Execution Time');
           setIsLoading(true);
 
           const visited = {};
@@ -218,7 +244,7 @@ const PathsSearch = React.memo(
               startingNode: node,
               previousObject: null,
               edge: null,
-              incoming: null,
+              isIncoming: null,
               depth: 0,
             }
             const key = `${node.id},${node.id}`;
@@ -232,25 +258,23 @@ const PathsSearch = React.memo(
             }
             const queueObject = queue.shift();
             const connections = await getConnections(session, queueObject.node);
-            connections.forEach(({ visitedNode, edge, incoming }) => {
+            connections.forEach(({ visitedNode, edge, isIncoming }) => {
+              if (revisitedLastNode(queueObject, visitedNode)) {
+                return;
+              }
               const newQueueObject = {
                 node: visitedNode,
                 startingNode: queueObject.startingNode,
                 previousObject: queueObject,
                 edge,
-                incoming,
+                isIncoming,
                 depth: queueObject.depth + 1,
               };
               checkAndMergePaths(newQueueObject, visited);
-              if (inputNodes.some((node) => node.id === visitedNode.id)) {
+              if (reachedInputNode(visitedNode)) {
                 return;
               }
-              const key = `${visitedNode.id},${queueObject.startingNode.id}`;
-              if (!visited[key]) {
-                visited[key] = [newQueueObject];
-              } else {
-                visited[key].push(newQueueObject);
-              }
+              addToVisited(visited, newQueueObject);
               if (queueObject.depth < Math.floor(pathMaxDepth / 2)) {
                 queue.push(newQueueObject);
               }
@@ -264,7 +288,6 @@ const PathsSearch = React.memo(
         } finally {
           session.close();
           setIsLoading(false);
-          console.timeEnd('Execution Time');
           setStopSearch(false);
         }
       },
@@ -277,6 +300,9 @@ const PathsSearch = React.memo(
         stopSearchRef,
         getConnections,
         checkAndMergePaths,
+        reachedInputNode,
+        revisitedLastNode,
+        addToVisited,
       ]
     );
 
