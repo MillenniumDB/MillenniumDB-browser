@@ -272,9 +272,15 @@ const RDFGraphObjectDetails = React.memo(
                     outgoing.slice(0, 50).map((connection) =>
                       addOutgoing(connection.object, connection.predicate)
                     );
+                    if (outgoing.length > 50) {
+                      enqueueSnackbar({
+                        message: 'Only showing first 50 outgoing connections',
+                        variant: 'info',
+                      });
+                    }
                   }}
                 >
-                  {outgoing.length <= 50 ? "Show All" : "Show First 50"}
+                  Show All
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
@@ -322,9 +328,15 @@ const RDFGraphObjectDetails = React.memo(
                     incoming.slice(0, 50).map((connection) =>
                       addIncoming(connection.subject, connection.predicate)
                     );
+                    if (incoming.length > 50) {
+                      enqueueSnackbar({
+                        message: 'Only showing first 50 incoming connections',
+                        variant: 'info',
+                      });
+                    }
                   }}
                 >
-                  {incoming.length <= 50 ? "Show All" : "Show First 50"}
+                  Show All
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
@@ -659,9 +671,15 @@ const QuadGraphObjectDetails = React.memo(
                     outgoing.slice(0, 50).map((connection) =>
                       addOutgoing(connection.to, connection.type, connection.edge)
                     );
+                    if (outgoing.length > 50) {
+                      enqueueSnackbar({
+                        message: 'Only showing first 50 outgoing connections',
+                        variant: 'info',
+                      });
+                    }
                   }}
                 >
-                  {outgoing.length <= 50 ? "Show All" : "Show First 50"}
+                  Show All
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
@@ -711,9 +729,15 @@ const QuadGraphObjectDetails = React.memo(
                     incoming.slice(0, 50).map((connection) =>
                       addIncoming(connection.from, connection.type, connection.edge)
                     );
+                    if (incoming.length > 50) {
+                      enqueueSnackbar({
+                        message: 'Only showing first 50 incoming connections',
+                        variant: 'info',
+                      });
+                    }
                   }}
                 >
-                  {incoming.length <= 50 ? "Show All" : "Show First 50"}
+                  Show All
                 </Button>
                 <Box sx={{ height: 400 }}>
                   {loading ? (
