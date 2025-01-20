@@ -39,16 +39,27 @@ export default function TextIndexSelect() {
     setAnchorElMenu(null);
   };
 
-  const getTextIndexNames = useCallback(async () => {
-    const catalog = await driverContext.getCatalog();
-    const textIndexNames = catalog.getMetadata().textIndexNames;
-    setTextIndexes(textIndexNames);
-    if (textIndexNames.length > 0) {
-      setSelectedTextIndex(textIndexNames[0]);
-    } else {
-      setSelectedSearchBy("literal");
-    }
-  }, [driverContext, setSelectedTextIndex, setSelectedSearchBy]);
+  const getTextIndexNames = useCallback(
+    async () => {
+      const catalog = await driverContext.getCatalog();
+      const textIndexNames = catalog.getMetadata().textIndexNames;
+      setTextIndexes(textIndexNames);
+      if (selectedTextIndex === null && selectedSearchBy === null) {
+        if (textIndexNames.length > 0) {
+          setSelectedTextIndex(textIndexNames[0]);
+        } else {
+          setSelectedSearchBy("literal");
+        }
+      }
+    },
+    [
+      driverContext,
+      setSelectedTextIndex,
+      setSelectedSearchBy,
+      selectedTextIndex,
+      selectedSearchBy,
+    ]
+  );
 
   useEffect(() => {
     if (loading) {

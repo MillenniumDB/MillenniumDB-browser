@@ -13,7 +13,7 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import React, { useCallback, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
@@ -21,13 +21,28 @@ import { PathsSearchBar } from './NodeSearchBar';
 import { graphObjectToReactForceGraphNode, graphObjectToString } from '../utils/GraphObjectUtils';
 import { types } from 'millenniumdb-driver';
 
-const sliderMarks = [
+const MAX_PATH_COUNT = 50;
+
+function calculateNodeDegreeValue(value) {
+  return 10 ** value;
+}
+
+const pathMaxDepthMarks = [
   { value: 0, label: '1' },
   { value: 1, label: '2' },
   { value: 2, label: '3' },
   { value: 3, label: '4' },
   { value: 4, label: '5' },
   { value: 5, label: '6' },
+];
+
+const nodeMaxDegreeMarks = [
+  { value: 1, label: <Typography variant="body2">10<sup>1</sup></Typography> },
+  { value: 2, label: <Typography variant="body2">10<sup>2</sup></Typography> },
+  { value: 3, label: <Typography variant="body2">10<sup>3</sup></Typography> },
+  { value: 4, label: <Typography variant="body2">10<sup>4</sup></Typography> },
+  { value: 5, label: <Typography variant="body2">10<sup>5</sup></Typography> },
+  { value: 6, label: <Typography variant="body2">10<sup>6</sup></Typography> },
 ];
 
 const PathsSearch = React.memo(
@@ -37,81 +52,76 @@ const PathsSearch = React.memo(
     setHighlightedNodes,
   }) => {
     const [pathMaxDepth, setPathMaxDepth] = useState(0);
+    const [nodeMaxDegree, setNodeMaxDegree] = useState(6);
     const [inputNodes, setInputNodes] = useState([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
-    const [stopSearch, setStopSearch] = useState(false);
 
     const scrollableAreaRef = useRef(null);
-    const stopSearchRef = useRef(stopSearch);
+    const stopSearchRef = useRef(false);
+    const reachedMaxPathsRef = useRef(false);
     const pathsCountRef = useRef(0);
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
 
-    useEffect(() => {
-      stopSearchRef.current = stopSearch;
-    }, [stopSearch]);
-
     const getConnections = useCallback(
       async (session, node) => {
-        let incomingQuery;
-        if (modelString === 'rdf') {
-          incomingQuery = node.constructor === types.IRI ? (
-            `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . }`
-          ) : (
-            `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . }`
-          );
-        } else {
-          incomingQuery = `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN *`;
-        }
-        const incomingResult = session.run(incomingQuery);
-        const incomingRecords = await incomingResult.records();
-        const incomingConnections = incomingRecords.map((record) => {
-          const edge = record.get('edge');
-          edge.type = modelString === 'rdf' ? edge : record.get('type');
-          let visitedNode = record.get('from');
-          if (typeof visitedNode === 'object') {
-            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
+        const incomingQuery =
+          modelString === "rdf"
+            ? node.constructor === types.IRI
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . }`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . }`
+            : `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN *`;
+        const outgoingQuery =
+          modelString === "rdf"
+            ? `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . }`
+            : `MATCH (${node.id})-[?edge :?type]->(?to) RETURN *`;
+
+        const processRecord = (record, direction) => {
+          const edge = record.get("edge");
+          edge.type = modelString === "rdf" ? edge : record.get("type");
+          let visitedNode = record.get(direction);
+          if (typeof visitedNode === "object") {
+            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString();
           } else {
-            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode }
+            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode };
           }
           return {
             visitedNode,
             edge,
-            isIncoming: false,
+            isIncoming: direction === "to",
           };
-        });
+        };
 
-        if (modelString === 'rdf' && node.constructor !== types.IRI) {
+        const runQuery = async (query, direction) => {
+          const connections = [];
+          const result = session.run(query);
+          return new Promise((resolve, reject) => {
+            result.subscribe({
+              onRecord: (record) => {
+                if (
+                  stopSearchRef.current ||
+                  connections.length >= calculateNodeDegreeValue(nodeMaxDegree)
+                ) {
+                  resolve(connections);
+                  return;
+                }
+                connections.push(processRecord(record, direction));
+              },
+              onSuccess: () => resolve(connections),
+              onError: (error) => reject(error),
+            });
+          });
+        };
+
+        const incomingConnections = await runQuery(incomingQuery, "from");
+        if (modelString === "rdf" && node.constructor !== types.IRI) {
           return incomingConnections;
         }
-
-        const outgoingQuery = modelString === 'rdf' ? (
-          `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . }`
-        ) : (
-          `MATCH (${node.id})-[?edge :?type]->(?to) RETURN *`
-        );
-        const outgoingResult = session.run(outgoingQuery);
-        const outgoingRecords = await outgoingResult.records();
-        const outgoingConnections = outgoingRecords.map((record) => {
-          const edge = record.get('edge');
-          edge.type = modelString === 'rdf' ? edge : record.get('type');
-          let visitedNode = record.get('to');
-          if (typeof visitedNode === 'object') {
-            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
-          } else {
-            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode }
-          }
-          return {
-            visitedNode,
-            edge,
-            isIncoming: true,
-          };
-        });
-
+        const outgoingConnections = await runQuery(outgoingQuery, "to");
         return [...incomingConnections, ...outgoingConnections];
       },
-      [modelString]
+      [modelString, stopSearchRef, nodeMaxDegree]
     );
 
     const addInputNodes = useCallback(() => {
@@ -121,8 +131,9 @@ const PathsSearch = React.memo(
     }, [inputNodes, addNodes, setHighlightedNodes]);
 
     const addPath = useCallback((path) => {
-      if (pathsCountRef.current > 50) {
-        setStopSearch(true);
+      if (pathsCountRef.current > MAX_PATH_COUNT) {
+        stopSearchRef.current = true;
+        reachedMaxPathsRef.current = true;
         return;
       }
       path.forEach((connection) => {
@@ -197,7 +208,10 @@ const PathsSearch = React.memo(
         const key = `${queueObject.node.id},${endingNode.id}`;
         if (visited[key]) {
           visited[key].forEach((visitedObject) => {
-            if (queueObject.depth + visitedObject.depth <= pathMaxDepth + 1) {
+            if (
+              queueObject.depth + visitedObject.depth <= pathMaxDepth + 1 &&
+              !stopSearchRef.current
+            ) {
               mergePaths(queueObject, visitedObject);
             }
           });
@@ -252,10 +266,7 @@ const PathsSearch = React.memo(
             queue.push(queueObject);
           });
 
-          while (queue.length > 0) {
-            if (stopSearchRef.current) {
-              return;
-            }
+          while (queue.length > 0 && !stopSearchRef.current) {
             const queueObject = queue.shift();
             const connections = await getConnections(session, queueObject.node);
             for (const { visitedNode, edge, isIncoming } of connections) {
@@ -285,13 +296,25 @@ const PathsSearch = React.memo(
           }
         } catch (error) {
           enqueueSnackbar({
-            message: error,
+            message: error.toString(),
             variant: 'error',
           });
         } finally {
           session.close();
           setIsLoading(false);
-          setStopSearch(false);
+          if (reachedMaxPathsRef.current) {
+            enqueueSnackbar({
+              message: `Reached maximum number of paths (${MAX_PATH_COUNT}). Search stopped.`,
+              variant: 'info',
+            });
+            reachedMaxPathsRef.current = false;
+          } else if (stopSearchRef.current) {
+            enqueueSnackbar({
+              message: 'Search stopped.',
+              variant: 'info',
+            });
+          }
+          stopSearchRef.current = false;
         }
       },
       [
@@ -376,9 +399,9 @@ const PathsSearch = React.memo(
                   sx={{ ml: 1 }}
                   variant="outlined"
                   size="small"
-                  onClick={() => setStopSearch(true)}
+                  onClick={() => stopSearchRef.current = true}
                   color="primary"
-                  disabled={stopSearch}
+                  disabled={stopSearchRef.current}
                 >
                   Stop search
                 </Button>
@@ -401,14 +424,30 @@ const PathsSearch = React.memo(
               </Typography>
               <Box sx={{ p: 2, pb: 0 }}>
                 <Slider
-                  defaultValue={0}
-                  step={1}
-                  marks={sliderMarks}
+                  value={pathMaxDepth}
+                  marks={pathMaxDepthMarks}
                   min={0}
                   max={5}
-                  size='small'
                   onChange={(_event, value) => setPathMaxDepth(value)}
-                  value={pathMaxDepth}
+                  size='small'
+                />
+              </Box>
+            </Box>
+            <Divider />
+
+            <Box sx={{ p: 2 }}>
+              <Typography variant="body1" component="p">
+                Maximum node degree
+              </Typography>
+              <Box sx={{ p: 2, pb: 0 }}>
+                <Slider
+                  value={nodeMaxDegree}
+                  marks={nodeMaxDegreeMarks}
+                  min={1}
+                  max={6}
+                  scale={calculateNodeDegreeValue}
+                  onChange={(_event, value) => setNodeMaxDegree(value)}
+                  size='small'
                 />
               </Box>
             </Box>
