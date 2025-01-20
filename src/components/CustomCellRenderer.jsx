@@ -77,11 +77,14 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
   const [cellContent, setCellContent] = useState(null);
 
   useEffect(() => {
+    if (value === null) {
+      return setCellContent('null');
+    }
     switch (typeof value) {
       case 'number':
       case 'bigint':
       case 'boolean': {
-        return setCellContent(<>{value.toString()}</>);
+        return setCellContent(value.toString());
       }
       case 'string': {
         return setCellContent(`"${value}"`);
@@ -94,7 +97,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
           case types.SimpleDate:
           case types.StringLang:
           case types.Time: {
-            return setCellContent(<>{value.toString()}</>);
+            return setCellContent(value.toString());
           }
           case types.GraphNode: {
             const nodeId = value.toString();
@@ -195,12 +198,12 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
             );
           }
           default: {
-            return setCellContent(<>{JSONStringifyObject(value)}</>);
+            return setCellContent(JSONStringifyObject(value));
           }
         }
       }
       default: {
-        return setCellContent(<>{'unknown'}</>);
+        return setCellContent('unknown');
       }
     }
   }, [value, onObjectClick, onIriClick, openInNewTab]);
@@ -220,11 +223,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
     },
   };
 
-  if (value === null || value === undefined) {
-    return cellContent;
-  }
-
-  return value.constructor === types.GraphPath ? (
+  return value?.constructor === types.GraphPath ? (
     <NoMaxWidthTooltip {...tooltipProps}>
       <Box
         ref={wrapper}
