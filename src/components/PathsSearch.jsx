@@ -49,7 +49,7 @@ const PathsSearch = React.memo(
   ({ addNodes,
     addConnection,
     clearAll,
-    setHighlightedNodes,
+    setSelectedNodesIds,
   }) => {
     const [pathMaxDepth, setPathMaxDepth] = useState(0);
     const [nodeMaxDegree, setNodeMaxDegree] = useState(6);
@@ -127,8 +127,8 @@ const PathsSearch = React.memo(
     const addInputNodes = useCallback(() => {
       const graphNodes = inputNodes.map((node) => graphObjectToReactForceGraphNode(node));
       addNodes(graphNodes);
-      setHighlightedNodes(new Set(inputNodes.map((node) => node.id)));
-    }, [inputNodes, addNodes, setHighlightedNodes]);
+      setSelectedNodesIds(new Set(inputNodes.map((node) => node.id)));
+    }, [inputNodes, addNodes, setSelectedNodesIds]);
 
     const addPath = useCallback((path) => {
       if (pathsCountRef.current > MAX_PATH_COUNT) {

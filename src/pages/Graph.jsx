@@ -37,6 +37,8 @@ export default function Graph() {
     setGraphForceLinkStrength,
     showGrid,
     setShowGrid,
+    showNodeLabels,
+    setShowNodeLabels,
     clearAll,
   } = useGraph();
 
@@ -82,6 +84,8 @@ export default function Graph() {
           setGraphForceLinkStrength={setGraphForceLinkStrength}
           showGrid={showGrid}
           setShowGrid={setShowGrid}
+          showNodeLabels={showNodeLabels}
+          setShowNodeLabels={setShowNodeLabels}
           clearAll={clearAll}
           moveOnBreakpoint={true}
         />

@@ -73,6 +73,8 @@ const GraphOptions = React.memo(
     setGraphForceLinkStrength,
     showGrid,
     setShowGrid,
+    showNodeLabels,
+    setShowNodeLabels,
     clearAll,
     moveOnBreakpoint = false,
   }) => {
@@ -194,6 +196,21 @@ const GraphOptions = React.memo(
                   <Switch
                     checked={showGrid}
                     onChange={(e) => setShowGrid(e.target.checked)}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="body2">Node Labels</Typography>
+                  <Switch
+                    checked={showNodeLabels}
+                    onChange={(e) => setShowNodeLabels(e.target.checked)}
                   />
                 </Box>
               </AccordionSetting>

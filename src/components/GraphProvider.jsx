@@ -20,7 +20,7 @@ export function GraphProvider({ children }) {
   const graphRef = useRef(null);
 
   const [selectedNode, setSelectedNode] = useState(null);
-  const [highlightedNodes, setHighlightedNodes] = useState(new Set());
+  const [selectedNodesIds, setSelectedNodesIds] = useState(new Set());
   const [opacityAtScale, setOpacityAtScale] = useState(0);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
@@ -38,6 +38,7 @@ export function GraphProvider({ children }) {
     FORCE_RANGES.chargeStrength.default
   );
   const [showGrid, setShowGrid] = useState(true);
+  const [showNodeLabels, setShowNodeLabels] = useState(false);
 
   // Cache this values as they are used multiple times
   const graphColorSettings = useMemo(() => {
@@ -211,7 +212,7 @@ export function GraphProvider({ children }) {
 
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
-      const isSelected = highlightedNodes.has(node.id);
+      const isSelected = selectedNodesIds.has(node.id);
 
       // Draw the shape of the node
       if (node.isEdge) {
@@ -259,58 +260,111 @@ export function GraphProvider({ children }) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      if (isSelected) {
-        ctx.fillStyle = node.isEdge
-          ? graphColorSettings.linkHighlightColor
-          : graphColorSettings.nodeHighlightColor;
-        fontSize = Math.max(
-          graphSizeSettings.fontSize,
-          graphSizeSettings.fontSize / globalScale
-        );
-      } else if (hoveredNodeId) {
-        ctx.fillStyle = graphColorSettings.textColor;
+      // if (isSelected) {
+      //   ctx.fillStyle = node.isEdge
+      //     ? graphColorSettings.linkHighlightColor
+      //     : graphColorSettings.nodeHighlightColor;
+      //   fontSize = Math.max(
+      //     graphSizeSettings.fontSize,
+      //     graphSizeSettings.fontSize / globalScale
+      //   );
+      // } else if (hoveredNodeId) {
+      //   ctx.fillStyle = graphColorSettings.textColor;
+      //   if (isHovered || isSelected) {
+      //     fontSize = Math.max(
+      //       graphSizeSettings.fontSize,
+      //       graphSizeSettings.fontSize / globalScale
+      //     );
+      //   } else if (highlightNodeIds.has(node.id)) {
+      //     // Prevent drawing text when opacity is zero
+      //     if (!opacityAtScale) {
+      //       ctx.restore();
+      //       return;
+      //     }
+
+      //     // Calculate color at scale in hex
+      //     const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
+      //       .toString(16)
+      //       .padStart(2, '0');
+      //     ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
+      //   } else {
+      //     if (!opacityAtScale) {
+      //       ctx.restore();
+      //       return;
+      //     }
+
+      //     ctx.fillStyle = graphColorSettings.textNonHoveredColor;
+      //   }
+      // } else {
+      //   // Prevent drawing text when opacity is zero
+      //   if (!opacityAtScale) {
+      //     ctx.restore();
+      //     return;
+      //   }
+
+      //   // Calculate color at scale in hex
+      //   const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
+      //     .toString(16)
+      //     .padStart(2, '0');
+      //   ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
+      // }
+
+      // Calculate color at scale in hex
+      const calculateOpacity = (color) => {
+        const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
+          .toString(16)
+          .padStart(2, '0');
+        return color + textOpacityAtScaleHex;
+      };
+
+      if (hoveredNodeId) {
         if (isHovered || isSelected) {
           fontSize = Math.max(
             graphSizeSettings.fontSize,
             graphSizeSettings.fontSize / globalScale
           );
-        } else if (highlightNodeIds.has(node.id)) {
+        } else {
           // Prevent drawing text when opacity is zero
           if (!opacityAtScale) {
             ctx.restore();
             return;
           }
-
-          // Calculate color at scale in hex
-          const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-            .toString(16)
-            .padStart(2, '0');
-          ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
+        }
+        if (isSelected && (isHovered || highlightNodeIds.has(node.id))) {
+          ctx.fillStyle = node.isEdge
+            ? graphColorSettings.linkHighlightColor
+            : graphColorSettings.nodeHighlightColor;
+        } else if (isHovered) {
+          ctx.fillStyle = graphColorSettings.textColor;
+        } else if (highlightNodeIds.has(node.id)) {
+          ctx.fillStyle = calculateOpacity(graphColorSettings.textColor);
         } else {
+          ctx.fillStyle = calculateOpacity(graphColorSettings.textNonHoveredColor);
+        }
+      } else {
+        if (isSelected) {
+          fontSize = Math.max(
+            graphSizeSettings.fontSize,
+            graphSizeSettings.fontSize / globalScale
+          );
+          ctx.fillStyle = node.isEdge
+            ? graphColorSettings.linkHighlightColor
+            : graphColorSettings.nodeHighlightColor;
+        } else {
+          ctx.fillStyle = calculateOpacity(graphColorSettings.textColor);
+          // Prevent drawing text when opacity is zero
           if (!opacityAtScale) {
             ctx.restore();
             return;
           }
-
-          ctx.fillStyle = graphColorSettings.textNonHoveredColor;
         }
-      } else {
-        // Prevent drawing text when opacity is zero
-        if (!opacityAtScale) {
-          ctx.restore();
-          return;
-        }
-
-        // Calculate color at scale in hex
-        const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-          .toString(16)
-          .padStart(2, '0');
-        ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
       }
 
       ctx.font = `${fontSize}px "Roboto"`;
       const yOffset = graphSizeSettings.nodeRadius + fontSize;
-      ctx.fillText(node.label, x, y + yOffset);
+      if (showNodeLabels || isHovered || isSelected) {
+        ctx.fillText(node.label, x, y + yOffset);
+      }
 
       ctx.restore();
     },
@@ -320,7 +374,8 @@ export function GraphProvider({ children }) {
       graphColorSettings,
       graphSizeSettings,
       opacityAtScale,
-      highlightedNodes,
+      selectedNodesIds,
+      showNodeLabels,
     ]
   );
 
@@ -389,9 +444,9 @@ export function GraphProvider({ children }) {
 
   useEffect(() => {
     if (selectedNode) {
-      setHighlightedNodes(new Set([selectedNode.id]));
+      setSelectedNodesIds(new Set([selectedNode.id]));
     } else {
-      setHighlightedNodes(new Set());
+      setSelectedNodesIds(new Set());
     }
   }, [selectedNode]);
 
@@ -584,8 +639,8 @@ export function GraphProvider({ children }) {
       handleOnBackgroundClick,
       selectedNode,
       setSelectedNode,
-      highlightedNodes,
-      setHighlightedNodes,
+      selectedNodesIds,
+      setSelectedNodesIds,
       addNodes,
       addConnection,
       removeNodeAndConnections,
@@ -599,6 +654,8 @@ export function GraphProvider({ children }) {
       setGraphForceLinkStrength,
       showGrid,
       setShowGrid,
+      showNodeLabels,
+      setShowNodeLabels,
       clearAll
     }}>
       {children}
