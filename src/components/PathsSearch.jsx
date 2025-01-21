@@ -69,13 +69,13 @@ const PathsSearch = React.memo(
         const incomingQuery =
           modelString === "rdf"
             ? node.constructor === types.IRI
-              ? `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . }`
-              : `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . }`
-            : `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN *`;
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . } LIMIT ${10 ** nodeMaxDegree}`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . } LIMIT ${10 ** nodeMaxDegree}`
+            : `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
         const outgoingQuery =
           modelString === "rdf"
-            ? `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . }`
-            : `MATCH (${node.id})-[?edge :?type]->(?to) RETURN *`;
+            ? `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . } LIMIT ${10 ** nodeMaxDegree}`
+            : `MATCH (${node.id})-[?edge :?type]->(?to) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
 
         const processRecord = (record, direction) => {
           const edge = record.get("edge");
