@@ -23,10 +23,6 @@ import { types } from 'millenniumdb-driver';
 
 const MAX_PATH_COUNT = 50;
 
-function calculateNodeDegreeValue(value) {
-  return 10 ** value;
-}
-
 const pathMaxDepthMarks = [
   { value: 0, label: '1' },
   { value: 1, label: '2' },
@@ -37,12 +33,11 @@ const pathMaxDepthMarks = [
 ];
 
 const nodeMaxDegreeMarks = [
-  { value: 1, label: <Typography variant="body2">10<sup>1</sup></Typography> },
-  { value: 2, label: <Typography variant="body2">10<sup>2</sup></Typography> },
-  { value: 3, label: <Typography variant="body2">10<sup>3</sup></Typography> },
-  { value: 4, label: <Typography variant="body2">10<sup>4</sup></Typography> },
-  { value: 5, label: <Typography variant="body2">10<sup>5</sup></Typography> },
-  { value: 6, label: <Typography variant="body2">10<sup>6</sup></Typography> },
+  { value: 10, label: '10' },
+  { value: 20, label: '20' },
+  { value: 50, label: '50' },
+  { value: 100, label: '100' },
+  { value: 1000, label: '1000' },
 ];
 
 const PathsSearch = React.memo(
@@ -52,7 +47,7 @@ const PathsSearch = React.memo(
     setSelectedNodesIds,
   }) => {
     const [pathMaxDepth, setPathMaxDepth] = useState(0);
-    const [nodeMaxDegree, setNodeMaxDegree] = useState(6);
+    const [nodeMaxDegree, setNodeMaxDegree] = useState(10);
     const [inputNodes, setInputNodes] = useState([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
@@ -71,13 +66,13 @@ const PathsSearch = React.memo(
         const incomingQuery =
           modelString === "rdf"
             ? node.constructor === types.IRI
-              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${10 ** nodeMaxDegree}`
-              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${10 ** nodeMaxDegree}`
-            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${nodeMaxDegree}`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${nodeMaxDegree}`
+            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${nodeMaxDegree}`;
         const outgoingQuery =
           modelString === "rdf"
-            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${10 ** nodeMaxDegree}`
-            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
+            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${nodeMaxDegree}`
+            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${nodeMaxDegree}`;
 
         const processRecord = (record, direction) => {
           const edge = record.get("edge");
@@ -442,9 +437,8 @@ const PathsSearch = React.memo(
                 <Slider
                   value={nodeMaxDegree}
                   marks={nodeMaxDegreeMarks}
-                  min={1}
-                  max={6}
-                  scale={calculateNodeDegreeValue}
+                  min={10}
+                  max={1000}
                   onChange={(_event, value) => setNodeMaxDegree(value)}
                   size='small'
                 />
