@@ -256,7 +256,7 @@ const NodeSearchBar = React.memo(
           );
           const session = driverContext.driver.session();
           try {
-            const result = await session.run(query);
+            const result = session.run(query);
             const records = await result.records();
             const newOptions = records.map((record) => {
               const node = record.get('node');

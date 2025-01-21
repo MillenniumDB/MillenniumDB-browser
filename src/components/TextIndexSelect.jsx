@@ -39,14 +39,18 @@ export default function TextIndexSelect() {
     setAnchorElMenu(null);
   };
 
+  // TODO: Add try catch block
   const getTextIndexNames = useCallback(
     async () => {
-      const catalog = await driverContext.getCatalog();
-      const textIndexNames = catalog.getMetadata().textIndexNames;
-      setTextIndexes(textIndexNames);
+      const session = driverContext.driver.session();
+      const query = "SHOW TEXT INDEX";
+      const result = session.run(query);
+      const records = await result.records();
+      const textIndexObjects = records.map((record) => record.toObject());
+      setTextIndexes(textIndexObjects);
       if (selectedTextIndex === null && selectedSearchBy === null) {
-        if (textIndexNames.length > 0) {
-          setSelectedTextIndex(textIndexNames[0]);
+        if (textIndexObjects.length > 0) {
+          setSelectedTextIndex(textIndexObjects[0].name);
         } else {
           setSelectedSearchBy("literal");
         }
@@ -112,13 +116,18 @@ export default function TextIndexSelect() {
                   <Typography sx={{ mt: 1, fontWeight: 'bold' }}>
                     Search by Text Index
                   </Typography>
-                  {textIndexes.map((index) => (
+                  {textIndexes.map((index, id) => (
                     <FormControlLabel
-                      key={index}
-                      value={index}
+                      key={id}
+                      value={index.name}
                       control={<Radio size='small'/>}
-                      label={<Typography variant="body2">{index}</Typography>}
-                      checked={selectedTextIndex === index}
+                      label={
+                        <>
+                          <Typography variant="body2">{index.name}</Typography>
+                          <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>{index.predicate.toString()}</Typography>
+                        </>
+                      }
+                      checked={selectedTextIndex === index.name}
                       onChange={(e) => {
                         setSelectedTextIndex(e.target.value);
                         setSelectedSearchBy(null);
