@@ -260,55 +260,6 @@ export function GraphProvider({ children }) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // if (isSelected) {
-      //   ctx.fillStyle = node.isEdge
-      //     ? graphColorSettings.linkHighlightColor
-      //     : graphColorSettings.nodeHighlightColor;
-      //   fontSize = Math.max(
-      //     graphSizeSettings.fontSize,
-      //     graphSizeSettings.fontSize / globalScale
-      //   );
-      // } else if (hoveredNodeId) {
-      //   ctx.fillStyle = graphColorSettings.textColor;
-      //   if (isHovered || isSelected) {
-      //     fontSize = Math.max(
-      //       graphSizeSettings.fontSize,
-      //       graphSizeSettings.fontSize / globalScale
-      //     );
-      //   } else if (highlightNodeIds.has(node.id)) {
-      //     // Prevent drawing text when opacity is zero
-      //     if (!opacityAtScale) {
-      //       ctx.restore();
-      //       return;
-      //     }
-
-      //     // Calculate color at scale in hex
-      //     const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-      //       .toString(16)
-      //       .padStart(2, '0');
-      //     ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
-      //   } else {
-      //     if (!opacityAtScale) {
-      //       ctx.restore();
-      //       return;
-      //     }
-
-      //     ctx.fillStyle = graphColorSettings.textNonHoveredColor;
-      //   }
-      // } else {
-      //   // Prevent drawing text when opacity is zero
-      //   if (!opacityAtScale) {
-      //     ctx.restore();
-      //     return;
-      //   }
-
-      //   // Calculate color at scale in hex
-      //   const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-      //     .toString(16)
-      //     .padStart(2, '0');
-      //   ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
-      // }
-
       // Calculate color at scale in hex
       const calculateOpacity = (color) => {
         const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
@@ -362,7 +313,7 @@ export function GraphProvider({ children }) {
 
       ctx.font = `${fontSize}px "Roboto"`;
       const yOffset = graphSizeSettings.nodeRadius + fontSize;
-      if (showNodeLabels || isHovered || isSelected) {
+      if (showNodeLabels || isHovered || isSelected || highlightNodeIds.has(node.id)) {
         ctx.fillText(node.label, x, y + yOffset);
       }
 
