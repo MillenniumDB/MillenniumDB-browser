@@ -14,30 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
-
-export const FORCE_RANGES = {
-  linkDistance: {
-    min: 10.0,
-    step: 1.0,
-    max: 250.0,
-    default: 60.0,
-  },
-  linkStrength: {
-    min: 0.0,
-    max: 1.0,
-    step: 0.01,
-    default: 0.5,
-  },
-  chargeStrength: {
-    min: 0.0,
-    max: 1000.0,
-    step: 50.0,
-    default: 300.0,
-  },
-  center: {
-    default: 0.01,
-  },
-};
+import { useUserContext } from '../context/UserContext';
 
 const AccordionSetting = ({ title, children, defaultExpanded = false }) => (
   <Accordion
@@ -63,8 +40,9 @@ const AccordionSetting = ({ title, children, defaultExpanded = false }) => (
   </Accordion>
 );
 
-const GraphOptions = React.memo(
-  ({
+const GraphOptions = React.memo(({clearAll, moveOnBreakpoint = false}) => {
+  const {
+    FORCE_RANGES,
     graphForceLinkDistance,
     setGraphForceLinkDistance,
     graphForceChargeStrength,
@@ -74,160 +52,158 @@ const GraphOptions = React.memo(
     showGrid,
     setShowGrid,
     showNodeLabels,
-    setShowNodeLabels,
-    clearAll,
-    moveOnBreakpoint = false,
-  }) => {
-    const [showSettings, setShowSettings] = useState(false);
+    setShowNodeLabels
+  } = useUserContext();
 
-    return (
-      <>
-        <Box
-          sx={(theme) => ({
-            position: 'absolute',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1,
-            zIndex: theme.zIndex.fab + 1,
-            top: 16,
-            right: 16,
-            ...(moveOnBreakpoint && {
+  const [showSettings, setShowSettings] = useState(false);
+
+  return (
+    <>
+      <Box
+        sx={(theme) => ({
+          position: 'absolute',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          zIndex: theme.zIndex.fab + 1,
+          top: 16,
+          right: 16,
+          ...(moveOnBreakpoint && {
+            [`${theme.breakpoints.down('md')}`]: {
+              top: 88,
+            },
+          }),
+        })}
+      >
+        {!showSettings && (
+          <Tooltip title="Graph Settings" placement="left">
+            <IconButton size="large" onClick={() => setShowSettings(true)}>
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+        {showSettings && (
+          <Box
+            sx={(theme) => ({
+              width: 200,
+              position: 'relative',
+              userSelect: 'none',
+              overflowX: 'hidden',
+              overflowY: 'scroll',
+              zIndex: theme.zIndex.fab + 2,
+              maxHeight: 'calc(100vh - 98px)',
               [`${theme.breakpoints.down('md')}`]: {
-                top: 88,
+                maxHeight: 'calc(100vh - 168px)',
               },
-            }),
-          })}
-        >
-          {!showSettings && (
-            <Tooltip title="Graph Settings" placement="left">
-              <IconButton size="large" onClick={() => setShowSettings(true)}>
-                <SettingsIcon />
-              </IconButton>
-            </Tooltip>
-          )}
-          {showSettings && (
+            })}
+          >
             <Box
-              sx={(theme) => ({
-                width: 200,
-                position: 'relative',
-                userSelect: 'none',
-                overflowX: 'hidden',
-                overflowY: 'scroll',
-                zIndex: theme.zIndex.fab + 2,
-                maxHeight: 'calc(100vh - 98px)',
-                [`${theme.breakpoints.down('md')}`]: {
-                  maxHeight: 'calc(100vh - 168px)',
-                },
-              })}
+              sx={{
+                position: 'absolute',
+                right: 7,
+                top: 7,
+                zIndex: (theme) => theme.zIndex.fab + 2,
+              }}
             >
+              <IconButton
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowSettings(false);
+                }}
+                size="small"
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <AccordionSetting title="Forces" defaultExpanded>
+              <Typography gutterBottom variant="body2">
+                Link Distance
+              </Typography>
+              <Box sx={{ px: 1 }}>
+                <Slider
+                  valueLabelDisplay="auto"
+                  size="small"
+                  min={FORCE_RANGES.linkDistance.min}
+                  max={FORCE_RANGES.linkDistance.max}
+                  step={FORCE_RANGES.linkDistance.step}
+                  value={graphForceLinkDistance}
+                  onChange={(_, value) => setGraphForceLinkDistance(value)}
+                />
+              </Box>
+              <Typography gutterBottom variant="body2">
+                Link Force
+              </Typography>
+              <Box sx={{ px: 1 }}>
+                <Slider
+                  valueLabelDisplay="auto"
+                  size="small"
+                  min={FORCE_RANGES.linkStrength.min}
+                  max={FORCE_RANGES.linkStrength.max}
+                  step={FORCE_RANGES.linkStrength.step}
+                  value={graphForceLinkStrength}
+                  onChange={(_, value) => setGraphForceLinkStrength(value)}
+                />
+              </Box>
+              <Typography gutterBottom variant="body2">
+                Repel Force
+              </Typography>
+              <Box sx={{ px: 1 }}>
+                <Slider
+                  valueLabelDisplay="auto"
+                  size="small"
+                  min={FORCE_RANGES.chargeStrength.min}
+                  max={FORCE_RANGES.chargeStrength.max}
+                  step={FORCE_RANGES.chargeStrength.step}
+                  value={graphForceChargeStrength}
+                  onChange={(_, value) => setGraphForceChargeStrength(value)}
+                />
+              </Box>
+            </AccordionSetting>
+            <AccordionSetting title="Style">
               <Box
                 sx={{
-                  position: 'absolute',
-                  right: 7,
-                  top: 7,
-                  zIndex: (theme) => theme.zIndex.fab + 2,
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
                 }}
               >
-                <IconButton
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowSettings(false);
-                  }}
-                  size="small"
-                >
-                  <CloseIcon />
-                </IconButton>
+                <Typography variant="body2">Grid</Typography>
+                <Switch
+                  checked={showGrid}
+                  onChange={(e) => setShowGrid(e.target.checked)}
+                />
               </Box>
-              <AccordionSetting title="Forces" defaultExpanded>
-                <Typography gutterBottom variant="body2">
-                  Link Distance
-                </Typography>
-                <Box sx={{ px: 1 }}>
-                  <Slider
-                    valueLabelDisplay="auto"
-                    size="small"
-                    min={FORCE_RANGES.linkDistance.min}
-                    max={FORCE_RANGES.linkDistance.max}
-                    step={FORCE_RANGES.linkDistance.step}
-                    value={graphForceLinkDistance}
-                    onChange={(_, value) => setGraphForceLinkDistance(value)}
-                  />
-                </Box>
-                <Typography gutterBottom variant="body2">
-                  Link Force
-                </Typography>
-                <Box sx={{ px: 1 }}>
-                  <Slider
-                    valueLabelDisplay="auto"
-                    size="small"
-                    min={FORCE_RANGES.linkStrength.min}
-                    max={FORCE_RANGES.linkStrength.max}
-                    step={FORCE_RANGES.linkStrength.step}
-                    value={graphForceLinkStrength}
-                    onChange={(_, value) => setGraphForceLinkStrength(value)}
-                  />
-                </Box>
-                <Typography gutterBottom variant="body2">
-                  Repel Force
-                </Typography>
-                <Box sx={{ px: 1 }}>
-                  <Slider
-                    valueLabelDisplay="auto"
-                    size="small"
-                    min={FORCE_RANGES.chargeStrength.min}
-                    max={FORCE_RANGES.chargeStrength.max}
-                    step={FORCE_RANGES.chargeStrength.step}
-                    value={graphForceChargeStrength}
-                    onChange={(_, value) => setGraphForceChargeStrength(value)}
-                  />
-                </Box>
-              </AccordionSetting>
-              <AccordionSetting title="Style">
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="body2">Grid</Typography>
-                  <Switch
-                    checked={showGrid}
-                    onChange={(e) => setShowGrid(e.target.checked)}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="body2">Node Labels</Typography>
-                  <Switch
-                    checked={showNodeLabels}
-                    onChange={(e) => setShowNodeLabels(e.target.checked)}
-                  />
-                </Box>
-              </AccordionSetting>
-            </Box>
-          )}
-
-          <Box sx={{ position: "absolute", right: 0, mt: 7 }}>
-            <Tooltip title="Clear All" placement="left">
-              <IconButton size="large" onClick={() => clearAll()}>
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                }}
+              >
+                <Typography variant="body2">Node Labels</Typography>
+                <Switch
+                  checked={showNodeLabels}
+                  onChange={(e) => setShowNodeLabels(e.target.checked)}
+                />
+              </Box>
+            </AccordionSetting>
           </Box>
+        )}
+
+        <Box sx={{ position: "absolute", right: 0, mt: 7 }}>
+          <Tooltip title="Clear All" placement="left">
+            <IconButton size="large" onClick={() => clearAll()}>
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
-      </>
-    );
-  }
-);
+      </Box>
+    </>
+  );
+});
 
 export default GraphOptions;

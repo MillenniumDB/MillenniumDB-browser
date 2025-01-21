@@ -2,7 +2,7 @@ import { useTheme } from '@emotion/react';
 import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState, createContext, useContext } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
-import { FORCE_RANGES } from './GraphOptions';
+import { useUserContext } from '../context/UserContext';
 
 const GraphContext = createContext();
 
@@ -17,6 +17,15 @@ export function GraphProvider({ children }) {
 
   const { width, height, ref } = useResizeDetector();
 
+  const {
+    FORCE_RANGES,
+    graphForceLinkDistance,
+    graphForceLinkStrength,
+    graphForceChargeStrength,
+    showGrid,
+    showNodeLabels,
+  } = useUserContext();
+
   const graphRef = useRef(null);
 
   const [selectedNode, setSelectedNode] = useState(null);
@@ -27,18 +36,6 @@ export function GraphProvider({ children }) {
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
 
   const zoomTransformRef = useRef(null);
-
-  const [graphForceLinkDistance, setGraphLinkDistance] = useState(
-    FORCE_RANGES.linkDistance.default
-  );
-  const [graphForceLinkStrength, setGraphForceLinkStrength] = useState(
-    FORCE_RANGES.linkStrength.default
-  );
-  const [graphForceChargeStrength, setGraphForceChargeStrength] = useState(
-    FORCE_RANGES.chargeStrength.default
-  );
-  const [showGrid, setShowGrid] = useState(true);
-  const [showNodeLabels, setShowNodeLabels] = useState(false);
 
   // Cache this values as they are used multiple times
   const graphColorSettings = useMemo(() => {
@@ -70,7 +67,7 @@ export function GraphProvider({ children }) {
     const settings = {
       nodeVal: 2,
       nodeRelSize: 10,
-      fontSize: 24,
+      fontSize: 16,
       hoverlineWidth: 2,
       maxZoom: 3,
       minZoom: 0.1,
@@ -597,16 +594,6 @@ export function GraphProvider({ children }) {
       removeNodeAndConnections,
       removeConnectionAndNeighbors,
       isNodeInGraphView,
-      graphForceLinkDistance,
-      setGraphLinkDistance,
-      graphForceChargeStrength,
-      setGraphForceChargeStrength,
-      graphForceLinkStrength,
-      setGraphForceLinkStrength,
-      showGrid,
-      setShowGrid,
-      showNodeLabels,
-      setShowNodeLabels,
       clearAll
     }}>
       {children}
