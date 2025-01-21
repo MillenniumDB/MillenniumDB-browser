@@ -66,16 +66,18 @@ const PathsSearch = React.memo(
 
     const getConnections = useCallback(
       async (session, node) => {
+        // Replace newlines with escaped newlines. Move to diver
+        const nodeId = node.id.toString().replaceAll('\n', '\\n');
         const incomingQuery =
           modelString === "rdf"
             ? node.constructor === types.IRI
-              ? `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . } LIMIT ${10 ** nodeMaxDegree}`
-              : `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . } LIMIT ${10 ** nodeMaxDegree}`
-            : `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${10 ** nodeMaxDegree}`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${10 ** nodeMaxDegree}`
+            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
         const outgoingQuery =
           modelString === "rdf"
-            ? `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . } LIMIT ${10 ** nodeMaxDegree}`
-            : `MATCH (${node.id})-[?edge :?type]->(?to) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
+            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${10 ** nodeMaxDegree}`
+            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${10 ** nodeMaxDegree}`;
 
         const processRecord = (record, direction) => {
           const edge = record.get("edge");
@@ -99,10 +101,7 @@ const PathsSearch = React.memo(
           return new Promise((resolve, reject) => {
             result.subscribe({
               onRecord: (record) => {
-                if (
-                  stopSearchRef.current ||
-                  connections.length >= calculateNodeDegreeValue(nodeMaxDegree)
-                ) {
+                if (stopSearchRef.current) {
                   resolve(connections);
                   return;
                 }
