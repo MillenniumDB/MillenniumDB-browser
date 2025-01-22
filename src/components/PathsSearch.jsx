@@ -13,7 +13,7 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
@@ -68,6 +68,7 @@ const PathsSearch = React.memo(
     const [inputNodes, setInputNodes] = useState([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [stopSearch, setStopSearch] = useState(false);
 
     const scrollableAreaRef = useRef(null);
     const stopSearchRef = useRef(false);
@@ -75,6 +76,47 @@ const PathsSearch = React.memo(
     const pathsCountRef = useRef(0);
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
+
+    useEffect(() => {
+      stopSearchRef.current = stopSearch;
+    }, [stopSearch]);
+
+    const processRecord = useCallback((record, direction) => {
+      const edge = record.get("edge");
+      edge.type = modelString === "rdf" ? edge : record.get("type");
+      let visitedNode = record.get(direction);
+      if (typeof visitedNode === "object") {
+        visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString();
+      } else {
+        visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode };
+      }
+      return {
+        visitedNode,
+        edge,
+        isIncoming: direction === "to",
+      };
+    }, [modelString]);
+
+    const runQuery = useCallback(async (query, direction, session) => {
+      // const connections = [];
+      const result = session.run(query);
+      const records = await result.records();
+      const connections = records.map((record) => processRecord(record, direction));
+      // return new Promise((resolve, reject) => {
+      //   result.subscribe({
+      //     onRecord: (record) => {
+      //       if (stopSearchRef.current) {
+      //         resolve(connections);
+      //         return;
+      //       }
+      //       connections.push(processRecord(record, direction));
+      //     },
+      //     onSuccess: () => resolve(connections),
+      //     onError: (error) => reject(error),
+      //   });
+      // });
+      return connections;
+    }, [processRecord]);
 
     const getConnections = useCallback(
       async (session, node) => {
@@ -91,48 +133,14 @@ const PathsSearch = React.memo(
             ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
             : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${valueToMaxDegree(nodeMaxDegree)}`;
 
-        const processRecord = (record, direction) => {
-          const edge = record.get("edge");
-          edge.type = modelString === "rdf" ? edge : record.get("type");
-          let visitedNode = record.get(direction);
-          if (typeof visitedNode === "object") {
-            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString();
-          } else {
-            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode };
-          }
-          return {
-            visitedNode,
-            edge,
-            isIncoming: direction === "to",
-          };
-        };
-
-        const runQuery = async (query, direction) => {
-          const connections = [];
-          const result = session.run(query);
-          return new Promise((resolve, reject) => {
-            result.subscribe({
-              onRecord: (record) => {
-                if (stopSearchRef.current) {
-                  resolve(connections);
-                  return;
-                }
-                connections.push(processRecord(record, direction));
-              },
-              onSuccess: () => resolve(connections),
-              onError: (error) => reject(error),
-            });
-          });
-        };
-
-        const incomingConnections = await runQuery(incomingQuery, "from");
+        const incomingConnections = await runQuery(incomingQuery, "from", session);
         if (modelString === "rdf" && node.constructor !== types.IRI) {
           return incomingConnections;
         }
-        const outgoingConnections = await runQuery(outgoingQuery, "to");
+        const outgoingConnections = await runQuery(outgoingQuery, "to", session);
         return [...incomingConnections, ...outgoingConnections];
       },
-      [modelString, stopSearchRef, nodeMaxDegree]
+      [modelString, nodeMaxDegree, runQuery]
     );
 
     const addInputNodes = useCallback(() => {
@@ -143,7 +151,7 @@ const PathsSearch = React.memo(
 
     const addPath = useCallback((path) => {
       if (pathsCountRef.current > MAX_PATH_COUNT) {
-        stopSearchRef.current = true;
+        setStopSearch(true);
         reachedMaxPathsRef.current = true;
         return;
       }
@@ -306,6 +314,7 @@ const PathsSearch = React.memo(
             }
           }
         } catch (error) {
+          console.error(error);
           enqueueSnackbar({
             message: error.toString(),
             variant: 'error',
@@ -325,7 +334,7 @@ const PathsSearch = React.memo(
               variant: 'info',
             });
           }
-          stopSearchRef.current = false;
+          setStopSearch(false);
         }
       },
       [
@@ -334,7 +343,6 @@ const PathsSearch = React.memo(
         driverContext.driver,
         addInputNodes,
         clearAll,
-        stopSearchRef,
         getConnections,
         checkAndMergePaths,
         reachedInputNode,
@@ -410,9 +418,9 @@ const PathsSearch = React.memo(
                   sx={{ ml: 1 }}
                   variant="outlined"
                   size="small"
-                  onClick={() => stopSearchRef.current = true}
+                  onClick={() => setStopSearch(true)}
                   color="primary"
-                  disabled={stopSearchRef.current}
+                  disabled={stopSearch}
                 >
                   Stop search
                 </Button>
