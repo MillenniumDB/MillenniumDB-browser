@@ -341,30 +341,40 @@ export function GraphProvider({ children }) {
     [hoveredNodeId, highlightLinkIds, graphColorSettings]
   );
 
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (graph) {
-      graph.d3Force(
-        'link',
-        d3Force
-          .forceLink()
-          .distance(FORCE_RANGES.linkDistance.default)
-          .strength(0.5)
-      );
-      graph.d3Force(
-        'charge',
-        d3Force
-          .forceManyBody()
-          .strength(FORCE_RANGES.chargeStrength.default)
-          .distanceMin(1)
-          .distanceMax(FORCE_RANGES.linkDistance.max)
-      );
-      graph.d3Force(
-        'center',
-        d3Force.forceCenter(0, 0).strength(FORCE_RANGES.center.default)
-      );
-    }
-  }, [graphRef, graphSizeSettings.nodeRadius]);
+  useEffect(
+    () => {
+      const graph = graphRef.current;
+      if (graph) {
+        graph.d3Force(
+          'link',
+          d3Force
+            .forceLink()
+            .distance(FORCE_RANGES.linkDistance.default)
+            .strength(0.5)
+        );
+        graph.d3Force(
+          'charge',
+          d3Force
+            .forceManyBody()
+            .strength(FORCE_RANGES.chargeStrength.default)
+            .distanceMin(1)
+            .distanceMax(FORCE_RANGES.linkDistance.max)
+        );
+        graph.d3Force(
+          'center',
+          d3Force.forceCenter(0, 0).strength(FORCE_RANGES.center.default)
+        );
+      }
+    },
+    [
+      graphRef,
+      graphSizeSettings.nodeRadius,
+      FORCE_RANGES.linkDistance.default,
+      FORCE_RANGES.chargeStrength.default,
+      FORCE_RANGES.linkDistance.max,
+      FORCE_RANGES.center.default,
+    ]
+  );
 
   useEffect(() => {
     const graph = graphRef.current;
