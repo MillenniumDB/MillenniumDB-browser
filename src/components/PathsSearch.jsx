@@ -33,12 +33,29 @@ const pathMaxDepthMarks = [
 ];
 
 const nodeMaxDegreeMarks = [
-  { value: 10, label: '10' },
-  { value: 20, label: '20' },
-  { value: 50, label: '50' },
-  { value: 100, label: '100' },
-  { value: 1000, label: '1000' },
+  { value: 0, label: '10' },
+  { value: 1, label: '20' },
+  { value: 2, label: '50' },
+  { value: 3, label: '100' },
+  { value: 4, label: '1000' },
 ];
+
+const valueToMaxDegree = (value) => {
+  switch (value) {
+    case 0:
+      return 10;
+    case 1:
+      return 20;
+    case 2:
+      return 50;
+    case 3:
+      return 100;
+    case 4:
+      return 1000;
+    default:
+      return 10;
+  }
+};
 
 const PathsSearch = React.memo(
   ({ addNodes,
@@ -47,7 +64,7 @@ const PathsSearch = React.memo(
     setSelectedNodesIds,
   }) => {
     const [pathMaxDepth, setPathMaxDepth] = useState(0);
-    const [nodeMaxDegree, setNodeMaxDegree] = useState(10);
+    const [nodeMaxDegree, setNodeMaxDegree] = useState(0);
     const [inputNodes, setInputNodes] = useState([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
@@ -61,18 +78,18 @@ const PathsSearch = React.memo(
 
     const getConnections = useCallback(
       async (session, node) => {
-        // Replace newlines with escaped newlines. Move to diver
+        // TODO: Replace newlines with \n in driver
         const nodeId = node.id.toString().replaceAll('\n', '\\n');
         const incomingQuery =
           modelString === "rdf"
             ? node.constructor === types.IRI
-              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${nodeMaxDegree}`
-              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${nodeMaxDegree}`
-            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${nodeMaxDegree}`;
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
+            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${valueToMaxDegree(nodeMaxDegree)}`;
         const outgoingQuery =
           modelString === "rdf"
-            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${nodeMaxDegree}`
-            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${nodeMaxDegree}`;
+            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
+            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${valueToMaxDegree(nodeMaxDegree)}`;
 
         const processRecord = (record, direction) => {
           const edge = record.get("edge");
@@ -420,7 +437,6 @@ const PathsSearch = React.memo(
                 <Slider
                   value={pathMaxDepth}
                   marks={pathMaxDepthMarks}
-                  min={0}
                   max={5}
                   onChange={(_event, value) => setPathMaxDepth(value)}
                   size='small'
@@ -437,8 +453,7 @@ const PathsSearch = React.memo(
                 <Slider
                   value={nodeMaxDegree}
                   marks={nodeMaxDegreeMarks}
-                  min={10}
-                  max={1000}
+                  max={4}
                   onChange={(_event, value) => setNodeMaxDegree(value)}
                   size='small'
                 />
