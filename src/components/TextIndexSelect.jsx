@@ -113,7 +113,7 @@ export default function TextIndexSelect() {
             <RadioGroup>
               {textIndexes.length > 0 && (
                 <>
-                  <Typography sx={{ mt: 1, fontWeight: 'bold' }}>
+                  <Typography sx={{ my: 1, fontWeight: 'bold' }}>
                     Search by Text Index
                   </Typography>
                   {textIndexes.map((index, id) => (
@@ -121,10 +121,20 @@ export default function TextIndexSelect() {
                       key={id}
                       value={index.name}
                       control={<Radio size='small'/>}
+                      sx={{ mb: 1 }}
                       label={
                         <>
                           <Typography variant="body2">{index.name}</Typography>
-                          <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>{index.predicate.toString()}</Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              wordBreak: 'break-all',
+                              color: 'text.secondary',
+                              fontSize: '12px',
+                              marginTop: '2px',
+                            }}>
+                              {index.predicate.toString()}
+                            </Typography>
                         </>
                       }
                       checked={selectedTextIndex === index.name}
