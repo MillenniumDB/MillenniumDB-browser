@@ -19,6 +19,7 @@ import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@emotion/react';
 import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
+import { useUserContext } from '../context/UserContext';
 import { enqueueSnackbar } from 'notistack';
 import { PathsSearchBar } from './NodeSearchBar';
 import { graphObjectToReactForceGraphNode, graphObjectToString } from '../utils/GraphObjectUtils';
@@ -30,7 +31,7 @@ const PathsSearch = React.memo(
     clearAll,
     setSelectedNodesIds,
   }) => {
-    const [pathMaxDepth, setPathMaxDepth] = useState(0);
+    const [pathMaxDepth, setPathMaxDepth] = useState(2);
     const [nodeMaxDegree, setNodeMaxDegree] = useState(10);
     const [pathMaxCount, setPathMaxCount] = useState(10);
     const [inputNodes, setInputNodes] = useState([]);
@@ -42,10 +43,18 @@ const PathsSearch = React.memo(
     const stopSearchRef = useRef(false);
     const reachedMaxPathsRef = useRef(false);
     const pathsCountRef = useRef(0);
+
+    const {
+      isDrawerOpen: isDrawerOpenUserContext,
+      setIsDrawerOpen: setIsDrawerOpenUserContext,
+    } = useUserContext();
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
-
     const theme = useTheme();
+
+    useEffect(() => {
+      setIsDrawerOpenUserContext(isDrawerOpen);
+    }, [isDrawerOpen, setIsDrawerOpenUserContext]);
 
     useEffect(() => {
       stopSearchRef.current = stopSearch;

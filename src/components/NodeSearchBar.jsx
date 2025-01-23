@@ -88,6 +88,18 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
   }
 };
 
+const isIri = (input) => {
+  let isUrl;
+  try {
+    new URL(input);
+    isUrl = true;
+  } catch (error) {
+    isUrl = false;
+  } finally {
+    return isUrl;
+  }
+};
+
 const regexToggleButton = ({ regexSearch, setRegexSearch }) => (
   <Tooltip title="Use Regular Expression">
     <ToggleButton
@@ -216,6 +228,8 @@ const NodeSearchBar = React.memo(
     const [options, setOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showPropertySearchBar, setShowPropertySearchBar] = useState(false);
+    const [autoCompleteError, setAutoCompleteError] = useState(false);
+    const [textFieldError, setTextFieldError] = useState(false);
 
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
@@ -226,7 +240,24 @@ const NodeSearchBar = React.memo(
       setRegexSearch,
       propertySearchName,
       setPropertySearchName,
+      isDrawerOpen,
     } = useUserContext();
+
+    useEffect(() => {
+      if (selectedSearchBy === 'iri' && inputValue) {
+        setAutoCompleteError(!isIri(inputValue));
+      } else {
+        setAutoCompleteError(false);
+      }
+    }, [inputValue, selectedSearchBy]);
+
+    useEffect(() => {
+      if (selectedSearchBy === 'property' && modelString === 'rdf') {
+        setTextFieldError(!isIri(propertySearchName));
+      } else {
+        setTextFieldError(false);
+      }
+    }, [propertySearchName, selectedSearchBy, modelString]);
 
     const handleOnInputChange = (_event, newInputValue) => {
       setInputValue(newInputValue);
@@ -292,7 +323,12 @@ const NodeSearchBar = React.memo(
       () => {
         let active = true;
 
-        if (inputValue === '') {
+        if (
+          inputValue === '' ||
+          propertySearchName === '' ||
+          autoCompleteError ||
+          textFieldError
+        ) {
           searchNodes.clear();
           setLoading(false);
           setOptions([]);
@@ -331,7 +367,9 @@ const NodeSearchBar = React.memo(
         modelString,
         driverContext,
         searchNodes,
-        setOptions
+        setOptions,
+        autoCompleteError,
+        textFieldError,
       ]
     );
 
@@ -349,13 +387,6 @@ const NodeSearchBar = React.memo(
         zIndex: theme.zIndex.drawer + 1,
         width: 426,
         left: 16,
-        display: 'flex',
-        border: '1px solid',
-        borderColor: theme.palette.divider,
-        overflow: 'hidden',
-        height: showPropertySearchBar ? 114 : 58,
-        transition: 'height 0.3s ease',
-        background: theme.palette.background.paper,
         [`${theme.breakpoints.down('md')}`]: {
           left: 0,
           boxSizing: 'border-box',
@@ -363,94 +394,124 @@ const NodeSearchBar = React.memo(
           mx: '16px',
         },
       })}>
-        <Button
-          sx={{ minWidth: 36, ml: selectedSearchBy === "property" ? 0 : -5, transition: '0.3s ease' }}
-          color="inherit"
-          onClick={() => setShowPropertySearchBar((prev) => !prev)}
-        >
-          <ExpandMoreIcon
-            sx={(theme) => ({
-              transition: 'transform 0.3s ease',
-              transform: showPropertySearchBar ? 'rotate(180deg)' : 'rotate(0deg)',
-              color: theme.palette.action.active,
-            })}
-          />
-        </Button>
-
-        <Box sx={{ width: '100%' }}>
-          <Autocomplete
-            getOptionLabel={(option) => option.label}
-            getOptionKey={(option) => option.id}
-            filterOptions={(x) => x}
-            options={options}
-            value={value}
-            inputValue={inputValue}
-            loading={loading}
-            loadingText="Searching..."
-            onChange={handleOnChange}
-            onInputChange={handleOnInputChange}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            getOptionDisabled={getOptionDisabled}
-            autoComplete
-            includeInputInList
-            fullWidth
-            freeSolo
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                color="primary"
-                placeholder="Search for a node"
-                InputProps={{
-                  ...params.InputProps,
-                  sx: {
-                    ...params.InputProps.sx,
-                    pr: '16px !important',
-                  },
-                  endAdornment: (
-                    <>
-                      {loading ? <CircularProgress size={20} /> : null}
-                      {/* {params.InputProps.endAdornment} */}
-                      {selectedSearchBy === 'property' && (
-                        regexToggleButton({ regexSearch, setRegexSearch }))}
-                    </>
-                  ),
-                }}
-                fullWidth
-              />
-            )}
-            renderOption={(props, option) => {
-              const { key, ...optionProps } = props;
-              return (
-                <li key={key} {...optionProps}>
-                  <Grid container sx={{ alignItems: 'center' }}>
-                    <Grid item sx={{ width: '100%', wordWrap: 'break-word' }}>
-                      <Typography variant="body1">{option.label}</Typography>
-                    </Grid>
-                    <Typography variant="body2" color="text.secondary">
-                      {option.type}
-                    </Typography>
-                  </Grid>
-                </li>
-              );
-            }}
-          />
-
-          <Box
-            component="form"
-            noValidate
-            autoComplete="off"
+        <Box sx={(theme) => ({
+          display: 'flex',
+          border: '1px solid',
+          borderColor: theme.palette.divider,
+          overflow: 'hidden',
+          height: showPropertySearchBar ? 114 : 58,
+          transition: 'height 0.3s ease',
+          background: theme.palette.background.paper,
+          mb: -0.5,
+        })}>
+          <Button
+            sx={{ minWidth: 36, ml: selectedSearchBy === "property" ? 0 : -5, transition: '0.3s ease' }}
+            color="inherit"
+            onClick={() => setShowPropertySearchBar((prev) => !prev)}
           >
-            <TextField
-              placeholder={`Enter ${modelString === 'rdf' ? 'IRI' : 'property'} for searching`}
-              variant="outlined"
+            <ExpandMoreIcon
+              sx={(theme) => ({
+                transition: 'transform 0.3s ease',
+                transform: showPropertySearchBar ? 'rotate(180deg)' : 'rotate(0deg)',
+                color: theme.palette.action.active,
+              })}
+            />
+          </Button>
+
+          <Box sx={{ width: '100%' }}>
+            <Autocomplete
+              getOptionLabel={(option) => option.label}
+              getOptionKey={(option) => option.id}
+              filterOptions={(x) => x}
+              options={options}
+              value={value}
+              inputValue={inputValue}
+              loading={loading}
+              loadingText="Searching..."
+              onChange={handleOnChange}
+              onInputChange={handleOnInputChange}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              getOptionDisabled={getOptionDisabled}
+              autoComplete
+              includeInputInList
               fullWidth
-              value={propertySearchName}
-              onChange={(event) => {
-                setPropertySearchName(event.target.value);
+              freeSolo
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  color="primary"
+                  placeholder="Search for a node"
+                  InputProps={{
+                    ...params.InputProps,
+                    sx: {
+                      ...params.InputProps.sx,
+                      pr: '16px !important',
+                    },
+                    endAdornment: (
+                      <>
+                        {loading ? <CircularProgress size={20} /> : null}
+                        {/* {params.InputProps.endAdornment} */}
+                        {selectedSearchBy === 'property' && (
+                          regexToggleButton({ regexSearch, setRegexSearch }))}
+                      </>
+                    ),
+                  }}
+                  fullWidth
+                  error = {autoCompleteError}
+                />
+              )}
+              renderOption={(props, option) => {
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <Grid container sx={{ alignItems: 'center' }}>
+                      <Grid item sx={{ width: '100%', wordWrap: 'break-word' }}>
+                        <Typography variant="body1">{option.label}</Typography>
+                      </Grid>
+                      <Typography variant="body2" color="text.secondary">
+                        {option.type}
+                      </Typography>
+                    </Grid>
+                  </li>
+                );
               }}
             />
+
+            <Box
+              component="form"
+              noValidate
+              autoComplete="off"
+            >
+              <TextField
+                placeholder={`Enter ${modelString === 'rdf' ? 'IRI' : 'property'} for searching`}
+                variant="outlined"
+                fullWidth
+                value={propertySearchName}
+                onChange={(event) => {
+                  setPropertySearchName(event.target.value);
+                }}
+                error = {textFieldError}
+              />
+            </Box>
           </Box>
         </Box>
+
+        {(autoCompleteError || textFieldError) && (
+          <Typography
+            color='error'
+            sx={(theme) => ({
+              fontSize: '12px',
+              display: 'inline-block',
+              background: isDrawerOpen ? theme.palette.background.paper : 'none',
+              ml: 1,
+              mt: 0.5,
+              px: 1,
+              pt: 0.5,
+            })}
+          >
+            Enter a valid IRI.
+          </Typography>
+        )}
       </Box>
     );
   }

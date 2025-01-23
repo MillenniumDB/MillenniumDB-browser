@@ -8,6 +8,7 @@ export const UserProvider = ({ children }) => {
   const [selectedSearchBy, setSelectedSearchBy] = useState(null);
   const [regexSearch, setRegexSearch] = useState(false);
   const [propertySearchName, setPropertySearchName] = useState('');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
 
   // Graph settings
   const FORCE_RANGES = {
@@ -56,6 +57,8 @@ export const UserProvider = ({ children }) => {
       setRegexSearch,
       propertySearchName,
       setPropertySearchName,
+      isDrawerOpen,
+      setIsDrawerOpen,
       FORCE_RANGES,
       graphForceLinkDistance,
       setGraphForceLinkDistance,
