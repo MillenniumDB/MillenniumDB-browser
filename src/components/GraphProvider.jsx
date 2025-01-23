@@ -135,8 +135,6 @@ export function GraphProvider({ children }) {
   };
 
   const handleRenderFramePre = (ctx, globalScale) => {
-    if (!showGrid) return;
-
     const graph = graphRef.current;
     if (!graph) return;
 
@@ -158,6 +156,8 @@ export function GraphProvider({ children }) {
     );
 
     // Handle grid drawing
+    if (!showGrid) return;
+
     ctx.save();
     const { gridSize } = graphSizeSettings;
     const { gridColor } = graphColorSettings;
