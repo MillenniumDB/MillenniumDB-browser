@@ -52,7 +52,7 @@ export default function TextIndexSelect() {
         if (textIndexObjects.length > 0) {
           setSelectedTextIndex(textIndexObjects[0].name);
         } else {
-          setSelectedSearchBy("literal");
+          setSelectedSearchBy("property");
         }
       }
     },
@@ -152,10 +152,14 @@ export default function TextIndexSelect() {
                 Search by
               </Typography>
               <FormControlLabel
-                value="literal"
+                value="property"
                 control={<Radio size='small'/>}
-                label={<Typography variant="body2">Literal</Typography>}
-                checked={selectedSearchBy === "literal"}
+                label={
+                  <Typography variant="body2">
+                    {modelString === 'rdf' ? 'Literal' : 'Property'}
+                  </Typography>
+                }
+                checked={selectedSearchBy === "property"}
                 onChange={(e) => {
                   setSelectedSearchBy(e.target.value);
                   setSelectedTextIndex(null);

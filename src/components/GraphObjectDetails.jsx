@@ -274,7 +274,7 @@ const RDFGraphObjectDetails = React.memo(
                     );
                     if (outgoing.length > 50) {
                       enqueueSnackbar({
-                        message: 'Only showing first 50 outgoing connections',
+                        message: 'Only showing first 50 outgoing connections.',
                         variant: 'info',
                       });
                     }
@@ -330,7 +330,7 @@ const RDFGraphObjectDetails = React.memo(
                     );
                     if (incoming.length > 50) {
                       enqueueSnackbar({
-                        message: 'Only showing first 50 incoming connections',
+                        message: 'Only showing first 50 incoming connections.',
                         variant: 'info',
                       });
                     }
@@ -673,7 +673,7 @@ const QuadGraphObjectDetails = React.memo(
                     );
                     if (outgoing.length > 50) {
                       enqueueSnackbar({
-                        message: 'Only showing first 50 outgoing connections',
+                        message: 'Only showing first 50 outgoing connections.',
                         variant: 'info',
                       });
                     }
@@ -731,7 +731,7 @@ const QuadGraphObjectDetails = React.memo(
                     );
                     if (incoming.length > 50) {
                       enqueueSnackbar({
-                        message: 'Only showing first 50 incoming connections',
+                        message: 'Only showing first 50 incoming connections.',
                         variant: 'info',
                       });
                     }

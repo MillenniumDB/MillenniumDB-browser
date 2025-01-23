@@ -1,6 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import RemoveIcon from '@mui/icons-material/Remove';
+import InfoIcon from '@mui/icons-material/Info';
 import {
   Box,
   Button,
@@ -9,53 +10,19 @@ import {
   IconButton,
   Toolbar,
   Tooltip,
-  Slider,
   Typography,
   CircularProgress,
+  MenuItem,
+  TextField,
 } from '@mui/material';
 import React, { useCallback, useRef, useState, useEffect } from 'react';
+import { useTheme } from '@emotion/react';
 import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
 import { PathsSearchBar } from './NodeSearchBar';
 import { graphObjectToReactForceGraphNode, graphObjectToString } from '../utils/GraphObjectUtils';
 import { types } from 'millenniumdb-driver';
-
-const MAX_PATH_COUNT = 50;
-
-const pathMaxDepthMarks = [
-  { value: 0, label: '1' },
-  { value: 1, label: '2' },
-  { value: 2, label: '3' },
-  { value: 3, label: '4' },
-  { value: 4, label: '5' },
-  { value: 5, label: '6' },
-];
-
-const nodeMaxDegreeMarks = [
-  { value: 0, label: '10' },
-  { value: 1, label: '20' },
-  { value: 2, label: '50' },
-  { value: 3, label: '100' },
-  { value: 4, label: '1000' },
-];
-
-const valueToMaxDegree = (value) => {
-  switch (value) {
-    case 0:
-      return 10;
-    case 1:
-      return 20;
-    case 2:
-      return 50;
-    case 3:
-      return 100;
-    case 4:
-      return 1000;
-    default:
-      return 10;
-  }
-};
 
 const PathsSearch = React.memo(
   ({ addNodes,
@@ -64,7 +31,8 @@ const PathsSearch = React.memo(
     setSelectedNodesIds,
   }) => {
     const [pathMaxDepth, setPathMaxDepth] = useState(0);
-    const [nodeMaxDegree, setNodeMaxDegree] = useState(0);
+    const [nodeMaxDegree, setNodeMaxDegree] = useState(10);
+    const [pathMaxCount, setPathMaxCount] = useState(10);
     const [inputNodes, setInputNodes] = useState([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
@@ -76,6 +44,8 @@ const PathsSearch = React.memo(
     const pathsCountRef = useRef(0);
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
+
+    const theme = useTheme();
 
     useEffect(() => {
       stopSearchRef.current = stopSearch;
@@ -98,23 +68,9 @@ const PathsSearch = React.memo(
     }, [modelString]);
 
     const runQuery = useCallback(async (query, direction, session) => {
-      // const connections = [];
       const result = session.run(query);
       const records = await result.records();
       const connections = records.map((record) => processRecord(record, direction));
-      // return new Promise((resolve, reject) => {
-      //   result.subscribe({
-      //     onRecord: (record) => {
-      //       if (stopSearchRef.current) {
-      //         resolve(connections);
-      //         return;
-      //       }
-      //       connections.push(processRecord(record, direction));
-      //     },
-      //     onSuccess: () => resolve(connections),
-      //     onError: (error) => reject(error),
-      //   });
-      // });
       return connections;
     }, [processRecord]);
 
@@ -125,13 +81,13 @@ const PathsSearch = React.memo(
         const incomingQuery =
           modelString === "rdf"
             ? node.constructor === types.IRI
-              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
-              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
-            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${valueToMaxDegree(nodeMaxDegree)}`;
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${nodeMaxDegree}`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${nodeMaxDegree}`
+            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${nodeMaxDegree}`;
         const outgoingQuery =
           modelString === "rdf"
-            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${valueToMaxDegree(nodeMaxDegree)}`
-            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${valueToMaxDegree(nodeMaxDegree)}`;
+            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${nodeMaxDegree}`
+            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${nodeMaxDegree}`;
 
         const incomingConnections = await runQuery(incomingQuery, "from", session);
         if (modelString === "rdf" && node.constructor !== types.IRI) {
@@ -150,7 +106,7 @@ const PathsSearch = React.memo(
     }, [inputNodes, addNodes, setSelectedNodesIds]);
 
     const addPath = useCallback((path) => {
-      if (pathsCountRef.current > MAX_PATH_COUNT) {
+      if (pathsCountRef.current > pathMaxCount) {
         setStopSearch(true);
         reachedMaxPathsRef.current = true;
         return;
@@ -172,7 +128,7 @@ const PathsSearch = React.memo(
         addConnection(edgeNode);
       });
       pathsCountRef.current += 1;
-    }, [addConnection, modelString]);
+    }, [addConnection, modelString, pathMaxCount]);
 
     const checkPathLoop = useCallback((path) => {
       const nodeIds = new Set();
@@ -263,6 +219,8 @@ const PathsSearch = React.memo(
         clearAll();
         addInputNodes();
         pathsCountRef.current = 0;
+        let success = false;
+        const startTime = performance.now();
 
         const session = driverContext.driver.session();
         try {
@@ -313,6 +271,7 @@ const PathsSearch = React.memo(
               }
             }
           }
+          success = true;
         } catch (error) {
           console.error(error);
           enqueueSnackbar({
@@ -324,7 +283,7 @@ const PathsSearch = React.memo(
           setIsLoading(false);
           if (reachedMaxPathsRef.current) {
             enqueueSnackbar({
-              message: `Reached maximum number of paths (${MAX_PATH_COUNT}). Search stopped.`,
+              message: `Reached maximum number of paths (${pathMaxCount}). Search stopped.`,
               variant: 'info',
             });
             reachedMaxPathsRef.current = false;
@@ -333,6 +292,19 @@ const PathsSearch = React.memo(
               message: 'Search stopped.',
               variant: 'info',
             });
+          } else if (success) {
+            const endTime = performance.now();
+            const totalDurationMs = parseInt(endTime - startTime);
+            let durationString;
+            if (totalDurationMs > 1_000) {
+              durationString = `${(totalDurationMs / 1_000).toFixed(2)} s`;
+            } else {
+              durationString = `${totalDurationMs} ms`;
+            }
+            enqueueSnackbar({
+              message: `Search completed successfully (Found ${pathsCountRef.current} paths in ${durationString}).`,
+              variant: 'success',
+            });
           }
           setStopSearch(false);
         }
@@ -340,6 +312,7 @@ const PathsSearch = React.memo(
       [
         inputNodes,
         pathMaxDepth,
+        pathMaxCount,
         driverContext.driver,
         addInputNodes,
         clearAll,
@@ -437,34 +410,79 @@ const PathsSearch = React.memo(
           <Divider />
 
           <Box ref={scrollableAreaRef} sx={{ overflow: 'scroll' }}>
-            <Box sx={{ p: 2 }}>
-              <Typography variant="body1" component="p">
-                Maximum path depth
+            <Box sx={{ px: 2, py: 3 }}>
+              <Typography variant="body1" sx={{ pb: 3 }}>
+                Search options
               </Typography>
-              <Box sx={{ p: 2, pb: 0 }}>
-                <Slider
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 3,
+                }}
+              >
+                <TextField
+                  label="Maximum path depth"
+                  disabled={isLoading}
+                  select
                   value={pathMaxDepth}
-                  marks={pathMaxDepthMarks}
-                  max={5}
-                  onChange={(_event, value) => setPathMaxDepth(value)}
-                  size='small'
-                />
-              </Box>
-            </Box>
-            <Divider />
+                  onChange={(event) => setPathMaxDepth(event.target.value)}
+                  sx={{ width: 'calc(50% - 12px)' }}
+                >
+                  <MenuItem value={0}>1</MenuItem>
+                  <MenuItem value={1}>2</MenuItem>
+                  <MenuItem value={2}>3</MenuItem>
+                  <MenuItem value={3}>4</MenuItem>
+                  <MenuItem value={4}>5</MenuItem>
+                  <MenuItem value={5}>6</MenuItem>
+                </TextField>
 
-            <Box sx={{ p: 2 }}>
-              <Typography variant="body1" component="p">
-                Maximum node degree
-              </Typography>
-              <Box sx={{ p: 2, pb: 0 }}>
-                <Slider
-                  value={nodeMaxDegree}
-                  marks={nodeMaxDegreeMarks}
-                  max={4}
-                  onChange={(_event, value) => setNodeMaxDegree(value)}
-                  size='small'
-                />
+                <Box sx={{ position: 'relative', width: 'calc(50% - 12px)' }}>
+                  <TextField
+                    label="Maximum node degree"
+                    disabled={isLoading}
+                    select
+                    value={nodeMaxDegree}
+                    onChange={(event) => setNodeMaxDegree(event.target.value)}
+                    fullWidth
+                  >
+                    <MenuItem value={10}>10</MenuItem>
+                    <MenuItem value={20}>20</MenuItem>
+                    <MenuItem value={50}>50</MenuItem>
+                    <MenuItem value={100}>100</MenuItem>
+                    <MenuItem value={1000}>1000</MenuItem>
+                  </TextField>
+                  <Tooltip
+                    placement="bottom-start"
+                    title="Set the maximum number of outgoing connections
+                    and the maximum number of incoming connections."
+                  >
+                    <InfoIcon
+                      sx={{
+                        position: 'absolute',
+                        right: 36,
+                        top: 16,
+                        color: theme.palette.action.active,
+                      }}
+                    />
+                  </Tooltip>
+                </Box>
+
+                <TextField
+                  label="Maximum paths found"
+                  disabled={isLoading}
+                  select
+                  value={pathMaxCount}
+                  onChange={(event) => setPathMaxCount(event.target.value)}
+                  sx={{ width: 'calc(50% - 12px)' }}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={30}>30</MenuItem>
+                  <MenuItem value={40}>40</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                </TextField>
               </Box>
             </Box>
             <Divider />

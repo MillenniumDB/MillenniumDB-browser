@@ -50,7 +50,7 @@ export default function Query() {
   const handleStop = () => {
     stopQuery();
     enqueueSnackbar({
-      message: `Query stopped`,
+      message: `Query stopped.`,
       variant: 'info',
     });
   };
@@ -124,7 +124,7 @@ export default function Query() {
         } else {
           const { resultCount } = summary;
           enqueueSnackbar({
-            message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
+            message: `Query executed successfully (Found ${resultCount} results in ${durationString}).`,
             variant: 'success',
           });
         }

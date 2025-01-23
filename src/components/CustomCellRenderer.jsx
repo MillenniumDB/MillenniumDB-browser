@@ -215,8 +215,8 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
       setTooltip(wrapper.current.scrollWidth > wrapper.current.clientWidth);
     },
     onClose: () => setTooltip(false),
-    enterDelay: 600,
-    enterNextDelay: 400,
+    enterDelay: 400,
+    enterNextDelay: 200,
     placement: 'bottom-start',
     slotProps: {
       popper: { modifiers: [{ name: 'offset', options: { offset: [0, -14] } }] },

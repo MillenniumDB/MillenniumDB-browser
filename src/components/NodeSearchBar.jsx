@@ -10,7 +10,6 @@ import {
   Tooltip,
   Button,
 } from '@mui/material';
-import { enqueueSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
 import { useUserContext } from '../context/UserContext';
@@ -55,7 +54,7 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
           '}\n' +
           'LIMIT 1\n'
         );
-      } else if (searchBy === 'literal') {
+      } else if (searchBy === 'property') {
         const regexPattern = regexSearch ? `${input}` : `^${escapeRegexSPARQL(input)}`;
         return (
           'SELECT ?node ?label\n' +
@@ -73,7 +72,7 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
           'RETURN *\n' +
           'LIMIT 50'
         );
-      } else if (searchBy === 'literal'){
+      } else if (searchBy === 'property'){
         const regexPattern = regexSearch ? `${input}` : `^${escapeRegex(input)}`;
         return (
           'MATCH (?node)\n' +
@@ -278,10 +277,7 @@ const NodeSearchBar = React.memo(
             }).filter(filterOptions);
             callback(newOptions);
           } catch (error) {
-            enqueueSnackbar({
-              message: error.message || 'Error in search',
-              variant: 'error',
-            });
+            console.error(error);
             callback([]);
           } finally {
             session.close();
@@ -351,7 +347,7 @@ const NodeSearchBar = React.memo(
       <Box sx={(theme) => ({
         position: 'relative',
         zIndex: theme.zIndex.drawer + 1,
-        width: 424,
+        width: 426,
         left: 16,
         display: 'flex',
         border: '1px solid',
@@ -368,15 +364,16 @@ const NodeSearchBar = React.memo(
         },
       })}>
         <Button
-          sx={{ minWidth: 36, ml: selectedSearchBy === "literal" ? 0 : -5, transition: '0.3s ease' }}
+          sx={{ minWidth: 36, ml: selectedSearchBy === "property" ? 0 : -5, transition: '0.3s ease' }}
           color="inherit"
           onClick={() => setShowPropertySearchBar((prev) => !prev)}
         >
           <ExpandMoreIcon
-            sx={{
+            sx={(theme) => ({
               transition: 'transform 0.3s ease',
               transform: showPropertySearchBar ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
+              color: theme.palette.action.active,
+            })}
           />
         </Button>
 
@@ -413,7 +410,7 @@ const NodeSearchBar = React.memo(
                     <>
                       {loading ? <CircularProgress size={20} /> : null}
                       {/* {params.InputProps.endAdornment} */}
-                      {selectedSearchBy === 'literal' && (
+                      {selectedSearchBy === 'property' && (
                         regexToggleButton({ regexSearch, setRegexSearch }))}
                     </>
                   ),
@@ -444,7 +441,7 @@ const NodeSearchBar = React.memo(
             autoComplete="off"
           >
             <TextField
-              placeholder="Enter property for searching"
+              placeholder={`Enter ${modelString === 'rdf' ? 'IRI' : 'property'} for searching`}
               variant="outlined"
               fullWidth
               value={propertySearchName}
