@@ -385,8 +385,10 @@ const NodeSearchBar = React.memo(
     }, [selectedTextIndex, selectedSearchBy]);
 
     useEffect(() => {
-      setPropertySearchName(modelString === 'rdf' ? 'rdfs:label' : 'label');
-    }, [modelString, setPropertySearchName]);
+      if (propertySearchName === null) {
+        setPropertySearchName(modelString === 'rdf' ? 'rdfs:label' : 'label');
+      }
+    }, [modelString, propertySearchName, setPropertySearchName]);
 
     return (
       <Box sx={(theme) => ({

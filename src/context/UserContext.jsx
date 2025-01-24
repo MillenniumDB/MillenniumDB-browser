@@ -7,7 +7,7 @@ export const UserProvider = ({ children }) => {
   const [selectedTextIndex, setSelectedTextIndex] = useState(null);
   const [selectedSearchBy, setSelectedSearchBy] = useState(null);
   const [regexSearch, setRegexSearch] = useState(false);
-  const [propertySearchName, setPropertySearchName] = useState('');
+  const [propertySearchName, setPropertySearchName] = useState(null);
 
   // Graph settings
   const FORCE_RANGES = {
