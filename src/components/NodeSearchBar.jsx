@@ -240,24 +240,31 @@ const NodeSearchBar = React.memo(
       setRegexSearch,
       propertySearchName,
       setPropertySearchName,
-      isDrawerOpen,
     } = useUserContext();
 
-    useEffect(() => {
-      if (selectedSearchBy === 'iri' && inputValue) {
-        setAutoCompleteError(!isIri(inputValue));
+    const isAutoCompleteError = useCallback((input) => {
+      if (selectedSearchBy === 'iri' && input) {
+        return !isIri(input);
       } else {
-        setAutoCompleteError(false);
+        return false;
       }
-    }, [inputValue, selectedSearchBy]);
+    }, [selectedSearchBy]);
+
+    const isTextFieldError = useCallback((input) => {
+      if (selectedSearchBy === 'property' && modelString === 'rdf') {
+        return !isIri(input);
+      } else {
+        return false;
+      }
+    }, [selectedSearchBy, modelString]);
 
     useEffect(() => {
-      if (selectedSearchBy === 'property' && modelString === 'rdf') {
-        setTextFieldError(!isIri(propertySearchName));
-      } else {
-        setTextFieldError(false);
-      }
-    }, [propertySearchName, selectedSearchBy, modelString]);
+      setAutoCompleteError(isAutoCompleteError(inputValue));
+    }, [isAutoCompleteError, inputValue]);
+
+    useEffect(() => {
+      setTextFieldError(isTextFieldError(propertySearchName));
+    }, [isTextFieldError, propertySearchName]);
 
     const handleOnInputChange = (_event, newInputValue) => {
       setInputValue(newInputValue);
@@ -326,8 +333,8 @@ const NodeSearchBar = React.memo(
         if (
           inputValue === '' ||
           propertySearchName === '' ||
-          autoCompleteError ||
-          textFieldError
+          isAutoCompleteError(inputValue) ||
+          isTextFieldError(propertySearchName)
         ) {
           searchNodes.clear();
           setLoading(false);
@@ -368,8 +375,8 @@ const NodeSearchBar = React.memo(
         driverContext,
         searchNodes,
         setOptions,
-        autoCompleteError,
-        textFieldError,
+        isAutoCompleteError,
+        isTextFieldError,
       ]
     );
 
@@ -402,7 +409,6 @@ const NodeSearchBar = React.memo(
           height: showPropertySearchBar ? 114 : 58,
           transition: 'height 0.3s ease',
           background: theme.palette.background.paper,
-          mb: -0.5,
         })}>
           <Button
             sx={{ minWidth: 36, ml: selectedSearchBy === "property" ? 0 : -5, transition: '0.3s ease' }}
@@ -499,15 +505,11 @@ const NodeSearchBar = React.memo(
         {(autoCompleteError || textFieldError) && (
           <Typography
             color='error'
-            sx={(theme) => ({
+            sx={{
               fontSize: '12px',
               display: 'inline-block',
-              background: isDrawerOpen ? theme.palette.background.paper : 'none',
               ml: 1,
-              mt: 0.5,
-              px: 1,
-              pt: 0.5,
-            })}
+            }}
           >
             Enter a valid IRI.
           </Typography>

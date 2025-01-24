@@ -21,7 +21,6 @@ import { types } from 'millenniumdb-driver';
 import { enqueueSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDriverContext } from '../context/DriverContext';
-import { useUserContext } from '../context/UserContext';
 import { useLoaderData } from 'react-router-dom';
 import {
   graphObjectToReactForceGraphNode,
@@ -62,7 +61,6 @@ const RDFGraphObjectDetails = React.memo(
     isNodeInGraphView
   }) => {
     const driverContext = useDriverContext();
-    const {isDrawerOpen, setIsDrawerOpen} = useUserContext();
 
     const scrollableAreaRef = useRef(null);
 
@@ -169,10 +167,6 @@ const RDFGraphObjectDetails = React.memo(
       }
     }, [scrollableAreaRef, selectedNode]);
 
-    useEffect(() => {
-      setIsDrawerOpen(selectedNode !== null);
-    }, [selectedNode, setIsDrawerOpen]);
-
     return (
       <Drawer
         transitionDuration={100}
@@ -190,7 +184,7 @@ const RDFGraphObjectDetails = React.memo(
           },
         })}
       >
-        <Toolbar sx={{ mb: '88px' }} />
+        <Toolbar sx={{ mb: '80px' }} />
         <Box sx={{ p: 1 }}>
           <IconButton
             onClick={() => setSelectedNode(null)}
@@ -398,7 +392,6 @@ const QuadGraphObjectDetails = React.memo(
     isNodeInGraphView
   }) => {
     const driverContext = useDriverContext();
-    const {isDrawerOpen, setIsDrawerOpen} = useUserContext();
 
     const scrollableAreaRef = useRef(null);
 
@@ -521,10 +514,6 @@ const QuadGraphObjectDetails = React.memo(
         drawer.scrollTo(0, 0);
       }
     }, [scrollableAreaRef, selectedNode]);
-
-    useEffect(() => {
-      setIsDrawerOpen(selectedNode !== null);
-    }, [selectedNode, setIsDrawerOpen]);
 
     return (
       <Drawer

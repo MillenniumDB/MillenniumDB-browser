@@ -19,7 +19,6 @@ import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@emotion/react';
 import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
-import { useUserContext } from '../context/UserContext';
 import { enqueueSnackbar } from 'notistack';
 import { PathsSearchBar } from './NodeSearchBar';
 import { graphObjectToReactForceGraphNode, graphObjectToString } from '../utils/GraphObjectUtils';
@@ -44,17 +43,9 @@ const PathsSearch = React.memo(
     const reachedMaxPathsRef = useRef(false);
     const pathsCountRef = useRef(0);
 
-    const {
-      isDrawerOpen: isDrawerOpenUserContext,
-      setIsDrawerOpen: setIsDrawerOpenUserContext,
-    } = useUserContext();
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
     const theme = useTheme();
-
-    useEffect(() => {
-      setIsDrawerOpenUserContext(isDrawerOpen);
-    }, [isDrawerOpen, setIsDrawerOpenUserContext]);
 
     useEffect(() => {
       stopSearchRef.current = stopSearch;
@@ -374,7 +365,7 @@ const PathsSearch = React.memo(
           <PathsSearchBar inputNodes={inputNodes} setInputNodes={setInputNodes} />
           <Box sx={{
             p: 1,
-            pb: 2,
+            pb: 3,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
