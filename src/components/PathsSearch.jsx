@@ -492,8 +492,7 @@ const PathsSearch = React.memo(
                 <Box sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography
-                      variant="h5"
-                      component="h5"
+                      variant="body1"
                       sx={{ wordWrap: 'break-word' }}
                     >
                       {node.id}
@@ -505,12 +504,11 @@ const PathsSearch = React.memo(
                       <RemoveIcon />
                     </IconButton>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {node.type}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {node.labelProperty}
-                  </Typography>
+                  {node.labelProperty &&
+                    <Typography variant="body2" color="text.secondary">
+                      {node.labelProperty}
+                    </Typography>
+                  }
                 </Box>
                 {index < inputNodes.length - 1 && <Divider />}
               </React.Fragment>

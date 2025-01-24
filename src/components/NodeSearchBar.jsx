@@ -301,7 +301,7 @@ const NodeSearchBar = React.memo(
               const label = record.has('label') ? (
                 record.get('label').toString()
               ) : (
-                node.toString()
+                ''
               );
               const id = node.id ? node.id : node.toString();
               const type = graphObjectToTypeString(node);
@@ -471,12 +471,20 @@ const NodeSearchBar = React.memo(
                 return (
                   <li key={key} {...optionProps}>
                     <Grid container sx={{ alignItems: 'center' }}>
-                      <Grid item sx={{ width: '100%', wordWrap: 'break-word' }}>
-                        <Typography variant="body1">{option.label}</Typography>
-                      </Grid>
-                      <Typography variant="body2" color="text.secondary">
-                        {option.type}
-                      </Typography>
+                      {option.label ? (
+                        <>
+                          <Grid item sx={{ width: '100%', wordWrap: 'break-word' }}>
+                            <Typography variant="body1">{option.label}</Typography>
+                          </Grid>
+                          <Typography variant="body2" color="text.secondary">
+                            {option.id}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Grid item sx={{ width: '100%', wordWrap: 'break-word' }}>
+                          <Typography variant="body1">{option.id}</Typography>
+                        </Grid>
+                      )}
                     </Grid>
                   </li>
                 );
