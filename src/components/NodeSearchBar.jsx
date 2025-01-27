@@ -441,7 +441,7 @@ const NodeSearchBar = React.memo(
 
           <Box sx={{ width: '100%' }}>
             <Autocomplete
-              getOptionLabel={(option) => option.label}
+              getOptionLabel={(option) => option.label === undefined ? option : option.label}
               getOptionKey={(option) => option.id}
               filterOptions={(x) => x}
               options={options}
@@ -515,7 +515,7 @@ const NodeSearchBar = React.memo(
                 placeholder={`Enter ${modelString === 'rdf' ? 'IRI' : 'property'} for searching`}
                 variant="outlined"
                 fullWidth
-                value={propertySearchName}
+                value={propertySearchName || ''}
                 onChange={(event) => {
                   setPropertySearchName(event.target.value);
                 }}
