@@ -23,12 +23,37 @@ import SquareIcon from '@mui/icons-material/Square';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TextIndexSelect from './TextIndexSelect';
 
+const defaultFilterOptions = () => true;
+const defaultGetOptionDisabled = () => false;
+
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const escapeRegexSPARQL = (str) => escapeRegex(str).replace(/\\/g, '\\\\');
 const escapeQuotes = (str) => str.replace(/"/g, '\\"');
 
-const defaultFilterOptions = () => true;
-const defaultGetOptionDisabled = () => false;
+function isIRI(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const isPrefixedName = (str) => {
+  return /^[a-zA-Z][a-zA-Z0-9-]*:[a-zA-Z0-9-]*$/.test(str);
+};
+
+const wrapIRIForQuery = (str) => {
+  if (isIRI(str)) {
+    if (isPrefixedName(str)) {
+      return str;
+    } else {
+      return `<${str}>`;
+    }
+  } else {
+    return `"${str}"`;
+  }
+}
 
 const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, property) => {
   switch (modelString) {
@@ -58,7 +83,7 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
         const regexPattern = regexSearch ? `${input}` : `^${escapeRegexSPARQL(input)}`;
         return (
           'SELECT ?node ?label\n' +
-          `WHERE { ?node ${property} ?label . FILTER regex(?label, "${escapeQuotes(regexPattern)}", "i")}\n` +
+          `WHERE { ?node ${wrapIRIForQuery(property)} ?label . FILTER regex(?label, "${escapeQuotes(regexPattern)}", "i")}\n` +
           'LIMIT 50'
         );
       } else {
@@ -85,18 +110,6 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
       }
     default:
       throw new Error('Invalid model string');
-  }
-};
-
-const isIri = (input) => {
-  let isUrl;
-  try {
-    new URL(input);
-    isUrl = true;
-  } catch (error) {
-    isUrl = false;
-  } finally {
-    return isUrl;
   }
 };
 
@@ -244,7 +257,7 @@ const NodeSearchBar = React.memo(
 
     const isAutoCompleteError = useCallback((input) => {
       if (selectedSearchBy === 'iri' && input) {
-        return !isIri(input);
+        return !isIRI(input);
       } else {
         return false;
       }
@@ -252,7 +265,7 @@ const NodeSearchBar = React.memo(
 
     const isTextFieldError = useCallback((input) => {
       if (selectedSearchBy === 'property' && modelString === 'rdf') {
-        return !isIri(input);
+        return !isIRI(input);
       } else {
         return false;
       }
