@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useUserContext } from '../context/UserContext';
+import { useLoaderData } from 'react-router-dom';
 
 const AccordionSetting = ({ title, children, defaultExpanded = false }) => (
   <Accordion
@@ -41,6 +42,8 @@ const AccordionSetting = ({ title, children, defaultExpanded = false }) => (
 );
 
 const GraphOptions = React.memo(({clearAll, moveOnBreakpoint = false}) => {
+  const modelString = useLoaderData();
+
   const {
     FORCE_RANGES,
     graphForceLinkDistance,
@@ -52,7 +55,9 @@ const GraphOptions = React.memo(({clearAll, moveOnBreakpoint = false}) => {
     showGrid,
     setShowGrid,
     showNodeLabels,
-    setShowNodeLabels
+    setShowNodeLabels,
+    usePrefixes,
+    setUsePrefixes,
   } = useUserContext();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -190,6 +195,23 @@ const GraphOptions = React.memo(({clearAll, moveOnBreakpoint = false}) => {
                   onChange={(e) => setShowNodeLabels(e.target.checked)}
                 />
               </Box>
+              {modelString === 'rdf' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="body2">Use Prefixes</Typography>
+                  <Switch
+                    checked={usePrefixes}
+                    onChange={(e) => setUsePrefixes(e.target.checked)}
+                  />
+                </Box>
+              )}
             </AccordionSetting>
           </Box>
         )}

@@ -45,6 +45,7 @@ export const UserProvider = ({ children }) => {
   );
   const [showGrid, setShowGrid] = useState(true);
   const [showNodeLabels, setShowNodeLabels] = useState(false);
+  const [usePrefixes, setUsePrefixes] = useState(true);
 
   return (
     <UserContext.Provider value={{
@@ -67,6 +68,8 @@ export const UserProvider = ({ children }) => {
       setShowGrid,
       showNodeLabels,
       setShowNodeLabels,
+      usePrefixes,
+      setUsePrefixes,
     }}>
       {children}
     </UserContext.Provider>

@@ -3,6 +3,8 @@ import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState, createContext, useContext } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 import { useUserContext } from '../context/UserContext';
+import { useLoaderData } from 'react-router-dom';
+import prefixes from '../data/prefixes.js';
 
 const GraphContext = createContext();
 
@@ -14,6 +16,7 @@ export function GraphProvider({ children }) {
   });
 
   const theme = useTheme();
+  const modelString = useLoaderData();
 
   const { width, height, ref } = useResizeDetector();
 
@@ -24,6 +27,7 @@ export function GraphProvider({ children }) {
     graphForceChargeStrength,
     showGrid,
     showNodeLabels,
+    usePrefixes,
   } = useUserContext();
 
   const graphRef = useRef(null);
@@ -203,6 +207,17 @@ export function GraphProvider({ children }) {
     ctx.restore();
   };
 
+  const getNodeLabel = useCallback((node) => {
+    if (modelString === 'rdf' && usePrefixes) {
+      for (const [prefix, uri] of Object.entries(prefixes)) {
+        if (node.label.startsWith(uri)) {
+          return node.label.replace(uri, `${prefix}:`);
+        }
+      }
+    }
+    return node.label;
+  }, [modelString, usePrefixes]);
+
   const NodeCanvasObject = useCallback(
     (node, ctx, globalScale) => {
       ctx.save();
@@ -311,7 +326,7 @@ export function GraphProvider({ children }) {
       ctx.font = `${fontSize}px "Roboto"`;
       const yOffset = graphSizeSettings.nodeRadius + fontSize;
       if (showNodeLabels || isHovered || isSelected || highlightNodeIds.has(node.id)) {
-        ctx.fillText(node.label, x, y + yOffset);
+        ctx.fillText(getNodeLabel(node), x, y + yOffset);
       }
 
       ctx.restore();
@@ -324,6 +339,7 @@ export function GraphProvider({ children }) {
       opacityAtScale,
       selectedNodesIds,
       showNodeLabels,
+      getNodeLabel,
     ]
   );
 
