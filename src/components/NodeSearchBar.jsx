@@ -229,6 +229,44 @@ const PathsSearchBar = React.memo(({ inputNodes, setInputNodes }) => {
   )
 });
 
+const ObjectEditSearchBar = React.memo(({ selectedObject, setSelectedObject }) => {
+  const [value, setValue] = useState(null);
+  const [inputValue, setInputValue] = useState('');
+
+  const handleOnChange = (_event, newValue) => {
+    if (newValue?.node) {
+      setSelectedObject(newValue.node);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedObject) {
+      setValue({
+        id: selectedObject.id,
+        label: '',
+      });
+    } else {
+      setValue(null);
+    }
+  }, [selectedObject]);
+
+  return (
+    <>
+      <Box sx={{ position: "absolute", top: 144, width: "100%" }}>
+        <NodeSearchBar
+          value={value}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          handleOnChange={handleOnChange}
+        />
+      </Box>
+      <Box sx={{ position: "absolute", top: 144, width: "100%" }}>
+        <TextIndexSelect />
+      </Box>
+    </>
+  )
+});
+
 const NodeSearchBar = React.memo(
   ({
     value,
@@ -542,4 +580,4 @@ const NodeSearchBar = React.memo(
   }
 );
 
-export { GraphSearchBar, PathsSearchBar };
+export { GraphSearchBar, PathsSearchBar, ObjectEditSearchBar };

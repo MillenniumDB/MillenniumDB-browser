@@ -69,7 +69,7 @@ function PathNode({ value, color }) {
   }
 }
 
-export default function CustomCellRenderer(props, onObjectClick, onIriClick, openInNewTab) {
+export default function CustomCellRenderer(props, onObjectClick, onIriClick, newTabOnObjectClick) {
   const { value } = props;
 
   const wrapper = useRef(null);
@@ -111,8 +111,8 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
             return setCellContent(
               <Link
                 href={`/object/${nodeId}`}
-                target={openInNewTab ? "_blank" : undefined}
-                rel={openInNewTab ? "noopener" : undefined}
+                target={newTabOnObjectClick ? "_blank" : undefined}
+                rel={newTabOnObjectClick ? "noopener" : undefined}
               >
                 {nodeId}
               </Link>
@@ -130,8 +130,8 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
               <Link
                 color="secondary"
                 href={`/object/${value.toString()}`}
-                target={openInNewTab ? "_blank" : undefined}
-                rel={openInNewTab ? "noopener" : undefined}
+                target={newTabOnObjectClick ? "_blank" : undefined}
+                rel={newTabOnObjectClick ? "noopener" : undefined}
               >
                 {value.toString()}
               </Link>
@@ -206,7 +206,7 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
         return setCellContent('unknown');
       }
     }
-  }, [value, onObjectClick, onIriClick, openInNewTab]);
+  }, [value, onObjectClick, onIriClick, newTabOnObjectClick]);
 
   const tooltipProps = {
     title: cellContent,

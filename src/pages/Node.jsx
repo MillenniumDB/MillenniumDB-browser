@@ -30,7 +30,7 @@ function ConnectionsTable({ columns, rows }) {
       <AGTable
         columns={columns}
         rows={rows}
-        openInNewTab={false}
+        newTabOnObjectClick={false}
       />
     </Box>
   );

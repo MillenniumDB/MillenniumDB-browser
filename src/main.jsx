@@ -29,6 +29,7 @@ import './styles/ag-grid.css';
 import './styles/react-force-graph.css';
 import { GraphProvider } from './components/GraphProvider';
 import { UserProvider } from './context/UserContext';
+import ObjectEdit from './pages/ObjectEdit';
 
 setupLanguages();
 
@@ -138,6 +139,19 @@ function App() {
             throw new Response(`Object ${objectId} not found`, {
               status: 404,
             });
+          },
+        },
+        {
+          path: '/object-edit',
+          element: <ObjectEdit />,
+          errorElement: <CatalogError />,
+          loader: async () => {
+            try {
+              const catalog = await driverContext.getCatalog();
+              return catalog.getModelString();
+            } catch (error) {
+              throw new Response(error.toString(), { status: 500 });
+            }
           },
         },
       ],
