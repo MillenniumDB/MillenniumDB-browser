@@ -49,7 +49,7 @@ const CustomPagination = ({
 };
 
 export default React.forwardRef(function AGTable(
-  { columns, rows, onObjectClick, onIriClick },
+  { columns, rows, onObjectClick, onIriClick, openInNewTab = true },
   ref
 ) {
   const theme = useTheme();
@@ -80,9 +80,9 @@ export default React.forwardRef(function AGTable(
       cellDataType: false,
       lockVisible: true,
       cellRenderer: (props) =>
-        CustomCellRenderer(props, onObjectClick, onIriClick),
+        CustomCellRenderer(props, onObjectClick, onIriClick, openInNewTab),
     }),
-    [onObjectClick, onIriClick]
+    [onObjectClick, onIriClick, openInNewTab]
   );
 
   const addRows = useCallback((newRows) => {

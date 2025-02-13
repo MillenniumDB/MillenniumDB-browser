@@ -2,7 +2,9 @@ import { useTheme } from '@emotion/react';
 import * as d3Force from 'd3-force';
 import { useCallback, useEffect, useMemo, useRef, useState, createContext, useContext } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
-import { FORCE_RANGES } from './GraphOptions';
+import { useUserContext } from '../context/UserContext';
+import { useLoaderData } from 'react-router-dom';
+import prefixes from '../data/prefixes.js';
 
 const GraphContext = createContext();
 
@@ -14,30 +16,30 @@ export function GraphProvider({ children }) {
   });
 
   const theme = useTheme();
+  const modelString = useLoaderData();
 
   const { width, height, ref } = useResizeDetector();
+
+  const {
+    FORCE_RANGES,
+    graphForceLinkDistance,
+    graphForceLinkStrength,
+    graphForceChargeStrength,
+    showGrid,
+    showNodeLabels,
+    usePrefixes,
+  } = useUserContext();
 
   const graphRef = useRef(null);
 
   const [selectedNode, setSelectedNode] = useState(null);
-  const [highlightedNodes, setHighlightedNodes] = useState(new Set());
+  const [selectedNodesIds, setSelectedNodesIds] = useState(new Set());
   const [opacityAtScale, setOpacityAtScale] = useState(0);
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
   const [highlightNodeIds, setHighlightNodeIds] = useState(new Set());
   const [highlightLinkIds, setHighlightLinkIds] = useState(new Set());
 
   const zoomTransformRef = useRef(null);
-
-  const [graphForceLinkDistance, setGraphLinkDistance] = useState(
-    FORCE_RANGES.linkDistance.default
-  );
-  const [graphForceLinkStrength, setGraphForceLinkStrength] = useState(
-    FORCE_RANGES.linkStrength.default
-  );
-  const [graphForceChargeStrength, setGraphForceChargeStrength] = useState(
-    FORCE_RANGES.chargeStrength.default
-  );
-  const [showGrid, setShowGrid] = useState(true);
 
   // Cache this values as they are used multiple times
   const graphColorSettings = useMemo(() => {
@@ -69,7 +71,7 @@ export function GraphProvider({ children }) {
     const settings = {
       nodeVal: 2,
       nodeRelSize: 10,
-      fontSize: 24,
+      fontSize: 16,
       hoverlineWidth: 2,
       maxZoom: 3,
       minZoom: 0.1,
@@ -137,8 +139,6 @@ export function GraphProvider({ children }) {
   };
 
   const handleRenderFramePre = (ctx, globalScale) => {
-    if (!showGrid) return;
-
     const graph = graphRef.current;
     if (!graph) return;
 
@@ -160,6 +160,8 @@ export function GraphProvider({ children }) {
     );
 
     // Handle grid drawing
+    if (!showGrid) return;
+
     ctx.save();
     const { gridSize } = graphSizeSettings;
     const { gridColor } = graphColorSettings;
@@ -205,13 +207,24 @@ export function GraphProvider({ children }) {
     ctx.restore();
   };
 
+  const getNodeLabel = useCallback((node) => {
+    if (modelString === 'rdf' && usePrefixes) {
+      for (const [prefix, uri] of Object.entries(prefixes)) {
+        if (node.label.startsWith(uri)) {
+          return node.label.replace(uri, `${prefix}:`);
+        }
+      }
+    }
+    return node.label;
+  }, [modelString, usePrefixes]);
+
   const NodeCanvasObject = useCallback(
     (node, ctx, globalScale) => {
       ctx.save();
 
       const { x, y } = node;
       const isHovered = hoveredNodeId === node.id;
-      const isSelected = highlightedNodes.has(node.id);
+      const isSelected = selectedNodesIds.has(node.id);
 
       // Draw the shape of the node
       if (node.isEdge) {
@@ -259,58 +272,62 @@ export function GraphProvider({ children }) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      if (isSelected) {
-        ctx.fillStyle = node.isEdge
-          ? graphColorSettings.linkHighlightColor
-          : graphColorSettings.nodeHighlightColor;
-        fontSize = Math.max(
-          graphSizeSettings.fontSize,
-          graphSizeSettings.fontSize / globalScale
-        );
-      } else if (hoveredNodeId) {
-        ctx.fillStyle = graphColorSettings.textColor;
+      // Calculate color at scale in hex
+      const calculateOpacity = (color) => {
+        const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
+          .toString(16)
+          .padStart(2, '0');
+        return color + textOpacityAtScaleHex;
+      };
+
+      if (hoveredNodeId) {
         if (isHovered || isSelected) {
           fontSize = Math.max(
             graphSizeSettings.fontSize,
             graphSizeSettings.fontSize / globalScale
           );
-        } else if (highlightNodeIds.has(node.id)) {
+        } else {
           // Prevent drawing text when opacity is zero
           if (!opacityAtScale) {
             ctx.restore();
             return;
           }
-
-          // Calculate color at scale in hex
-          const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-            .toString(16)
-            .padStart(2, '0');
-          ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
+        }
+        if (isSelected && (isHovered || highlightNodeIds.has(node.id))) {
+          ctx.fillStyle = node.isEdge
+            ? graphColorSettings.linkHighlightColor
+            : graphColorSettings.nodeHighlightColor;
+        } else if (isHovered) {
+          ctx.fillStyle = graphColorSettings.textColor;
+        } else if (highlightNodeIds.has(node.id)) {
+          ctx.fillStyle = calculateOpacity(graphColorSettings.textColor);
         } else {
+          ctx.fillStyle = calculateOpacity(graphColorSettings.textNonHoveredColor);
+        }
+      } else {
+        if (isSelected) {
+          fontSize = Math.max(
+            graphSizeSettings.fontSize,
+            graphSizeSettings.fontSize / globalScale
+          );
+          ctx.fillStyle = node.isEdge
+            ? graphColorSettings.linkHighlightColor
+            : graphColorSettings.nodeHighlightColor;
+        } else {
+          ctx.fillStyle = calculateOpacity(graphColorSettings.textColor);
+          // Prevent drawing text when opacity is zero
           if (!opacityAtScale) {
             ctx.restore();
             return;
           }
-
-          ctx.fillStyle = graphColorSettings.textNonHoveredColor;
         }
-      } else {
-        // Prevent drawing text when opacity is zero
-        if (!opacityAtScale) {
-          ctx.restore();
-          return;
-        }
-
-        // Calculate color at scale in hex
-        const textOpacityAtScaleHex = Math.round(opacityAtScale * 255)
-          .toString(16)
-          .padStart(2, '0');
-        ctx.fillStyle = graphColorSettings.textColor + textOpacityAtScaleHex;
       }
 
       ctx.font = `${fontSize}px "Roboto"`;
       const yOffset = graphSizeSettings.nodeRadius + fontSize;
-      ctx.fillText(node.label, x, y + yOffset);
+      if (showNodeLabels || isHovered || isSelected || highlightNodeIds.has(node.id)) {
+        ctx.fillText(getNodeLabel(node), x, y + yOffset);
+      }
 
       ctx.restore();
     },
@@ -320,7 +337,9 @@ export function GraphProvider({ children }) {
       graphColorSettings,
       graphSizeSettings,
       opacityAtScale,
-      highlightedNodes,
+      selectedNodesIds,
+      showNodeLabels,
+      getNodeLabel,
     ]
   );
 
@@ -338,30 +357,40 @@ export function GraphProvider({ children }) {
     [hoveredNodeId, highlightLinkIds, graphColorSettings]
   );
 
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (graph) {
-      graph.d3Force(
-        'link',
-        d3Force
-          .forceLink()
-          .distance(FORCE_RANGES.linkDistance.default)
-          .strength(0.5)
-      );
-      graph.d3Force(
-        'charge',
-        d3Force
-          .forceManyBody()
-          .strength(FORCE_RANGES.chargeStrength.default)
-          .distanceMin(1)
-          .distanceMax(FORCE_RANGES.linkDistance.max)
-      );
-      graph.d3Force(
-        'center',
-        d3Force.forceCenter(0, 0).strength(FORCE_RANGES.center.default)
-      );
-    }
-  }, [graphRef, graphSizeSettings.nodeRadius]);
+  useEffect(
+    () => {
+      const graph = graphRef.current;
+      if (graph) {
+        graph.d3Force(
+          'link',
+          d3Force
+            .forceLink()
+            .distance(FORCE_RANGES.linkDistance.default)
+            .strength(0.5)
+        );
+        graph.d3Force(
+          'charge',
+          d3Force
+            .forceManyBody()
+            .strength(FORCE_RANGES.chargeStrength.default)
+            .distanceMin(1)
+            .distanceMax(FORCE_RANGES.linkDistance.max)
+        );
+        graph.d3Force(
+          'center',
+          d3Force.forceCenter(0, 0).strength(FORCE_RANGES.center.default)
+        );
+      }
+    },
+    [
+      graphRef,
+      graphSizeSettings.nodeRadius,
+      FORCE_RANGES.linkDistance.default,
+      FORCE_RANGES.chargeStrength.default,
+      FORCE_RANGES.linkDistance.max,
+      FORCE_RANGES.center.default,
+    ]
+  );
 
   useEffect(() => {
     const graph = graphRef.current;
@@ -389,9 +418,9 @@ export function GraphProvider({ children }) {
 
   useEffect(() => {
     if (selectedNode) {
-      setHighlightedNodes(new Set([selectedNode.id]));
+      setSelectedNodesIds(new Set([selectedNode.id]));
     } else {
-      setHighlightedNodes(new Set());
+      setSelectedNodesIds(new Set());
     }
   }, [selectedNode]);
 
@@ -584,21 +613,13 @@ export function GraphProvider({ children }) {
       handleOnBackgroundClick,
       selectedNode,
       setSelectedNode,
-      highlightedNodes,
-      setHighlightedNodes,
+      selectedNodesIds,
+      setSelectedNodesIds,
       addNodes,
       addConnection,
       removeNodeAndConnections,
       removeConnectionAndNeighbors,
       isNodeInGraphView,
-      graphForceLinkDistance,
-      setGraphLinkDistance,
-      graphForceChargeStrength,
-      setGraphForceChargeStrength,
-      graphForceLinkStrength,
-      setGraphForceLinkStrength,
-      showGrid,
-      setShowGrid,
       clearAll
     }}>
       {children}

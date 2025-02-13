@@ -1,12 +1,22 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
-import { Box, Chip, Link } from '@mui/material';
+import { Box, Chip, Link, Tooltip } from '@mui/material';
 import { types } from 'millenniumdb-driver';
-import { Fragment } from 'react';
+import { useRef, useState, Fragment, useEffect } from 'react';
 import { JSONStringifyObject } from '../utils/GraphObjectUtils';
+import { styled } from '@mui/material/styles';
+import { tooltipClasses } from '@mui/material/Tooltip';
 
-function PathNode({ value, color, onObjectClick, onIriClick }) {
+const NoMaxWidthTooltip = styled(({ className, ...props }) => (
+  <Tooltip {...props} classes={{ popper: className }} />
+))({
+  [`& .${tooltipClasses.tooltip}`]: {
+    maxWidth: 'none',
+  },
+});
+
+function PathNode({ value, color }) {
   if (value === null || value === undefined) {
     return <Chip size="small" label="null" />;
   }
@@ -35,7 +45,7 @@ function PathNode({ value, color, onObjectClick, onIriClick }) {
         case types.GraphNode: {
           const nodeId = value.toString();
           return (
-            <Link onClick={() => onObjectClick(nodeId)}>
+            <Link href={`/object/${nodeId}`} target="_blank" rel="noopener">
               <Chip color={color} size="small" label={nodeId} />
             </Link>
           );
@@ -43,7 +53,7 @@ function PathNode({ value, color, onObjectClick, onIriClick }) {
         case types.IRI: {
           const iriStr = value.toString();
           return (
-            <Link onClick={() => onIriClick(value)}>
+            <Link href={iriStr} target="_blank" rel="noopener">
               <Chip color={color} size="small" label={iriStr} />
             </Link>
           );
@@ -59,117 +69,177 @@ function PathNode({ value, color, onObjectClick, onIriClick }) {
   }
 }
 
-export default function CustomCellRenderer(props, onObjectClick, onIriClick) {
+export default function CustomCellRenderer(props, onObjectClick, onIriClick, openInNewTab) {
   const { value } = props;
 
-  if (value === null || value === undefined) {
-    return <>null</>;
-  }
+  const wrapper = useRef(null);
+  const [tooltip, setTooltip] = useState(false);
+  const [cellContent, setCellContent] = useState(null);
 
-  switch (typeof value) {
-    case 'number':
-    case 'bigint':
-    case 'boolean': {
-      return <>{value.toString()}</>;
+  useEffect(() => {
+    if (value === null) {
+      return setCellContent('null');
     }
-    case 'string': {
-      return <>{`"${value}"`}</>;
-    }
-    case 'object': {
-      switch (value.constructor) {
-        case types.DateTime:
-        case types.Decimal:
-        case types.GraphAnon:
-        case types.SimpleDate:
-        case types.StringLang:
-        case types.Time: {
-          return <>{value.toString()}</>;
-        }
-        case types.GraphNode: {
-          const nodeId = value.toString();
-          return (
-            <Link component="button" onClick={() => onObjectClick(value)}>
-              {nodeId}
-            </Link>
-          );
-        }
-        case types.GraphEdge: {
-          return (
-            <Link component="button" color="secondary" onClick={() => onObjectClick(value)}>
-              {value.toString()}
-            </Link>
-          );
-        }
-        case types.GraphPath: {
-          return (
-            <Box
-              sx={{
-                display: 'inline',
-                height: '100%',
-                '& > *': {
-                  verticalAlign: 'middle',
-                },
-              }}
-            >
-              <PathNode
-                color="primary"
-                value={value.start}
-                onObjectClick={() => onObjectClick(value.start)}
-              />
-              {value.segments.map((segment, segmentIdx) => {
-                return (
-                  <Fragment key={segmentIdx}>
-                    {segment.reverse ? (
-                      <ArrowBackIcon color="secondary" fontSize="small" />
-                    ) : (
-                      <HorizontalRuleIcon color="secondary" fontSize="small" />
-                    )}
-                    <PathNode
-                      color="secondary"
-                      value={segment.type}
-                      onObjectClick={() => onObjectClick(segment.type)}
-                    />
-                    {segment.reverse ? (
-                      <HorizontalRuleIcon color="secondary" fontSize="small" />
-                    ) : (
-                      <ArrowForwardIcon color="secondary" fontSize="small" />
-                    )}
-                    <PathNode
-                      color="primary"
-                      value={segment.to}
-                      onObjectClick={() => onObjectClick(segment.to)}
-                    />
-                  </Fragment>
-                );
-              })}
-            </Box>
-          );
-        }
-        case types.IRI: {
-          const iriStr = value.toString();
-          return <Link onClick={() => onIriClick(value)}>{`<${iriStr}>`}</Link>;
-        }
-        case types.StringDatatype: {
-          return (
-            <>
-              {`"${value.str}"^^`}
+    switch (typeof value) {
+      case 'number':
+      case 'bigint':
+      case 'boolean': {
+        return setCellContent(value.toString());
+      }
+      case 'string': {
+        return setCellContent(`"${value}"`);
+      }
+      case 'object': {
+        switch (value.constructor) {
+          case types.DateTime:
+          case types.Decimal:
+          case types.GraphAnon:
+          case types.SimpleDate:
+          case types.StringLang:
+          case types.Time: {
+            return setCellContent(value.toString());
+          }
+          case types.GraphNode: {
+            const nodeId = value.toString();
+            if (onObjectClick) {
+              return setCellContent(
+                <Link onClick={() => onObjectClick(value)}>
+                  {nodeId}
+                </Link>
+              );
+            }
+            return setCellContent(
               <Link
-                onClick={(e) => e.stopPropagation()}
-                href={value.datatype.toString()}
-                target="_blank"
+                href={`/object/${nodeId}`}
+                target={openInNewTab ? "_blank" : undefined}
+                rel={openInNewTab ? "noopener" : undefined}
               >
-                {`<${value.datatype.toString()}>`}
+                {nodeId}
               </Link>
-            </>
-          );
-        }
-        default: {
-          return <>{JSONStringifyObject(value)}</>;
+            );
+          }
+          case types.GraphEdge: {
+            if (onObjectClick) {
+              return setCellContent(
+                <Link color="secondary" onClick={() => onObjectClick(value)}>
+                  {value.toString()}
+                </Link>
+              );
+            }
+            return setCellContent(
+              <Link
+                color="secondary"
+                href={`/object/${value.toString()}`}
+                target={openInNewTab ? "_blank" : undefined}
+                rel={openInNewTab ? "noopener" : undefined}
+              >
+                {value.toString()}
+              </Link>
+            );
+          }
+          case types.GraphPath: {
+            return setCellContent(
+              <Box
+                sx={{
+                  display: 'inline',
+                  height: '100%',
+                  '& > *': {
+                    verticalAlign: 'middle',
+                  },
+                }}
+              >
+                <PathNode color="primary" value={value.start} />
+                {value.segments.map((segment, segmentIdx) => {
+                  return (
+                    <Fragment key={segmentIdx}>
+                      {segment.reverse ? (
+                        <ArrowBackIcon color="secondary" fontSize="small" />
+                      ) : (
+                        <HorizontalRuleIcon color="secondary" fontSize="small" />
+                      )}
+                      <PathNode color="secondary" value={segment.type}/>
+                      {segment.reverse ? (
+                        <HorizontalRuleIcon color="secondary" fontSize="small" />
+                      ) : (
+                        <ArrowForwardIcon color="secondary" fontSize="small" />
+                      )}
+                      <PathNode color="primary" value={segment.to} />
+                    </Fragment>
+                  );
+                })}
+              </Box>
+            );
+          }
+          case types.IRI: {
+            const iriStr = value.toString();
+            if (onIriClick) {
+              return setCellContent(
+                <Link onClick={() => onIriClick(value)}>{`<${iriStr}>`}</Link>
+              );
+            }
+            return setCellContent(
+              <Link href={iriStr} target="_blank" rel="noopener">
+                {`<${iriStr}>`}
+              </Link>
+            );
+          }
+          case types.StringDatatype: {
+            return setCellContent(
+              <>
+                {`"${value.str}"^^`}
+                <Link
+                  onClick={(e) => e.stopPropagation()}
+                  href={value.datatype.toString()}
+                  target="_blank"
+                >
+                  {`<${value.datatype.toString()}>`}
+                </Link>
+              </>
+            );
+          }
+          default: {
+            return setCellContent(JSONStringifyObject(value));
+          }
         }
       }
+      default: {
+        return setCellContent('unknown');
+      }
     }
-    default: {
-      return <>{'unknown'}</>;
-    }
-  }
+  }, [value, onObjectClick, onIriClick, openInNewTab]);
+
+  const tooltipProps = {
+    title: cellContent,
+    open: tooltip,
+    onOpen: () => {
+      setTooltip(wrapper.current.scrollWidth > wrapper.current.clientWidth);
+    },
+    onClose: () => setTooltip(false),
+    enterDelay: 400,
+    enterNextDelay: 200,
+    placement: 'bottom-start',
+    slotProps: {
+      popper: { modifiers: [{ name: 'offset', options: { offset: [0, -14] } }] },
+    },
+  };
+
+  return value?.constructor === types.GraphPath ? (
+    <NoMaxWidthTooltip {...tooltipProps}>
+      <Box
+        ref={wrapper}
+        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+      >
+        {cellContent}
+      </Box>
+    </NoMaxWidthTooltip>
+  ) : (
+    <Tooltip {...tooltipProps}>
+      <Box
+        ref={wrapper}
+        sx={{ overflow: "hidden", textOverflow: "ellipsis" }}
+      >
+        {cellContent}
+      </Box>
+    </Tooltip>
+  );
 }

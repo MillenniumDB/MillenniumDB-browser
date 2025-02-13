@@ -3,17 +3,14 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLoaderData, useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 
 import AGTable from '../components/AGTable';
 import { types } from 'millenniumdb-driver';
-import { graphObjectToString, graphObjectToTypeString } from '../utils/GraphObjectUtils';
+import { graphObjectToTypeString } from '../utils/GraphObjectUtils';
 
 const TABLE_HEIGHT_PX = 500;
 
 function PropertiesTable({ rows }) {
-  const navigate = useNavigate();
-
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
       <AGTable
@@ -22,23 +19,18 @@ function PropertiesTable({ rows }) {
           { field: 'value', headerName: 'value' },
         ]}
         rows={rows}
-        onObjectClick={(value) => navigate(`/object/${graphObjectToString(value)}`)}
-        onIriClick={(value) => window.open(value.toString(), '_blank')}
       />
     </Box>
   );
 }
 
 function ConnectionsTable({ columns, rows }) {
-  const navigate = useNavigate();
-
   return (
     <Box sx={{ height: TABLE_HEIGHT_PX }}>
       <AGTable
         columns={columns}
         rows={rows}
-        onObjectClick={(value) => navigate(`/object/${graphObjectToString(value)}`)}
-        onIriClick={(value) => window.open(value.toString(), '_blank')}
+        openInNewTab={false}
       />
     </Box>
   );
@@ -50,7 +42,6 @@ export default function Node() {
 
   const data = useLoaderData();
   const { objectId } = useParams();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const isEdgeCurrent = data.object.constructor === types.GraphEdge;
@@ -125,15 +116,11 @@ export default function Node() {
               <Typography variant="h5" gutterBottom>
                 {'Connection'}
               </Typography>
-              <Link component="button" onClick={(e) => {
-                navigate(`/object/${graphObjectToString(description?.edgeNodes.from)}`)
-              }}>
+              <Link href={`/object/${description?.edgeNodes.from.toString()}`}>
                 <Chip size="small" color="primary" label={description?.edgeNodes.from.toString()} />
               </Link>
               <ArrowForwardIcon fontSize="small" />
-              <Link component="button" onClick={(e) => {
-                navigate(`/object/${graphObjectToString(description?.edgeNodes.to)}`)
-              }}>
+              <Link href={`/object/${description?.edgeNodes.to.toString()}`}>
                 <Chip size="small" color="primary" label={description?.edgeNodes.to.toString()} />
               </Link>
             </Box>

@@ -10,7 +10,6 @@ import Editor from '../components/Editor';
 import ExamplesDialog from '../components/ExamplesDialog';
 import { useDriverContext } from '../context/DriverContext';
 import examples from '../data/examples';
-import { graphObjectToString } from '../utils/GraphObjectUtils';
 
 const ADD_ROWS_DELAY_MS = 100;
 
@@ -51,7 +50,7 @@ export default function Query() {
   const handleStop = () => {
     stopQuery();
     enqueueSnackbar({
-      message: `Query stopped`,
+      message: `Query stopped.`,
       variant: 'info',
     });
   };
@@ -125,7 +124,7 @@ export default function Query() {
         } else {
           const { resultCount } = summary;
           enqueueSnackbar({
-            message: `Query executed successfully (Found ${resultCount} results in ${durationString})`,
+            message: `Query executed successfully (Found ${resultCount} results in ${durationString}).`,
             variant: 'success',
           });
         }
@@ -237,13 +236,7 @@ export default function Query() {
             running={running}
           />
           <Box sx={{ height: '90vh' }}>
-            <AGTable
-              ref={agTableRef}
-              onObjectClick={(value) => {
-                window.open(`#/object/${graphObjectToString(value)}`, '_blank')
-              }}
-              onIriClick={(value) => window.open(value.toString(), '_blank')}
-            />
+            <AGTable ref={agTableRef} />
           </Box>
         </Stack>
       </Container>

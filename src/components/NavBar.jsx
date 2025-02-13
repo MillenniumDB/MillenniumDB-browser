@@ -13,9 +13,10 @@ import {
   Box,
   Menu,
   MenuItem,
+  Card,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useNavigation } from 'react-router-dom';
+import { useNavigation, useLocation } from 'react-router-dom';
 import { useDarkModeContext } from '../context/DarkModeContext';
 
 export default function Navbar() {
@@ -26,6 +27,9 @@ export default function Navbar() {
   const theme = useTheme();
 
   const darkModeContext = useDarkModeContext();
+
+  const location = useLocation();
+  const activeTab = location.pathname;
 
   const loading = useMemo(() => {
     return navigation.state === 'loading';
@@ -39,6 +43,20 @@ export default function Navbar() {
     setAnchorElNav(null);
   };
 
+  const getUnderlineStyle = (path) => ({
+    textDecoration: activeTab === path ? 'underline' : 'none',
+    textUnderlineOffset: '4px',
+    textDecorationColor: activeTab === path ? theme.palette.text.primary : 'transparent',
+    transition: 'text-decoration-color 0.3s',
+    '&:hover': {
+      textDecoration: 'underline',
+      textDecorationColor:
+        activeTab === path
+          ? theme.palette.text.primary
+          : theme.palette.action.disabled
+    },
+  });
+
   return (
     <>
       <AppBar
@@ -49,7 +67,7 @@ export default function Navbar() {
         sx={{
           backgroundColor:
             theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+          zIndex: (theme) => theme.zIndex.drawer + 2,
         }}
       >
         {loading && (
@@ -97,40 +115,55 @@ export default function Navbar() {
               open={Boolean(anchorElNav)}
               onClose={handleCloseNavMenu}
               sx={{ display: { xs: 'block', md: 'none' } }}
+              elevation={0}
             >
-              <MenuItem>
-                <Typography sx={{ textAlign: 'center' }}>
-                  <Link
-                    href="/"
-                    sx={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={handleCloseNavMenu}
-                  >
-                    Query
-                  </Link>
-                </Typography>
-              </MenuItem>
-              <MenuItem>
-                <Typography sx={{ textAlign: 'center' }}>
-                  <Link
-                    href="/graph"
-                    sx={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={handleCloseNavMenu}
-                  >
-                    Graph
-                  </Link>
-                </Typography>
-              </MenuItem>
-              <MenuItem>
-                <Typography sx={{ textAlign: 'center' }}>
-                  <Link
-                    href="/paths"
-                    sx={{ textDecoration: 'none', color: 'inherit' }}
-                    onClick={handleCloseNavMenu}
-                  >
-                    Paths
-                  </Link>
-                </Typography>
-              </MenuItem>
+              <Card variant="outlined" sx={{ my: -1, py: 1 }}>
+                <MenuItem
+                  component={Link}
+                  href="/"
+                  onClick={handleCloseNavMenu}
+                  sx={{
+                    textAlign: 'center',
+                    textDecoration: activeTab === '/' ? 'underline' : 'none',
+                    textUnderlineOffset: '4px',
+                    '&:hover': {
+                      textDecoration: activeTab === '/' ? 'underline' : 'none',
+                    },
+                  }}
+                >
+                  <Typography>Query</Typography>
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  href="/graph"
+                  onClick={handleCloseNavMenu}
+                  sx={{
+                    textAlign: 'center',
+                    textDecoration: activeTab === '/graph' ? 'underline' : 'none',
+                    textUnderlineOffset: '4px',
+                    '&:hover': {
+                      textDecoration: activeTab === '/graph' ? 'underline' : 'none',
+                    },
+                  }}
+                >
+                  <Typography>Graph</Typography>
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  href="/paths"
+                  onClick={handleCloseNavMenu}
+                  sx={{
+                    textAlign: 'center',
+                    textDecoration: activeTab === '/paths' ? 'underline' : 'none',
+                    textUnderlineOffset: '4px',
+                    '&:hover': {
+                      textDecoration: activeTab === '/paths' ? 'underline' : 'none',
+                    },
+                  }}
+                >
+                  <Typography>Paths</Typography>
+                </MenuItem>
+              </Card>
             </Menu>
           </Box>
 
@@ -153,7 +186,13 @@ export default function Navbar() {
             <Typography noWrap>
               <Link
                 href="/"
-                sx={{ m: 2, textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
+                sx={{
+                  m: 2,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  fontWeight: 500,
+                  ...getUnderlineStyle('/'),
+                }}
               >
                 Query
               </Link>
@@ -161,7 +200,13 @@ export default function Navbar() {
             <Typography noWrap>
               <Link
                 href="/graph"
-                sx={{ m: 2, textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
+                sx={{
+                  m: 2,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  fontWeight: 500,
+                  ...getUnderlineStyle('/graph'),
+                }}
               >
                 Graph
               </Link>
@@ -169,7 +214,13 @@ export default function Navbar() {
             <Typography noWrap>
               <Link
                 href="/paths"
-                sx={{ m: 2, textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
+                sx={{
+                  m: 2,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  fontWeight: 500,
+                  ...getUnderlineStyle('/paths'),
+                }}
               >
                 Paths
               </Link>

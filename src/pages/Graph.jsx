@@ -29,14 +29,6 @@ export default function Graph() {
     removeNodeAndConnections,
     removeConnectionAndNeighbors,
     isNodeInGraphView,
-    graphForceLinkDistance,
-    setGraphLinkDistance,
-    graphForceChargeStrength,
-    setGraphForceChargeStrength,
-    graphForceLinkStrength,
-    setGraphForceLinkStrength,
-    showGrid,
-    setShowGrid,
     clearAll,
   } = useGraph();
 
@@ -74,14 +66,6 @@ export default function Graph() {
           isNodeInGraphView={isNodeInGraphView}
         />
         <GraphOptions
-          graphForceLinkDistance={graphForceLinkDistance}
-          setGraphForceLinkDistance={setGraphLinkDistance}
-          graphForceChargeStrength={graphForceChargeStrength}
-          setGraphForceChargeStrength={setGraphForceChargeStrength}
-          graphForceLinkStrength={graphForceLinkStrength}
-          setGraphForceLinkStrength={setGraphForceLinkStrength}
-          showGrid={showGrid}
-          setShowGrid={setShowGrid}
           clearAll={clearAll}
           moveOnBreakpoint={true}
         />

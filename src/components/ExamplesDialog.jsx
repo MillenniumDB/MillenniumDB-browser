@@ -1,4 +1,5 @@
 import { useTheme } from '@emotion/react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -6,43 +7,90 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
-import { Fragment } from 'react';
 import examples from '../data/examples';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-function ExampleItem({ example, handleExample }) {
+function ExampleAccordion({ exampleIdx, example, handleExample }) {
   const theme = useTheme();
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <Box display="flex" alignItems="center" gap={2} sx={{ py: 1 }}>
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="body1" color="text.primary">
-          {example.title}
-        </Typography>
+    <Accordion
+      key={exampleIdx}
+      square
+      variant="outlined"
+      elevation={0}
+      onChange={() => setIsExpanded(!isExpanded)}
+    >
+      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box
           sx={{
-            whiteSpace: 'preserve',
-            my: 1,
-            p: 2,
-            backgroundColor:
-              theme.palette.mode === 'dark' ? '#212121' : '#ededed',
-            fontFamily: 'monospace',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            mr: 2,
           }}
         >
-          {example.query}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography
+              variant="body1"
+              color="text.primary"
+              sx={{ fontWeight: 'bold', mr: 1 }}
+            >
+              {`${exampleIdx + 1}. `}
+            </Typography>
+            <Typography variant="body1" color="text.primary">
+              {example.title}
+            </Typography>
+          </Box>
+          {!isExpanded && (
+            <Button
+              sx={{ minWidth: 100 }}
+              variant="contained"
+              onClick={() => handleExample(example)}
+            >
+              Try
+            </Button>
+          )}
         </Box>
-      </Box>
-
-      <Button
-        sx={{ minWidth: 100 }}
-        variant="contained"
-        onClick={() => handleExample(example)}
-      >
-        Try
-      </Button>
-    </Box>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Box sx={{
+          display: 'flex',
+          gap: 2,
+          alignItems: 'center',
+        }}>
+          <Box
+            sx={{
+              whiteSpace: 'preserve',
+              p: 2,
+              backgroundColor:
+                theme.palette.mode === 'dark' ? '#212121' : '#ededed',
+              fontFamily: 'monospace',
+              width: '100%',
+            }}
+          >
+            {example.query}
+          </Box>
+          {isExpanded && (
+            <Button
+              sx={{ minWidth: 100 }}
+              variant="contained"
+              onClick={() => handleExample(example)}
+            >
+              Try
+            </Button>
+          )}
+        </Box>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 
@@ -57,12 +105,13 @@ export default function ExamplesDialog({ open, setOpen, handleExample }) {
       onClose={() => setOpen(false)}
     >
       <DialogTitle>{'Query Examples'}</DialogTitle>
-      <DialogContent dividers sx={{ py: 0, px: 2 }}>
+      <DialogContent dividers sx={{ p: 2 }}>
         {examples.map((example, exampleIdx) => (
-          <Fragment key={exampleIdx}>
-            {exampleIdx > 0 && <Divider />}
-            <ExampleItem example={example} handleExample={handleExample} />
-          </Fragment>
+          <ExampleAccordion
+            exampleIdx={exampleIdx}
+            example={example}
+            handleExample={handleExample}
+          />
         ))}
       </DialogContent>
       <DialogActions>

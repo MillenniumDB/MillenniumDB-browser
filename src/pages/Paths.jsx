@@ -19,17 +19,9 @@ export default function Paths() {
     handleOnNodeHover,
     handleRenderFramePre,
     handleOnZoom,
-    setHighlightedNodes,
+    setSelectedNodesIds,
     addNodes,
     addConnection,
-    graphForceLinkDistance,
-    setGraphLinkDistance,
-    graphForceChargeStrength,
-    setGraphForceChargeStrength,
-    graphForceLinkStrength,
-    setGraphForceLinkStrength,
-    showGrid,
-    setShowGrid,
     clearAll,
   } = useGraph();
 
@@ -57,17 +49,9 @@ export default function Paths() {
           addNodes={addNodes}
           addConnection={addConnection}
           clearAll={clearAll}
-          setHighlightedNodes={setHighlightedNodes}
+          setSelectedNodesIds={setSelectedNodesIds}
         />
         <GraphOptions
-          graphForceLinkDistance={graphForceLinkDistance}
-          setGraphForceLinkDistance={setGraphLinkDistance}
-          graphForceChargeStrength={graphForceChargeStrength}
-          setGraphForceChargeStrength={setGraphForceChargeStrength}
-          graphForceLinkStrength={graphForceLinkStrength}
-          setGraphForceLinkStrength={setGraphForceLinkStrength}
-          showGrid={showGrid}
-          setShowGrid={setShowGrid}
           clearAll={clearAll}
         />
         <ForceGraph2D

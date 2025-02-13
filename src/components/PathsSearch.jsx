@@ -1,6 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import RemoveIcon from '@mui/icons-material/Remove';
+import InfoIcon from '@mui/icons-material/Info';
 import {
   Box,
   Button,
@@ -9,11 +10,13 @@ import {
   IconButton,
   Toolbar,
   Tooltip,
-  Slider,
   Typography,
   CircularProgress,
+  MenuItem,
+  TextField,
 } from '@mui/material';
 import React, { useCallback, useRef, useState, useEffect } from 'react';
+import { useTheme } from '@emotion/react';
 import { useDriverContext } from '../context/DriverContext';
 import { useLoaderData } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
@@ -21,43 +24,93 @@ import { PathsSearchBar } from './NodeSearchBar';
 import { graphObjectToReactForceGraphNode, graphObjectToString } from '../utils/GraphObjectUtils';
 import { types } from 'millenniumdb-driver';
 
-const sliderMarks = [
-  { value: 0, label: '1' },
-  { value: 1, label: '2' },
-  { value: 2, label: '3' },
-  { value: 3, label: '4' },
-  { value: 4, label: '5' },
-  { value: 5, label: '6' },
-];
-
 const PathsSearch = React.memo(
   ({ addNodes,
     addConnection,
     clearAll,
-    setHighlightedNodes,
+    setSelectedNodesIds,
   }) => {
-    const [pathMaxDepth, setPathMaxDepth] = useState(0);
+    const [pathMaxDepth, setPathMaxDepth] = useState(2);
+    const [nodeMaxDegree, setNodeMaxDegree] = useState(10);
+    const [pathMaxCount, setPathMaxCount] = useState(10);
     const [inputNodes, setInputNodes] = useState([]);
     const [isDrawerOpen, setIsDrawerOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [stopSearch, setStopSearch] = useState(false);
 
     const scrollableAreaRef = useRef(null);
-    const stopSearchRef = useRef(stopSearch);
+    const stopSearchRef = useRef(false);
+    const reachedMaxPathsRef = useRef(false);
+    const pathsCountRef = useRef(0);
+
     const driverContext = useDriverContext();
     const modelString = useLoaderData();
+    const theme = useTheme();
 
     useEffect(() => {
       stopSearchRef.current = stopSearch;
     }, [stopSearch]);
 
+    const processRecord = useCallback((record, direction) => {
+      const edge = record.get("edge");
+      edge.type = modelString === "rdf" ? edge : record.get("type");
+      let visitedNode = record.get(direction);
+      if (typeof visitedNode === "object") {
+        visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString();
+      } else {
+        visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode };
+      }
+      return {
+        visitedNode,
+        edge,
+        isIncoming: direction === "to",
+      };
+    }, [modelString]);
+
+    const runQuery = useCallback(async (query, direction, session) => {
+      const result = session.run(query);
+      const records = await result.records();
+      const connections = records.map((record) => processRecord(record, direction));
+      return connections;
+    }, [processRecord]);
+
+    const getConnections = useCallback(
+      async (session, node) => {
+        // TODO: Replace newlines with \n in driver
+        const nodeId = node.id.toString().replaceAll('\n', '\\n');
+        const incomingQuery =
+          modelString === "rdf"
+            ? node.constructor === types.IRI
+              ? `SELECT ?edge ?from WHERE { ?from ?edge <${nodeId}> . } LIMIT ${nodeMaxDegree}`
+              : `SELECT ?edge ?from WHERE { ?from ?edge ${nodeId} . } LIMIT ${nodeMaxDegree}`
+            : `MATCH (?from)-[?edge :?type]->(${nodeId}) RETURN * LIMIT ${nodeMaxDegree}`;
+        const outgoingQuery =
+          modelString === "rdf"
+            ? `SELECT ?edge ?to WHERE { <${nodeId}> ?edge ?to . } LIMIT ${nodeMaxDegree}`
+            : `MATCH (${nodeId})-[?edge :?type]->(?to) RETURN * LIMIT ${nodeMaxDegree}`;
+
+        const incomingConnections = await runQuery(incomingQuery, "from", session);
+        if (modelString === "rdf" && node.constructor !== types.IRI) {
+          return incomingConnections;
+        }
+        const outgoingConnections = await runQuery(outgoingQuery, "to", session);
+        return [...incomingConnections, ...outgoingConnections];
+      },
+      [modelString, nodeMaxDegree, runQuery]
+    );
+
     const addInputNodes = useCallback(() => {
       const graphNodes = inputNodes.map((node) => graphObjectToReactForceGraphNode(node));
       addNodes(graphNodes);
-      setHighlightedNodes(new Set(inputNodes.map((node) => node.id)));
-    }, [inputNodes, addNodes, setHighlightedNodes]);
+      setSelectedNodesIds(new Set(inputNodes.map((node) => node.id)));
+    }, [inputNodes, addNodes, setSelectedNodesIds]);
 
     const addPath = useCallback((path) => {
+      if (pathsCountRef.current > pathMaxCount) {
+        setStopSearch(true);
+        reachedMaxPathsRef.current = true;
+        return;
+      }
       path.forEach((connection) => {
         const edgeNode = graphObjectToReactForceGraphNode(connection.edge);
         edgeNode.isEdge = true;
@@ -74,7 +127,8 @@ const PathsSearch = React.memo(
         }
         addConnection(edgeNode);
       });
-    }, [addConnection, modelString]);
+      pathsCountRef.current += 1;
+    }, [addConnection, modelString, pathMaxCount]);
 
     const checkPathLoop = useCallback((path) => {
       const nodeIds = new Set();
@@ -91,75 +145,13 @@ const PathsSearch = React.memo(
       return false;
     }, []);
 
-    const getConnections = useCallback(
-      async (session, node) => {
-        let incomingQuery;
-        if (modelString === 'rdf') {
-          incomingQuery = node.constructor === types.IRI ? (
-            `SELECT ?edge ?from WHERE { ?from ?edge <${node.id}> . }`
-          ) : (
-            `SELECT ?edge ?from WHERE { ?from ?edge ${node.id} . }`
-          );
-        } else {
-          incomingQuery = `MATCH (?from)-[?edge :?type]->(${node.id}) RETURN *`;
-        }
-        const incomingResult = session.run(incomingQuery);
-        const incomingRecords = await incomingResult.records();
-        const incomingConnections = incomingRecords.map((record) => {
-          const edge = record.get('edge');
-          edge.type = modelString === 'rdf' ? edge : record.get('type');
-          let visitedNode = record.get('from');
-          if (typeof visitedNode === 'object') {
-            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
-          } else {
-            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode }
-          }
-          return {
-            visitedNode,
-            edge,
-            incoming: false,
-          };
-        });
-
-        if (modelString === 'rdf' && node.constructor !== types.IRI) {
-          return incomingConnections;
-        }
-
-        const outgoingQuery = modelString === 'rdf' ? (
-          `SELECT ?edge ?to WHERE { <${node.id}> ?edge ?to . }`
-        ) : (
-          `MATCH (${node.id})-[?edge :?type]->(?to) RETURN *`
-        );
-        const outgoingResult = session.run(outgoingQuery);
-        const outgoingRecords = await outgoingResult.records();
-        const outgoingConnections = outgoingRecords.map((record) => {
-          const edge = record.get('edge');
-          edge.type = modelString === 'rdf' ? edge : record.get('type');
-          let visitedNode = record.get('to');
-          if (typeof visitedNode === 'object') {
-            visitedNode.id = visitedNode.id ? visitedNode.id : visitedNode.toString()
-          } else {
-            visitedNode = { id: graphObjectToString(visitedNode), value: visitedNode }
-          }
-          return {
-            visitedNode,
-            edge,
-            incoming: true,
-          };
-        });
-
-        return [...incomingConnections, ...outgoingConnections];
-      },
-      [modelString]
-    );
-
     const mergePaths = useCallback((queueObject, visitedObject) => {
       const path = [];
       [queueObject, visitedObject].forEach((object) => {
         let currentObject = object;
         while (currentObject.previousObject) {
           let connection;
-          if (currentObject.incoming) {
+          if (currentObject.isIncoming) {
             connection = {
               from: currentObject.previousObject.node,
               to: currentObject.node,
@@ -191,7 +183,10 @@ const PathsSearch = React.memo(
         const key = `${queueObject.node.id},${endingNode.id}`;
         if (visited[key]) {
           visited[key].forEach((visitedObject) => {
-            if (queueObject.depth + visitedObject.depth <= pathMaxDepth + 1) {
+            if (
+              queueObject.depth + visitedObject.depth <= pathMaxDepth + 1 &&
+              !stopSearchRef.current
+            ) {
               mergePaths(queueObject, visitedObject);
             }
           });
@@ -199,14 +194,36 @@ const PathsSearch = React.memo(
       });
     }, [inputNodes, mergePaths, pathMaxDepth]);
 
+    const revisitedLastNode = useCallback((queueObject, visitedNode) => {
+      if (queueObject.previousObject) {
+        return queueObject.previousObject.node.id === visitedNode.id;
+      }
+      return false;
+    }, []);
+
+    const reachedInputNode = useCallback((node) => {
+      return inputNodes.some((inputNode) => node.id === inputNode.id);
+    }, [inputNodes]);
+
+    const addToVisited = useCallback((visited, queueObject) => {
+      const key = `${queueObject.node.id},${queueObject.startingNode.id}`;
+      if (!visited[key]) {
+        visited[key] = [queueObject];
+      } else {
+        visited[key].push(queueObject);
+      }
+    }, []);
+
     const searchPaths = useCallback(
       async () => {
         clearAll();
         addInputNodes();
+        pathsCountRef.current = 0;
+        let success = false;
+        const startTime = performance.now();
 
         const session = driverContext.driver.session();
         try {
-          console.time('Execution Time');
           setIsLoading(true);
 
           const visited = {};
@@ -218,7 +235,7 @@ const PathsSearch = React.memo(
               startingNode: node,
               previousObject: null,
               edge: null,
-              incoming: null,
+              isIncoming: null,
               depth: 0,
             }
             const key = `${node.id},${node.id}`;
@@ -226,57 +243,84 @@ const PathsSearch = React.memo(
             queue.push(queueObject);
           });
 
-          while (queue.length > 0) {
-            if (stopSearchRef.current) {
-              return;
-            }
+          while (queue.length > 0 && !stopSearchRef.current) {
             const queueObject = queue.shift();
             const connections = await getConnections(session, queueObject.node);
-            connections.forEach(({ visitedNode, edge, incoming }) => {
+            for (const { visitedNode, edge, isIncoming } of connections) {
+              if (stopSearchRef.current) {
+                return;
+              }
+              if (revisitedLastNode(queueObject, visitedNode)) {
+                continue;
+              }
               const newQueueObject = {
                 node: visitedNode,
                 startingNode: queueObject.startingNode,
                 previousObject: queueObject,
                 edge,
-                incoming,
+                isIncoming,
                 depth: queueObject.depth + 1,
               };
               checkAndMergePaths(newQueueObject, visited);
-              if (inputNodes.some((node) => node.id === visitedNode.id)) {
-                return;
+              if (reachedInputNode(visitedNode)) {
+                continue;
               }
-              const key = `${visitedNode.id},${queueObject.startingNode.id}`;
-              if (!visited[key]) {
-                visited[key] = [newQueueObject];
-              } else {
-                visited[key].push(newQueueObject);
-              }
+              addToVisited(visited, newQueueObject);
               if (queueObject.depth < Math.floor(pathMaxDepth / 2)) {
                 queue.push(newQueueObject);
               }
-            });
+            }
           }
+          success = true;
         } catch (error) {
+          console.error(error);
           enqueueSnackbar({
-            message: error,
+            message: error.toString(),
             variant: 'error',
           });
         } finally {
           session.close();
           setIsLoading(false);
-          console.timeEnd('Execution Time');
+          if (reachedMaxPathsRef.current) {
+            enqueueSnackbar({
+              message: `Reached maximum number of paths (${pathMaxCount}). Search stopped.`,
+              variant: 'info',
+            });
+            reachedMaxPathsRef.current = false;
+          } else if (stopSearchRef.current) {
+            enqueueSnackbar({
+              message: 'Search stopped.',
+              variant: 'info',
+            });
+          } else if (success) {
+            const endTime = performance.now();
+            const totalDurationMs = parseInt(endTime - startTime);
+            let durationString;
+            if (totalDurationMs > 1_000) {
+              durationString = `${(totalDurationMs / 1_000).toFixed(2)} s`;
+            } else {
+              durationString = `${totalDurationMs} ms`;
+            }
+            enqueueSnackbar({
+              message: `Search completed successfully (Found ${pathsCountRef.current} paths in ${durationString}).`,
+              variant: 'success',
+            });
+          }
           setStopSearch(false);
         }
       },
       [
         inputNodes,
         pathMaxDepth,
+        pathMaxCount,
         driverContext.driver,
         addInputNodes,
         clearAll,
-        stopSearchRef,
         getConnections,
         checkAndMergePaths,
+        reachedInputNode,
+        revisitedLastNode,
+        addToVisited,
       ]
     );
 
@@ -321,7 +365,7 @@ const PathsSearch = React.memo(
           <PathsSearchBar inputNodes={inputNodes} setInputNodes={setInputNodes} />
           <Box sx={{
             p: 1,
-            pb: 2,
+            pb: 3,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -366,21 +410,79 @@ const PathsSearch = React.memo(
           <Divider />
 
           <Box ref={scrollableAreaRef} sx={{ overflow: 'scroll' }}>
-            <Box sx={{ p: 2 }}>
-              <Typography variant="body1" component="p">
-                Maximum path depth
+            <Box sx={{ px: 2, py: 3 }}>
+              <Typography variant="body1" sx={{ pb: 3 }}>
+                Search options
               </Typography>
-              <Box sx={{ p: 2, pb: 0 }}>
-                <Slider
-                  defaultValue={0}
-                  step={1}
-                  marks={sliderMarks}
-                  min={0}
-                  max={5}
-                  size='small'
-                  onChange={(_event, value) => setPathMaxDepth(value)}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 3,
+                }}
+              >
+                <TextField
+                  label="Maximum path depth"
+                  disabled={isLoading}
+                  select
                   value={pathMaxDepth}
-                />
+                  onChange={(event) => setPathMaxDepth(event.target.value)}
+                  sx={{ width: 'calc(50% - 12px)' }}
+                >
+                  <MenuItem value={0}>1</MenuItem>
+                  <MenuItem value={1}>2</MenuItem>
+                  <MenuItem value={2}>3</MenuItem>
+                  <MenuItem value={3}>4</MenuItem>
+                  <MenuItem value={4}>5</MenuItem>
+                  <MenuItem value={5}>6</MenuItem>
+                </TextField>
+
+                <Box sx={{ position: 'relative', width: 'calc(50% - 12px)' }}>
+                  <TextField
+                    label="Maximum node degree"
+                    disabled={isLoading}
+                    select
+                    value={nodeMaxDegree}
+                    onChange={(event) => setNodeMaxDegree(event.target.value)}
+                    fullWidth
+                  >
+                    <MenuItem value={10}>10</MenuItem>
+                    <MenuItem value={20}>20</MenuItem>
+                    <MenuItem value={50}>50</MenuItem>
+                    <MenuItem value={100}>100</MenuItem>
+                    <MenuItem value={1000}>1000</MenuItem>
+                  </TextField>
+                  <Tooltip
+                    placement="bottom-start"
+                    title="Set the maximum number of outgoing connections
+                    and the maximum number of incoming connections."
+                  >
+                    <InfoIcon
+                      sx={{
+                        position: 'absolute',
+                        right: 36,
+                        top: 16,
+                        color: theme.palette.action.active,
+                      }}
+                    />
+                  </Tooltip>
+                </Box>
+
+                <TextField
+                  label="Maximum paths found"
+                  disabled={isLoading}
+                  select
+                  value={pathMaxCount}
+                  onChange={(event) => setPathMaxCount(event.target.value)}
+                  sx={{ width: 'calc(50% - 12px)' }}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={30}>30</MenuItem>
+                  <MenuItem value={40}>40</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                </TextField>
               </Box>
             </Box>
             <Divider />
@@ -390,8 +492,7 @@ const PathsSearch = React.memo(
                 <Box sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography
-                      variant="h5"
-                      component="h5"
+                      variant="body1"
                       sx={{ wordWrap: 'break-word' }}
                     >
                       {node.id}
@@ -403,12 +504,11 @@ const PathsSearch = React.memo(
                       <RemoveIcon />
                     </IconButton>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {node.type}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {node.labelProperty}
-                  </Typography>
+                  {node.labelProperty &&
+                    <Typography variant="body2" color="text.secondary">
+                      {node.labelProperty}
+                    </Typography>
+                  }
                 </Box>
                 {index < inputNodes.length - 1 && <Divider />}
               </React.Fragment>
