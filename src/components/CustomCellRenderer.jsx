@@ -58,6 +58,9 @@ function PathNode({ value, color }) {
             </Link>
           );
         }
+        case Array: {
+          return <Chip size="small" label={`[${value.join(', ')}]`} />;
+        }
         default: {
           return <Chip size="small" label={JSONStringifyObject(value)} />;
         }
@@ -196,6 +199,9 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
                 </Link>
               </>
             );
+          }
+          case Array: {
+            return setCellContent(`[${value.join(', ')}]`);
           }
           default: {
             return setCellContent(JSONStringifyObject(value));
