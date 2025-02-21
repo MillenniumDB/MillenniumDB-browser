@@ -50,7 +50,7 @@ export default function TextIndexSelect() {
       setTextIndexes(textIndexObjects);
       if (selectedTextIndex === null && selectedSearchBy === null) {
         if (textIndexObjects.length > 0) {
-          setSelectedTextIndex(textIndexObjects[0].name);
+          setSelectedTextIndex("*");
         } else {
           setSelectedSearchBy("property");
         }
@@ -73,15 +73,17 @@ export default function TextIndexSelect() {
   }, [getTextIndexNames, loading]);
 
   return (
-    <Box sx={(theme) => ({
-      position: "absolute",
-      left: 440,
-      zIndex: theme.zIndex.drawer + 1,
-      [`${theme.breakpoints.down('md')}`]: {
-        left: 'auto',
-        right: 14,
-      },
-    })}>
+    <Box
+      sx={(theme) => ({
+        position: 'absolute',
+        left: 440,
+        zIndex: theme.zIndex.drawer + 1,
+        [`${theme.breakpoints.down('md')}`]: {
+          left: 'auto',
+          right: 14,
+        },
+      })}
+    >
       <Tooltip title="Select Text Index">
         <IconButton
           sx={{ width: 36, height: 36, ml: 1, mt: 1.4 }}
@@ -107,7 +109,7 @@ export default function TextIndexSelect() {
       >
         <Card
           variant="outlined"
-          sx={{my: -1, py: 1, px: 2, maxWidth: 220, overflowX: 'auto' }}
+          sx={{ my: -1, py: 1, px: 2, maxWidth: 220, overflowX: 'auto' }}
         >
           <FormControl>
             <RadioGroup>
@@ -116,11 +118,41 @@ export default function TextIndexSelect() {
                   <Typography sx={{ my: 1, fontWeight: 'bold' }}>
                     Search by Text Index
                   </Typography>
+
+                  {/* Search over all indexes */}
+                  <FormControlLabel
+                    value="*"
+                    control={<Radio size="small" />}
+                    sx={{ mb: 1 }}
+                    label={
+                      <>
+                        <Typography variant="body2">{'*'}</Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            wordBreak: 'break-all',
+                            color: 'text.secondary',
+                            fontSize: '12px',
+                            marginTop: '2px',
+                          }}
+                        >
+                          {'Search over all indexes'}
+                        </Typography>
+                      </>
+                    }
+                    checked={selectedTextIndex === '*'}
+                    onChange={(e) => {
+                      setSelectedTextIndex(e.target.value);
+                      setSelectedSearchBy(null);
+                      handleCloseIndexMenu();
+                    }}
+                  />
+
                   {textIndexes.map((index, id) => (
                     <FormControlLabel
                       key={id}
                       value={index.name}
-                      control={<Radio size='small'/>}
+                      control={<Radio size="small" />}
                       sx={{ mb: 1 }}
                       label={
                         <>
@@ -132,9 +164,10 @@ export default function TextIndexSelect() {
                               color: 'text.secondary',
                               fontSize: '12px',
                               marginTop: '2px',
-                            }}>
-                              {index.predicate.toString()}
-                            </Typography>
+                            }}
+                          >
+                            {index.predicate.toString()}
+                          </Typography>
                         </>
                       }
                       checked={selectedTextIndex === index.name}
@@ -145,7 +178,7 @@ export default function TextIndexSelect() {
                       }}
                     />
                   ))}
-                  <Divider sx={{ my: 1, width: 'calc(100% + 32px)', mx: -2 }}/>
+                  <Divider sx={{ my: 1, width: 'calc(100% + 32px)', mx: -2 }} />
                 </>
               )}
               <Typography sx={{ mt: 1, fontWeight: 'bold' }}>
@@ -153,25 +186,25 @@ export default function TextIndexSelect() {
               </Typography>
               <FormControlLabel
                 value="property"
-                control={<Radio size='small'/>}
+                control={<Radio size="small" />}
                 label={
                   <Typography variant="body2">
                     {modelString === 'rdf' ? 'Literal' : 'Property'}
                   </Typography>
                 }
-                checked={selectedSearchBy === "property"}
+                checked={selectedSearchBy === 'property'}
                 onChange={(e) => {
                   setSelectedSearchBy(e.target.value);
                   setSelectedTextIndex(null);
                   handleCloseIndexMenu();
                 }}
               />
-              {modelString === "rdf" && (
+              {modelString === 'rdf' && (
                 <FormControlLabel
                   value="iri"
-                  control={<Radio size='small'/>}
+                  control={<Radio size="small" />}
                   label={<Typography variant="body2">IRI</Typography>}
-                  checked={selectedSearchBy === "iri"}
+                  checked={selectedSearchBy === 'iri'}
                   onChange={(e) => {
                     setSelectedSearchBy(e.target.value);
                     setSelectedTextIndex(null);

@@ -59,11 +59,11 @@ const getSearchQuery = (modelString, input, textIndex, searchBy, regexSearch, pr
   switch (modelString) {
     case 'rdf':
       if (textIndex) {
-        return (
-          'SELECT ?node ?label\n' +
-          `WHERE { ?node mdbfn:textSearch ("${textIndex}" "${escapeQuotes(input)}" "prefix" ?label) . }\n` +
-          'LIMIT 50'
-        );
+        return `SELECT ${
+          textIndex === '*' ? 'DISTINCT' : ''
+        } ?node ?label WHERE { ?node mdbproc:textSearch ("${textIndex}" "${escapeQuotes(
+          input
+        )}" "prefix" ?label) . } LIMIT 50`;
       } else if (searchBy === 'iri') {
         return (
           'SELECT ?node\n' +
@@ -309,6 +309,7 @@ const NodeSearchBar = React.memo(
             const result = session.run(query);
             const records = await result.records();
             const newOptions = records.map((record) => {
+              console.log(record);
               const node = record.get('node');
               const graphNode = graphObjectToReactForceGraphNode(node);
               const label = record.has('label') ? (
