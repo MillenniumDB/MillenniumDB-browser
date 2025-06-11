@@ -8,6 +8,7 @@ import MillenniumDBDiagnosticsAdapter from './millenniumdb-diagnostics-adapter';
 
 import * as MQL from './mql/mql-language';
 import * as SPARQL from './sparql/sparql-language';
+import * as GQL from './gql/gql-language';
 
 export function setupLanguages() {
   self.MonacoEnvironment = {
@@ -15,6 +16,7 @@ export function setupLanguages() {
       switch (label) {
         case MQL.id:
         case SPARQL.id:
+        case GQL.id:
           return MillenniumDBWorkerModule();
         default:
           return EditorWorkerModule();
@@ -47,6 +49,16 @@ export function setupLanguages() {
     monaco.languages.registerCompletionItemProvider(
       SPARQL.id,
       SPARQL.completionProvider
+    );
+  });
+
+  monaco.languages.register({ id: GQL.id });
+  monaco.languages.onLanguage(GQL.id, () => {
+    monaco.languages.setLanguageConfiguration(GQL.id, GQL.configuration);
+    monaco.languages.setTokensProvider(GQL.id, GQL.tokensProvider);
+    monaco.languages.registerCompletionItemProvider(
+      GQL.id,
+      GQL.completionProvider
     );
   });
 }

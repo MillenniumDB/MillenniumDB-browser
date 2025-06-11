@@ -155,16 +155,21 @@ export default function CustomCellRenderer(props, onObjectClick, onIriClick, ope
                 {value.segments.map((segment, segmentIdx) => {
                   return (
                     <Fragment key={segmentIdx}>
-                      {segment.reverse ? (
+                      {segment.direction === "left" ? (
                         <ArrowBackIcon color="secondary" fontSize="small" />
+                      ) : segment.direction === "right" ? (
+                        <HorizontalRuleIcon color="secondary" fontSize="small" />
                       ) : (
                         <HorizontalRuleIcon color="secondary" fontSize="small" />
                       )}
-                      <PathNode color="secondary" value={segment.type}/>
-                      {segment.reverse ? (
+                      <PathNode color="secondary" value={segment.type} />
+
+                      {segment.direction === "left" ? (
                         <HorizontalRuleIcon color="secondary" fontSize="small" />
-                      ) : (
+                      ) : segment.direction === "right" ? (
                         <ArrowForwardIcon color="secondary" fontSize="small" />
+                      ) : (
+                        <HorizontalRuleIcon color="secondary" fontSize="small" />
                       )}
                       <PathNode color="primary" value={segment.to} />
                     </Fragment>

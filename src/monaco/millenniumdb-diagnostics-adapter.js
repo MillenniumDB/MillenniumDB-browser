@@ -1,6 +1,7 @@
 import * as monaco from 'monaco-editor-core';
 import { id as MQLLanguageId } from './mql/mql-language';
 import { id as SPARQLLanguageId } from './sparql/sparql-language';
+import { id as GQLLanguageId } from './gql/gql-language';
 
 export default class MillenniumDBDiagnosticsAdapter {
   static VALIDATION_TIMEOUT_MS = 200;
@@ -12,7 +13,7 @@ export default class MillenniumDBDiagnosticsAdapter {
 
     const onModelAdd = (model) => {
       const languageId = model.getLanguageId();
-      if (languageId !== MQLLanguageId && languageId !== SPARQLLanguageId) {
+      if (languageId !== MQLLanguageId && languageId !== SPARQLLanguageId && languageId != GQLLanguageId) {
         return;
       }
 

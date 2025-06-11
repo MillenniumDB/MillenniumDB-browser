@@ -1,8 +1,10 @@
 import MQLLanguageService from './mql/mql-language-service';
 import SPARQLLanguageService from './sparql/sparql-language-service';
+import GQLLanguageService from './gql/gql-language-service';
 
 import * as MQL from './mql/mql-language';
 import * as SPARQL from './sparql/sparql-language';
+import * as GQL from './gql/gql-language';
 
 export default class MillenniumDBWorker {
   constructor(ctx, createData) {
@@ -15,6 +17,10 @@ export default class MillenniumDBWorker {
       }
       case SPARQL.id: {
         this._languageService = new SPARQLLanguageService();
+        break;
+      }
+      case GQL.id: {
+        this._languageService = new GQLLanguageService();
         break;
       }
       default:
