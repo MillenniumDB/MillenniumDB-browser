@@ -25,6 +25,7 @@ function antlr4TokenToMonacoToken(token) {
     case GQLLexer.EQUALS_OPERATOR:
     case GQLLexer.EXCLAMATION_MARK:
     case GQLLexer.MINUS_SIGN:
+    case GQLLexer.MULTISET_ALTERNATION_OPERATOR:
     case GQLLexer.PERCENT:
     case GQLLexer.PERIOD:
     case GQLLexer.PLUS_SIGN:
@@ -66,8 +67,6 @@ function antlr4TokenToMonacoToken(token) {
     case GQLLexer.DESCRIBE:
     case GQLLexer.DESC:
     case GQLLexer.DISTINCT:
-    case GQLLexer.EDGE:
-    case GQLLexer.INCOMING:
     case GQLLexer.INSERT:
     case GQLLexer.IS:
     case GQLLexer.IN:
@@ -86,14 +85,11 @@ function antlr4TokenToMonacoToken(token) {
     case GQLLexer.OPTIONAL:
     case GQLLexer.ORDER:
     case GQLLexer.OR:
-    case GQLLexer.OUTGOING:
     case GQLLexer.PATH_LENGTH:
-    case GQLLexer.PROPERTIES:
     case GQLLexer.PROPERTY:
     case GQLLexer.NOT:
     case GQLLexer.NULL:
-    case GQLLexer.NULLS_LAST:
-    case GQLLexer.NULLS_FIRST:
+    case GQLLexer.NULLS:
     case GQLLexer.SHORTEST:
     case GQLLexer.SIMPLE:
     case GQLLexer.RETURN:
