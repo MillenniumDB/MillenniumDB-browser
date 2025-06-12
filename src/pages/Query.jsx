@@ -174,6 +174,10 @@ export default function Query() {
         setLanguage('sparql');
         break;
       }
+      case 'gql': {
+        setLanguage('gql');
+        break;
+      }
       default:
         setLanguage('plaintext');
         break;
@@ -187,6 +191,9 @@ export default function Query() {
       }
       case 'sparql': {
         return 'SELECT *\nWHERE { ?s ?p ?o . }\nLIMIT 100\n';
+      }
+      case 'gql': {
+        return 'MATCH (a)-[e]-(b)\nRETURN a,e,b\nLIMIT 100\n';
       }
       default:
         return '';
