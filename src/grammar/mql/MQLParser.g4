@@ -5,9 +5,14 @@ options {
 	tokenVocab = MQLLexer;
 }
 
-root: ((setStatement? matchQuery | describeQuery) | insertPatterns | tensorStoreQuery) EOF;
+root: matchQuery | describeQuery | insertPatterns | createIndexQuery | showQuery EOF;
 
-matchQuery: matchStatement /*callStatement**/ whereStatement? groupByStatement? orderByStatement? returnStatement;
+matchQuery: primitiveStatementList whereStatement? groupByStatement? orderByStatement?
+        returnStatement;
+
+primitiveStatementList: primitiveStatement*;
+
+primitiveStatement: matchStatement | callStatement | letStatement;
 
 insertPatterns: K_INSERT insertLinearPattern (',' insertLinearPattern)*;
 
@@ -21,31 +26,17 @@ insertPlainEdge: '<' '-' '[' TYPE properties? ']''-'
 |                '-' '[' TYPE properties? ']''-' '>'
 ;
 
-tensorStoreQuery: createTensorStore | insertTensors | deleteTensors;
+createIndexQuery: K_CREATE identifier K_INDEX STRING K_WITH createIndexOptions;
 
-createTensorStore: K_CREATE K_TENSOR K_STORE identifier K_DIMENSIONS UNSIGNED_INTEGER;
+createIndexOptions:
+    '{' (createIndexOption (',' createIndexOption)*)? '}';
 
-// deleteTensorStore: K_DELETE K_TENSOR K_STORE identifier
+createIndexOption:
+    STRING ('=' value | boolValue);
 
-insertTensors: K_INSERT K_INTO K_TENSOR K_STORE identifier K_VALUES insertTensorsTuple (',' insertTensorsTuple)*;
-
-insertTensorsTuple: '(' fixedNodeInside ',' tensor ')';
-
-deleteTensors: K_DELETE K_FROM K_TENSOR K_STORE identifier K_OBJECTS '(' fixedNodeInside (',' fixedNodeInside)* ')';
-
-tensor: '[' numericValue (',' numericValue)* ']';
-
-tensorDistance: K_TENSOR_DISTANCE '(' identifier ',' conditionalOrExpr ',' tensorDistanceReference ',' metricType ')';
-
-tensorDistanceReference: conditionalOrExpr | tensor;
-
-metricType: K_ANGULAR | K_EUCLIDEAN | K_MANHATTAN;
-
-// callStatement: K_CALL procedure (K_YIELD returnItem (',' returnItem)* limitOffsetClauses?)?;
-
-// procedure: nearestNeighbors;
-
-// nearestNeighbors: K_NEAREST_NEIGHBORS '(' identifier ',' (node | tensor) ',' UNSIGNED_INTEGER ',' metricType ')';
+showQuery: K_SHOW (
+|   identifier K_INDEX
+);
 
 // updateStatements: (insertStatement | deleteStatement | updateSetStatement)+;
 
@@ -93,9 +84,13 @@ describeQuery: K_DESCRIBE describeFlag* fixedNodeInside;
 
 describeFlag: ( K_LABELS | K_PROPERTIES| K_OUTGOING | K_INCOMING ) (K_LIMIT UNSIGNED_INTEGER)?;
 
-setStatement: K_SET setItem (',' setItem)*;
-
 matchStatement: K_MATCH graphPattern;
+
+letStatement: K_LET letDefinitionList;
+
+letDefinitionList: letDefinition (',' letDefinition)*;
+
+letDefinition: VARIABLE '=' conditionalOrExpr;
 
 whereStatement: K_WHERE conditionalOrExpr;
 
@@ -106,6 +101,14 @@ orderByStatement: K_ORDER K_BY orderByItem (',' orderByItem)*;
 returnStatement: K_RETURN K_DISTINCT? returnItem (',' returnItem)* limitOffsetClauses? # returnList
 |                K_RETURN K_DISTINCT? '*' limitOffsetClauses? # returnAll
 ;
+
+callStatement: K_CALL identifier '(' callArguments? ')' yieldStatement?;
+
+yieldStatement: K_YIELD ('*' | yieldItem (',' yieldItem)*);
+
+yieldItem: VARIABLE alias?;
+
+callArguments: conditionalOrExpr (',' conditionalOrExpr)*;
 
 limitOffsetClauses
     : limitClause offsetClause? | offsetClause limitClause?
@@ -118,8 +121,6 @@ limitClause
 offsetClause
     : K_OFFSET UNSIGNED_INTEGER
     ;
-
-setItem: VARIABLE '=' fixedNodeInside;
 
 returnItem: VARIABLE KEY? # returnItemVar
 |           aggregateFunc '(' VARIABLE KEY? ')' (alias)? # returnItemAgg
@@ -169,7 +170,9 @@ pathSuffix: op='*'
 |           '{' min=UNSIGNED_INTEGER ',' max=UNSIGNED_INTEGER '}'
 ;
 
-pathType: (K_ANY|K_ALL) (K_SHORTEST)? (K_WALKS|K_SIMPLE|K_ACYCLIC|K_TRAILS)?;
+pathType: (K_ANY|K_ALL) (K_SHORTEST)? (K_WALKS|K_SIMPLE|K_ACYCLIC|K_TRAILS)?
+|         (K_SHORTEST) UNSIGNED_INTEGER K_GROUPS? (K_WALKS|K_SIMPLE|K_ACYCLIC|K_TRAILS)?
+;
 
 node: fixedNode
 |     varNode
@@ -238,9 +241,25 @@ atomicExpr:  VARIABLE KEY? # exprVar
 ;
 
 function: regex
-|         tensorDistance;
+|         textSearch
+|         cosineSimilarity
+|         cosineDistance
+|         manhattanDistance
+|         euclideanDistance;
 
 regex: K_REGEX '(' conditionalOrExpr ',' conditionalOrExpr (',' conditionalOrExpr)? ')';
+
+textSearch: K_TEXT_SEARCH '(' STRING ',' STRING ',' textSearchIndexMode ',' VARIABLE (',' VARIABLE)? ')';
+
+cosineSimilarity:  K_COSINE_SIMILARITY  '(' conditionalOrExpr ',' conditionalOrExpr ')';
+
+cosineDistance:    K_COSINE_DISTANCE    '(' conditionalOrExpr ',' conditionalOrExpr ')';
+
+manhattanDistance: K_MANHATTAN_DISTANCE '(' conditionalOrExpr ',' conditionalOrExpr ')';
+
+euclideanDistance: K_EUCLIDEAN_DISTANCE '(' conditionalOrExpr ',' conditionalOrExpr ')';
+
+textSearchIndexMode: K_PREFIX | K_MATCH;
 
 exprTypename: K_NULL
 |             K_STRING
@@ -250,9 +269,9 @@ exprTypename: K_NULL
 ;
 
 // it excludes keywords true and false
-keyword: K_ACYCLIC
+keyword:
+K_ACYCLIC
 | K_AND
-| K_ANGULAR
 | K_ANY
 | K_AS
 | K_AVG
@@ -260,6 +279,9 @@ keyword: K_ACYCLIC
 | K_ASC
 | K_BY
 | K_BOOL
+| K_CALL
+| K_COSINE_DISTANCE
+| K_COSINE_SIMILARITY
 | K_COUNT
 | K_CREATE
 | K_DELETE
@@ -268,19 +290,23 @@ keyword: K_ACYCLIC
 | K_DIMENSIONS
 | K_DISTINCT
 | K_EDGE
-| K_EUCLIDEAN
+| K_EUCLIDEAN_DISTANCE
 | K_FROM
 | K_INCOMING
+| K_INDEX
 | K_INSERT
 | K_INTEGER
 | K_INTO
 | K_IS
 | K_FLOAT
 | K_GROUP
+| K_GROUPS
+| K_IDENTITY
 | K_LABELS
 | K_LABEL
+| K_LET
 | K_LIMIT
-| K_MANHATTAN
+| K_MANHATTAN_DISTANCE
 | K_MATCH
 | K_MAX
 | K_MIN
@@ -290,22 +316,23 @@ keyword: K_ACYCLIC
 | K_ORDER
 | K_OR
 | K_OUTGOING
+| K_PREFIX
 | K_PROPERTIES
 | K_PROPERTY
 | K_NOT
 | K_NULL
 | K_SHORTEST
+| K_SHOW
 | K_SIMPLE
-| K_TENSOR_DISTANCE
+| K_TEXT_SEARCH
 | K_REGEX
 | K_RETURN
-| K_SET
 | K_SUM
 | K_STRING
-| K_STORE
-| K_TENSOR
 | K_TRAILS
 | K_VALUES
 | K_WALKS
+| K_WITH
 | K_WHERE
+| K_YIELD
 ;

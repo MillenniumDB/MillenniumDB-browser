@@ -14,6 +14,15 @@ export default class SPARQLParserListener extends antlr4.tree.ParseTreeListener 
 	}
 
 
+	// Enter a parse tree produced by SPARQLParser#showQuery.
+	enterShowQuery(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#showQuery.
+	exitShowQuery(ctx) {
+	}
+
+
 	// Enter a parse tree produced by SPARQLParser#prologue.
 	enterPrologue(ctx) {
 	}
@@ -938,6 +947,33 @@ export default class SPARQLParserListener extends antlr4.tree.ParseTreeListener 
 
 	// Exit a parse tree produced by SPARQLParser#builtInCall.
 	exitBuiltInCall(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#procedure.
+	enterProcedure(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#procedure.
+	exitProcedure(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#procedureArguments.
+	enterProcedureArguments(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#procedureArguments.
+	exitProcedureArguments(ctx) {
+	}
+
+
+	// Enter a parse tree produced by SPARQLParser#procedureBindings.
+	enterProcedureBindings(ctx) {
+	}
+
+	// Exit a parse tree produced by SPARQLParser#procedureBindings.
+	exitProcedureBindings(ctx) {
 	}
 
 

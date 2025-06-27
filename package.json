@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run lint && vite build",
-    "grammar": "npm run grammar:sparql && npm run grammar:mql",
+    "grammar": "npm run grammar:sparql && npm run grammar:mql && npm run grammar:gql",
     "grammar:sparql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript src/grammar/sparql/SPARQLParser.g4 src/grammar/sparql/SPARQLLexer.g4",
     "grammar:mql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript src/grammar/mql/MQLParser.g4 src/grammar/mql/MQLLexer.g4",
+    "grammar:gql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript src/grammar/gql/GQLParser.g4 src/grammar/gql/GQLLexer.g4",
     "serve": "vite preview",
     "lint": "eslint ./src/**/*.{js,jsx}"
   },

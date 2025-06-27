@@ -10,9 +10,13 @@ function antlr4TokenToMonacoToken(token) {
     case SPARQLLexer.BLANK_NODE_LABEL:
       return 'type';
     case SPARQLLexer.IRIREF:
+    case SPARQLLexer.A:
       return 'uri';
     case SPARQLLexer.LANGTAG:
       return 'langtag';
+    case SPARQLLexer.K_FALSE:
+    case SPARQLLexer.K_TRUE:
+      return 'boolean';
     case SPARQLLexer.VAR1:
     case SPARQLLexer.VAR2:
       return 'variable';
@@ -70,6 +74,7 @@ function antlr4TokenToMonacoToken(token) {
     case SPARQLLexer.GRAPH:
     case SPARQLLexer.GROUP:
     case SPARQLLexer.HAVING:
+    case SPARQLLexer.INDEX:
     case SPARQLLexer.LIMIT:
     case SPARQLLexer.MINUS:
     case SPARQLLexer.NAMED:
@@ -81,6 +86,7 @@ function antlr4TokenToMonacoToken(token) {
     case SPARQLLexer.SELECT:
     case SPARQLLexer.SERVICE:
     case SPARQLLexer.SHORTEST:
+    case SPARQLLexer.SHOW:
     case SPARQLLexer.SILENT:
     case SPARQLLexer.SIMPLE:
     case SPARQLLexer.UNDEF:
@@ -89,7 +95,6 @@ function antlr4TokenToMonacoToken(token) {
     case SPARQLLexer.WALKS:
     case SPARQLLexer.WHERE:
       return 'keyword';
-    case SPARQLLexer.A:
     case SPARQLLexer.ABS:
     case SPARQLLexer.AVG:
     case SPARQLLexer.BIND:

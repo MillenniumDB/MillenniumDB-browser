@@ -23,6 +23,24 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by MQLParser#primitiveStatementList.
+	enterPrimitiveStatementList(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#primitiveStatementList.
+	exitPrimitiveStatementList(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#primitiveStatement.
+	enterPrimitiveStatement(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#primitiveStatement.
+	exitPrimitiveStatement(ctx) {
+	}
+
+
 	// Enter a parse tree produced by MQLParser#insertPatterns.
 	enterInsertPatterns(ctx) {
 	}
@@ -68,84 +86,39 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by MQLParser#tensorStoreQuery.
-	enterTensorStoreQuery(ctx) {
+	// Enter a parse tree produced by MQLParser#createIndexQuery.
+	enterCreateIndexQuery(ctx) {
 	}
 
-	// Exit a parse tree produced by MQLParser#tensorStoreQuery.
-	exitTensorStoreQuery(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#createTensorStore.
-	enterCreateTensorStore(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#createTensorStore.
-	exitCreateTensorStore(ctx) {
+	// Exit a parse tree produced by MQLParser#createIndexQuery.
+	exitCreateIndexQuery(ctx) {
 	}
 
 
-	// Enter a parse tree produced by MQLParser#insertTensors.
-	enterInsertTensors(ctx) {
+	// Enter a parse tree produced by MQLParser#createIndexOptions.
+	enterCreateIndexOptions(ctx) {
 	}
 
-	// Exit a parse tree produced by MQLParser#insertTensors.
-	exitInsertTensors(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#insertTensorsTuple.
-	enterInsertTensorsTuple(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#insertTensorsTuple.
-	exitInsertTensorsTuple(ctx) {
+	// Exit a parse tree produced by MQLParser#createIndexOptions.
+	exitCreateIndexOptions(ctx) {
 	}
 
 
-	// Enter a parse tree produced by MQLParser#deleteTensors.
-	enterDeleteTensors(ctx) {
+	// Enter a parse tree produced by MQLParser#createIndexOption.
+	enterCreateIndexOption(ctx) {
 	}
 
-	// Exit a parse tree produced by MQLParser#deleteTensors.
-	exitDeleteTensors(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#tensor.
-	enterTensor(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#tensor.
-	exitTensor(ctx) {
+	// Exit a parse tree produced by MQLParser#createIndexOption.
+	exitCreateIndexOption(ctx) {
 	}
 
 
-	// Enter a parse tree produced by MQLParser#tensorDistance.
-	enterTensorDistance(ctx) {
+	// Enter a parse tree produced by MQLParser#showQuery.
+	enterShowQuery(ctx) {
 	}
 
-	// Exit a parse tree produced by MQLParser#tensorDistance.
-	exitTensorDistance(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#tensorDistanceReference.
-	enterTensorDistanceReference(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#tensorDistanceReference.
-	exitTensorDistanceReference(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#metricType.
-	enterMetricType(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#metricType.
-	exitMetricType(ctx) {
+	// Exit a parse tree produced by MQLParser#showQuery.
+	exitShowQuery(ctx) {
 	}
 
 
@@ -167,21 +140,39 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by MQLParser#setStatement.
-	enterSetStatement(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#setStatement.
-	exitSetStatement(ctx) {
-	}
-
-
 	// Enter a parse tree produced by MQLParser#matchStatement.
 	enterMatchStatement(ctx) {
 	}
 
 	// Exit a parse tree produced by MQLParser#matchStatement.
 	exitMatchStatement(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#letStatement.
+	enterLetStatement(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#letStatement.
+	exitLetStatement(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#letDefinitionList.
+	enterLetDefinitionList(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#letDefinitionList.
+	exitLetDefinitionList(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#letDefinition.
+	enterLetDefinition(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#letDefinition.
+	exitLetDefinition(ctx) {
 	}
 
 
@@ -230,6 +221,42 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by MQLParser#callStatement.
+	enterCallStatement(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#callStatement.
+	exitCallStatement(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#yieldStatement.
+	enterYieldStatement(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#yieldStatement.
+	exitYieldStatement(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#yieldItem.
+	enterYieldItem(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#yieldItem.
+	exitYieldItem(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#callArguments.
+	enterCallArguments(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#callArguments.
+	exitCallArguments(ctx) {
+	}
+
+
 	// Enter a parse tree produced by MQLParser#limitOffsetClauses.
 	enterLimitOffsetClauses(ctx) {
 	}
@@ -254,15 +281,6 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 
 	// Exit a parse tree produced by MQLParser#offsetClause.
 	exitOffsetClause(ctx) {
-	}
-
-
-	// Enter a parse tree produced by MQLParser#setItem.
-	enterSetItem(ctx) {
-	}
-
-	// Exit a parse tree produced by MQLParser#setItem.
-	exitSetItem(ctx) {
 	}
 
 
@@ -740,6 +758,60 @@ export default class MQLParserListener extends antlr4.tree.ParseTreeListener {
 
 	// Exit a parse tree produced by MQLParser#regex.
 	exitRegex(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#textSearch.
+	enterTextSearch(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#textSearch.
+	exitTextSearch(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#cosineSimilarity.
+	enterCosineSimilarity(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#cosineSimilarity.
+	exitCosineSimilarity(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#cosineDistance.
+	enterCosineDistance(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#cosineDistance.
+	exitCosineDistance(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#manhattanDistance.
+	enterManhattanDistance(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#manhattanDistance.
+	exitManhattanDistance(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#euclideanDistance.
+	enterEuclideanDistance(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#euclideanDistance.
+	exitEuclideanDistance(ctx) {
+	}
+
+
+	// Enter a parse tree produced by MQLParser#textSearchIndexMode.
+	enterTextSearchIndexMode(ctx) {
+	}
+
+	// Exit a parse tree produced by MQLParser#textSearchIndexMode.
+	exitTextSearchIndexMode(ctx) {
 	}
 
 
