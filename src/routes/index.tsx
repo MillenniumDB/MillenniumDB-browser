@@ -1,4 +1,8 @@
+import classes from "./index.module.css";
+
+import { Box } from "@mantine/core";
 import { createFileRoute } from "@tanstack/react-router";
+import { DataTable } from "../components/data-table";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -6,8 +10,11 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="p-2">
-      <h3>Welcome Home!</h3>
-    </div>
+    <Box className={classes.root}>
+      <Box className={classes.editor}>Editor</Box>
+      <Box className={classes.results}>
+        <DataTable />
+      </Box>
+    </Box>
   );
 }

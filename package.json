@@ -16,7 +16,10 @@
     "@tabler/icons-react": "^3.34.0",
     "@tanstack/react-router": "^1.125.4",
     "@tanstack/react-router-devtools": "^1.125.4",
+    "ag-grid-community": "^34.0.0",
+    "ag-grid-react": "^34.0.0",
     "clsx": "^2.1.1",
+    "npm": "^11.4.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

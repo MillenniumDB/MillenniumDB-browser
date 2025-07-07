@@ -1,0 +1,11 @@
+.root {
+  height: calc(100vh - var(--app-shell-header-height, 0px));
+}
+
+.editor {
+  height: 50%;
+}
+
+.results {
+  height: 50%;
+}

@@ -1,3 +1,5 @@
+import classes from "./app-header.module.css";
+
 import {
   ActionIcon,
   Anchor,
@@ -13,7 +15,6 @@ import {
 import { Link } from "@tanstack/react-router";
 import cx from "clsx";
 import AppLogo from "../assets/app-logo.svg";
-import classes from "./app-header.module.css";
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
 
@@ -48,7 +49,7 @@ export function AppHeader(props: AppHeaderProps) {
         <Group gap={4}>
           <Tooltip label={isDarkMode ? "Light mode" : "Dark mode"} openDelay={500}>
             <ActionIcon size="lg" variant="default" onClick={toggleColorScheme}>
-              <IconSun size="xs" className={cx(classes.icon, classes.light)} />
+              <IconSun className={cx(classes.icon, classes.light)} />
               <IconMoon className={cx(classes.icon, classes.dark)} />
             </ActionIcon>
           </Tooltip>
