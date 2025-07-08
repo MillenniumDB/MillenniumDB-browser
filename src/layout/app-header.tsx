@@ -26,7 +26,7 @@ type AppHeaderProps = {
 export function AppHeader(props: AppHeaderProps) {
   const { setColorScheme } = useMantineColorScheme();
 
-  const computedColorScheme = useComputedColorScheme("dark");
+  const computedColorScheme = useComputedColorScheme();
 
   const isDarkMode = useMemo(() => {
     return computedColorScheme === "dark";

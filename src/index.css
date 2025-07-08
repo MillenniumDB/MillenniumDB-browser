@@ -1,0 +1,64 @@
+/* TODO: Modularize, add dark mode */
+.mdb-string {
+  color: #ce9178;
+}
+
+.mdb-keyword {
+  color: #c586c0;
+}
+
+.mdb-comment {
+  color: #6a9955;
+}
+
+.mdb-var {
+  color: #6089b4;
+}
+
+.mdb-iri {
+  color: #ce6700;
+}
+
+.mdb-number {
+  color: #b5cea8;
+}
+
+.mdb-operator {
+  color: #d4d4d4;
+}
+
+.mdb-function {
+  color: #dcdcaa;
+}
+
+.mdb-constant {
+  color: #4fc1ff;
+}
+
+.mdb-type {
+  color: #4ec9b0;
+}
+
+.mdb-punctuation {
+  color: #d4d4d4;
+}
+
+.mdb-boolean {
+  color: #569cd6;
+}
+
+.mdb-null {
+  color: #569cd6;
+}
+
+.mdb-language {
+  color: #4fc1ff;
+}
+
+.mdb-node {
+  color: magenta;
+}
+
+.mdb-edge {
+  color: cyan;
+}

@@ -1,11 +1,13 @@
 .root {
   height: calc(100vh - var(--app-shell-header-height, 0px));
+  min-height: 600px;
 }
 
-.editor {
-  height: 50%;
+.pane {
+  min-height: 200px;
 }
 
-.results {
-  height: 50%;
+.innerPane {
+  height: 100%;
+  width: 100%;
 }
