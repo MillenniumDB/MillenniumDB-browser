@@ -42,7 +42,7 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
     const { iri } = value;
     return (
       <Anchor className="mdb-iri" href={iri} target="_blank">
-        {iri}
+        {`<${iri}>`}
       </Anchor>
     );
   }
@@ -58,7 +58,7 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
           {"^^"}
         </Text>
         <Anchor className="mdb-iri" href={iri} target="_blank">
-          {iri}
+          {`<${iri}>`}
         </Anchor>
       </Text>
     );
@@ -76,7 +76,7 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
   if (value instanceof SimpleDate || value instanceof DateTime || value instanceof Time) {
     return <Text span className="mdb-string">{`${value}`}</Text>;
   } else if (value instanceof Decimal) {
-    return <Text span className="mdb-number">{`${value}`}</Text>;
+    return <Text span className="mdb-numeric">{`${value}`}</Text>;
   }
 
   // path
@@ -92,7 +92,7 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
   } else if (type === "boolean") {
     return <Text span className="mdb-boolean">{`${value}`}</Text>;
   } else if (type === "bigint" || type === "number") {
-    return <Text span className="mdb-number">{`${value}`}</Text>;
+    return <Text span className="mdb-numeric">{`${value}`}</Text>;
   }
 
   // TODO: arrays and objects with recursive highlight?

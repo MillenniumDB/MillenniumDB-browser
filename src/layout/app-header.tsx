@@ -5,18 +5,21 @@ import {
   Anchor,
   AppShell,
   Burger,
+  Code,
   Container,
   Group,
   Image,
+  Skeleton,
   Tooltip,
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import cx from "clsx";
 import AppLogo from "../assets/app-logo.svg";
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
+import { useMDB } from "../providers/mdb-provider";
+import clsx from "clsx";
 
 type AppHeaderProps = {
   opened: boolean;
@@ -24,6 +27,8 @@ type AppHeaderProps = {
 };
 
 export function AppHeader(props: AppHeaderProps) {
+  const { catalog } = useMDB();
+
   const { setColorScheme } = useMantineColorScheme();
 
   const computedColorScheme = useComputedColorScheme();
@@ -40,17 +45,23 @@ export function AppHeader(props: AppHeaderProps) {
     <AppShell.Header>
       <Container className={classes.inner} size="xl">
         <Group gap={8}>
-          <Burger opened={props.opened} onClick={props.toggle} hiddenFrom="sm" size="sm" />
+          <Burger opened={props.opened} onClick={props.toggle} hiddenFrom="xs" size="sm" />
           <Anchor href="/" component={Link}>
-            <Image className={classes.appLogo} src={AppLogo} h={30} w="auto" fit="contain" alt="MillenniumDB" />
+            <Image src={AppLogo} h={30} w="auto" fit="contain" alt="MillenniumDB" />
           </Anchor>
+
+          {catalog ? (
+            <Code>{`${catalog.getModelString()}_v${catalog.getVersion()}`}</Code>
+          ) : (
+            <Skeleton height={16} width={40} />
+          )}
         </Group>
 
         <Group gap={4}>
           <Tooltip label={isDarkMode ? "Light mode" : "Dark mode"} openDelay={500}>
             <ActionIcon size="lg" variant="default" onClick={toggleColorScheme}>
-              <IconSun className={cx(classes.icon, classes.light)} />
-              <IconMoon className={cx(classes.icon, classes.dark)} />
+              <IconSun className={clsx(classes.icon, classes.light)} />
+              <IconMoon className={clsx(classes.icon, classes.dark)} />
             </ActionIcon>
           </Tooltip>
         </Group>

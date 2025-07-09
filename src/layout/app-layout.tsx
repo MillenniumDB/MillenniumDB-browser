@@ -1,20 +1,27 @@
 import { AppShell } from "@mantine/core";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 import { useDisclosure } from "@mantine/hooks";
 
 import { AppHeader } from "./app-header";
 import { AppNavbar } from "./app-navbar";
+import { useEffect } from "react";
 
-export const HEADER_HEIGHT = 58;
-export const NAVBAR_WIDTH = 300;
+export const HEADER_HEIGHT = 48;
+export const NAVBAR_WIDTH = 180;
 
 export function AppLayout() {
-  const [opened, { toggle }] = useDisclosure();
+  const [opened, { toggle, close }] = useDisclosure();
+
+  const location = useLocation();
+
+  useEffect(() => {
+    close();
+  }, [location.pathname, close]);
 
   return (
     <AppShell
       header={{ height: HEADER_HEIGHT }}
-      navbar={{ width: NAVBAR_WIDTH, breakpoint: "sm", collapsed: { mobile: !opened } }}
+      navbar={{ width: NAVBAR_WIDTH, breakpoint: "xs", collapsed: { mobile: !opened } }}
     >
       <AppHeader opened={opened} toggle={toggle} />
 

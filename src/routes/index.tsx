@@ -1,6 +1,6 @@
 import classes from "./index.module.css";
 
-import { Box, Paper } from "@mantine/core";
+import { Box } from "@mantine/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataTable } from "../components/data-table/data-table";
 import { driver, type Record } from "millenniumdb-driver";
@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { type ColDef } from "ag-grid-community";
 import { MDBCellRenderer } from "../components/data-table/mdb-cell-renderer";
 import { Split } from "@gfazioli/mantine-split-pane";
-import cx from "clsx";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -54,12 +53,12 @@ function Index() {
 
   return (
     <Box className={classes.root} p="sm">
-      <Split orientation="horizontal" h="100%" spacing="sm">
+      <Split orientation="horizontal" h="100%" spacing="sm" size="md" variant="dotted">
         <Split.Pane className={classes.pane}>
           <Box className={classes.innerPane}>TODO: Editor</Box>
         </Split.Pane>
 
-        <Split.Resizer size="md" />
+        <Split.Resizer />
 
         <Split.Pane grow className={classes.pane}>
           <Box className={classes.innerPane}>

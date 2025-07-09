@@ -1,64 +1,35 @@
-/* TODO: Modularize, add dark mode */
 .mdb-string {
-  color: #ce9178;
-}
-
-.mdb-keyword {
-  color: #c586c0;
-}
-
-.mdb-comment {
-  color: #6a9955;
-}
-
-.mdb-var {
-  color: #6089b4;
+  color: var(--mdb-string);
 }
 
 .mdb-iri {
-  color: #ce6700;
+  color: var(--mdb-iri);
 }
 
-.mdb-number {
-  color: #b5cea8;
-}
-
-.mdb-operator {
-  color: #d4d4d4;
-}
-
-.mdb-function {
-  color: #dcdcaa;
-}
-
-.mdb-constant {
-  color: #4fc1ff;
-}
-
-.mdb-type {
-  color: #4ec9b0;
-}
-
-.mdb-punctuation {
-  color: #d4d4d4;
+.mdb-numeric {
+  color: var(--mdb-numeric);
 }
 
 .mdb-boolean {
-  color: #569cd6;
+  color: var(--mdb-boolean);
 }
 
 .mdb-null {
-  color: #569cd6;
+  color: var(--mdb-null);
 }
 
-.mdb-language {
-  color: #4fc1ff;
+.mdb-type {
+  color: var(--mdb-type);
+}
+
+.mdb-iri-prefix {
+  color: var(--mdb-iri-prefix);
+}
+
+.mdb-iri-suffix {
+  color: var(--mdb-iri-suffix);
 }
 
 .mdb-node {
-  color: magenta;
-}
-
-.mdb-edge {
-  color: cyan;
+  color: var(--mdb-node);
 }

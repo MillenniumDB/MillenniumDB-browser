@@ -1,0 +1,35 @@
+.link {
+  font-size: 14px;
+  /* font-weight: bold; */
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 8px var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-text);
+
+  &:hover {
+    background-color: var(--mantine-color-default-hover);
+  }
+
+  &.active {
+    cursor: default;
+    background-color: var(--mantine-primary-color-light);
+    color: var(--mantine-primary-color-light-color);
+
+    .linkIcon {
+      color: var(--mantine-primary-color-light-color);
+    }
+  }
+
+  & .linkIcon {
+    margin-right: var(--mantine-spacing-sm);
+  }
+}
+
+.linkIcon {
+  width: 20px;
+  height: 20px;
+
+  color: var(--mantine-color-text);
+}
