@@ -6,9 +6,10 @@ import { CustomMantineProvider } from "./theme/custom-mantine-provider";
 
 import { routeTree } from "./routeTree.gen";
 
-import "@gfazioli/mantine-split-pane/styles.css";
-import "@mantine/core/styles.css";
+// do not change css import order
 import "./index.css";
+import "@mantine/core/styles.css";
+import "@gfazioli/mantine-split-pane/styles.css";
 
 const router = createRouter({ routeTree });
 

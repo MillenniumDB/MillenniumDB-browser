@@ -19,6 +19,8 @@ const THEME: Partial<ThemeDefaultParams> = {
   },
 
   fontFamily: "var(--mantine-font-family-monospace)",
+  fontSize: 12,
+  spacing: 4,
 };
 
 export const CustomAgGridTheme = themeQuartz.withParams(THEME);

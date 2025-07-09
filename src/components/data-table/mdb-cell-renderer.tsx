@@ -1,4 +1,4 @@
-import { Anchor, Text } from "@mantine/core";
+import { Text } from "@mantine/core";
 import type { CustomCellRendererProps } from "ag-grid-react";
 import {
   DateTime,
@@ -14,22 +14,16 @@ import {
   GraphPath,
 } from "millenniumdb-driver";
 
-export function MDBCellRenderer(props: CustomCellRendererProps) {
-  const { value } = props;
-
+export function MDBCellRenderer({ value }: CustomCellRendererProps) {
   if (value === null) {
-    return (
-      <Text span className="mdb-null">
-        {"NULL"}
-      </Text>
-    );
+    return <span className="mdb-null">{"NULL"}</span>;
   }
 
   // nodes
   if (value instanceof GraphNode) {
-    return <Text span className="mdb-node">{`${value}`}</Text>;
+    return <span className="mdb-node">{`${value}`}</span>;
   } else if (value instanceof GraphAnon) {
-    return <Text span className="mdb-node">{`${value}`}</Text>;
+    return <span className="mdb-node">{`${value}`}</span>;
   }
 
   // edge
@@ -41,9 +35,9 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
   if (value instanceof IRI) {
     const { iri } = value;
     return (
-      <Anchor className="mdb-iri" href={iri} target="_blank">
+      <a className="mdb-iri" href={iri} target="_blank">
         {`<${iri}>`}
-      </Anchor>
+      </a>
     );
   }
 
@@ -52,23 +46,21 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
     const { str, datatype } = value;
     const { iri } = datatype;
     return (
-      <Text span>
-        <Text span className="mdb-string">{`"${str}"`}</Text>
-        <Text span className="mdb-punctuation">
-          {"^^"}
-        </Text>
-        <Anchor className="mdb-iri" href={iri} target="_blank">
+      <span>
+        <span className="mdb-string">{`"${str}"`}</span>
+        <span className="mdb-punctuation">{"^^"}</span>
+        <a className="mdb-iri" href={iri} target="_blank">
           {`<${iri}>`}
-        </Anchor>
-      </Text>
+        </a>
+      </span>
     );
   } else if (value instanceof StringLang) {
     const { str, lang } = value;
     return (
-      <Text span>
-        <Text span className="mdb-string">{`"${str}"`}</Text>
-        <Text span className="mdb-language">{`@${lang}`}</Text>
-      </Text>
+      <span>
+        <span className="mdb-string">{`"${str}"`}</span>
+        <span className="mdb-language">{`@${lang}`}</span>
+      </span>
     );
   }
 
@@ -78,9 +70,9 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
     value instanceof DateTime ||
     value instanceof Time
   ) {
-    return <Text span className="mdb-string">{`${value}`}</Text>;
+    return <span className="mdb-string">{`${value}`}</span>;
   } else if (value instanceof Decimal) {
-    return <Text span className="mdb-numeric">{`${value}`}</Text>;
+    return <span className="mdb-numeric">{`${value}`}</span>;
   }
 
   // path
@@ -92,20 +84,20 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
   // builtin
   const type = typeof value;
   if (type === "string") {
-    return <Text span className="mdb-string">{`"${value}"`}</Text>;
+    return <span className="mdb-string">{`"${value}"`}</span>;
   } else if (type === "boolean") {
-    return <Text span className="mdb-boolean">{`${value}`}</Text>;
+    return <span className="mdb-boolean">{`${value}`}</span>;
   } else if (type === "bigint" || type === "number") {
-    return <Text span className="mdb-numeric">{`${value}`}</Text>;
+    return <span className="mdb-numeric">{`${value}`}</span>;
   }
 
   // TODO: arrays and objects with recursive highlight?
 
   // array
   if (Array.isArray(value)) {
-    return <Text span>{`[${value}]`}</Text>;
+    return <span>{`[${value}]`}</span>;
   }
 
   // fallback
-  return <Text span>{value.toString()}</Text>;
+  return <span>{value.toString()}</span>;
 }

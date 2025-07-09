@@ -26,7 +26,7 @@ type AppHeaderProps = {
   toggle: () => void;
 };
 
-export function AppHeader(props: AppHeaderProps) {
+export function AppHeader({ opened, toggle }: AppHeaderProps) {
   const { catalog } = useMDB();
 
   const { setColorScheme } = useMantineColorScheme();
@@ -45,12 +45,7 @@ export function AppHeader(props: AppHeaderProps) {
     <AppShell.Header>
       <Container className={classes.inner} size="xl">
         <Group gap={8}>
-          <Burger
-            opened={props.opened}
-            onClick={props.toggle}
-            hiddenFrom="xs"
-            size="sm"
-          />
+          <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" />
           <Anchor href="/" component={Link}>
             <Image
               src={AppLogo}

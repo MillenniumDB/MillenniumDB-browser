@@ -37,7 +37,7 @@ function Index() {
   };
 
   useEffect(() => {
-    async function f() {
+    async function executeQuery() {
       const d = driver("http://localhost:1234");
       const s = d.session();
       const r = s.run("SELECT ?s ?p ?o ?w WHERE { ?s ?p ?o . } LIMIT 999");
@@ -48,17 +48,19 @@ function Index() {
     }
 
     clear();
-    f();
+    executeQuery();
   }, []);
 
   return (
-    <Box className={classes.root} p="sm">
+    <Box className={classes.root}>
       <Split
         orientation="horizontal"
         h="100%"
+        size="sm"
+        p="sm"
         spacing="sm"
-        size="md"
-        variant="dotted"
+        hoverColor="var(--mantine-primary-color-light-color)"
+        variant="default"
       >
         <Split.Pane className={classes.pane}>
           <Box className={classes.innerPane}>TODO: Editor</Box>
