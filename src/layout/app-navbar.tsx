@@ -1,7 +1,11 @@
 import classes from "./app-navbar.module.css";
 
 import { AppShell, ScrollArea, Stack } from "@mantine/core";
-import { IconBracketsAngle, IconChartDots3Filled, type IconProps } from "@tabler/icons-react";
+import {
+  IconBracketsAngle,
+  IconChartDots3Filled,
+  type IconProps,
+} from "@tabler/icons-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { type ElementType } from "react";
 import clsx from "clsx";
@@ -26,7 +30,11 @@ function CustomNavLink({ href, label, icon: Icon }: CustomNavLinkProps) {
 
 const navLinks = [
   { href: "/", icon: IconBracketsAngle, label: "Query" },
-  { href: "/graph-explorer", icon: IconChartDots3Filled, label: "Graph Explorer" },
+  {
+    href: "/graph-explorer",
+    icon: IconChartDots3Filled,
+    label: "Graph Explorer",
+  },
 ];
 
 export function AppNavbar() {

@@ -1,6 +1,11 @@
 // https://mantine.dev/colors-generator/?color=C02ADF
 
-import { createTheme, MantineProvider, type CSSVariablesResolver, type MantineColorsTuple } from "@mantine/core";
+import {
+  createTheme,
+  MantineProvider,
+  type CSSVariablesResolver,
+  type MantineColorsTuple,
+} from "@mantine/core";
 import type { ReactNode } from "react";
 
 const brightPink: MantineColorsTuple = [
@@ -81,9 +86,15 @@ type CustomMantineProviderProps = {
   children: ReactNode;
 };
 
-export function CustomMantineProvider({ children }: CustomMantineProviderProps) {
+export function CustomMantineProvider({
+  children,
+}: CustomMantineProviderProps) {
   return (
-    <MantineProvider defaultColorScheme="dark" theme={theme} cssVariablesResolver={cssVariablesResolver}>
+    <MantineProvider
+      defaultColorScheme="dark"
+      theme={theme}
+      cssVariablesResolver={cssVariablesResolver}
+    >
       {children}
     </MantineProvider>
   );

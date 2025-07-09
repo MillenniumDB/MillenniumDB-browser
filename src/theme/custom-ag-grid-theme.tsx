@@ -12,7 +12,11 @@ const THEME: Partial<ThemeDefaultParams> = {
 
   headerFontWeight: "bold",
 
-  oddRowBackgroundColor: { ref: "backgroundColor", mix: 0.975, onto: "foregroundColor" },
+  oddRowBackgroundColor: {
+    ref: "backgroundColor",
+    mix: 0.975,
+    onto: "foregroundColor",
+  },
 
   fontFamily: "var(--mantine-font-family-monospace)",
 };

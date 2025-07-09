@@ -1,4 +1,8 @@
-import { AllCommunityModule, ModuleRegistry, type ColDef } from "ag-grid-community";
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  type ColDef,
+} from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { CustomAgGridTheme } from "../../theme/custom-ag-grid-theme";
 import { Box } from "@mantine/core";

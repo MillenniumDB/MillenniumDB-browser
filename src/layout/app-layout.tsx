@@ -21,7 +21,11 @@ export function AppLayout() {
   return (
     <AppShell
       header={{ height: HEADER_HEIGHT }}
-      navbar={{ width: NAVBAR_WIDTH, breakpoint: "xs", collapsed: { mobile: !opened } }}
+      navbar={{
+        width: NAVBAR_WIDTH,
+        breakpoint: "xs",
+        collapsed: { mobile: !opened },
+      }}
     >
       <AppHeader opened={opened} toggle={toggle} />
 

@@ -73,7 +73,11 @@ export function MDBCellRenderer(props: CustomCellRendererProps) {
   }
 
   // date
-  if (value instanceof SimpleDate || value instanceof DateTime || value instanceof Time) {
+  if (
+    value instanceof SimpleDate ||
+    value instanceof DateTime ||
+    value instanceof Time
+  ) {
     return <Text span className="mdb-string">{`${value}`}</Text>;
   } else if (value instanceof Decimal) {
     return <Text span className="mdb-numeric">{`${value}`}</Text>;

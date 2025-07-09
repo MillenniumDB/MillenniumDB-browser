@@ -1,7 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 
 import { Catalog, Driver, driver as mdbDriver } from "millenniumdb-driver";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 
 type MDBContextType = {
   driver: Driver;
@@ -29,7 +35,12 @@ export const MDBProvider = ({ children }: MDBProviderProps) => {
         try {
           const catalog = await value.driver.catalog();
           if (cancelled) return;
-          console.info("Catalog loaded!", catalog.getModelString(), "version", catalog.getVersion());
+          console.info(
+            "Catalog loaded!",
+            catalog.getModelString(),
+            "version",
+            catalog.getVersion(),
+          );
           setValue((prev) => ({
             ...prev,
             catalog,

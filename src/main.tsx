@@ -25,5 +25,5 @@ createRoot(document.getElementById("root")!).render(
         <RouterProvider router={router} />
       </CustomMantineProvider>
     </MDBProvider>
-  </StrictMode>
+  </StrictMode>,
 );

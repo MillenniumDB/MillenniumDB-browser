@@ -28,7 +28,7 @@ function Index() {
         cellRenderer: MDBCellRenderer,
         field: varName,
         headerName: varName,
-      }))
+      })),
     );
   };
 
@@ -53,7 +53,13 @@ function Index() {
 
   return (
     <Box className={classes.root} p="sm">
-      <Split orientation="horizontal" h="100%" spacing="sm" size="md" variant="dotted">
+      <Split
+        orientation="horizontal"
+        h="100%"
+        spacing="sm"
+        size="md"
+        variant="dotted"
+      >
         <Split.Pane className={classes.pane}>
           <Box className={classes.innerPane}>TODO: Editor</Box>
         </Split.Pane>

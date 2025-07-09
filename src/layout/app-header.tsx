@@ -45,9 +45,20 @@ export function AppHeader(props: AppHeaderProps) {
     <AppShell.Header>
       <Container className={classes.inner} size="xl">
         <Group gap={8}>
-          <Burger opened={props.opened} onClick={props.toggle} hiddenFrom="xs" size="sm" />
+          <Burger
+            opened={props.opened}
+            onClick={props.toggle}
+            hiddenFrom="xs"
+            size="sm"
+          />
           <Anchor href="/" component={Link}>
-            <Image src={AppLogo} h={30} w="auto" fit="contain" alt="MillenniumDB" />
+            <Image
+              src={AppLogo}
+              h={30}
+              w="auto"
+              fit="contain"
+              alt="MillenniumDB"
+            />
           </Anchor>
 
           {catalog ? (
@@ -58,7 +69,10 @@ export function AppHeader(props: AppHeaderProps) {
         </Group>
 
         <Group gap={4}>
-          <Tooltip label={isDarkMode ? "Light mode" : "Dark mode"} openDelay={500}>
+          <Tooltip
+            label={isDarkMode ? "Light mode" : "Dark mode"}
+            openDelay={500}
+          >
             <ActionIcon size="lg" variant="default" onClick={toggleColorScheme}>
               <IconSun className={clsx(classes.icon, classes.light)} />
               <IconMoon className={clsx(classes.icon, classes.dark)} />
