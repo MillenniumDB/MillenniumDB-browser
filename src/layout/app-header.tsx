@@ -15,7 +15,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import AppLogo from "../assets/app-logo.svg";
+import AppLogo from "../assets/logo-mdb-sm.png";
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
 import { useMDB } from "../providers/mdb-provider";
@@ -53,6 +53,7 @@ export function AppHeader({ opened, toggle }: AppHeaderProps) {
               w="auto"
               fit="contain"
               alt="MillenniumDB"
+              className={classes.appLogo}
             />
           </Anchor>
 

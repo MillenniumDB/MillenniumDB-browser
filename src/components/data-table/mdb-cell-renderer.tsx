@@ -1,4 +1,3 @@
-import { Text } from "@mantine/core";
 import type { CustomCellRendererProps } from "ag-grid-react";
 import {
   DateTime,
@@ -28,7 +27,7 @@ export function MDBCellRenderer({ value }: CustomCellRendererProps) {
 
   // edge
   if (value instanceof GraphEdge) {
-    return <Text span className="mdb-edge">{`${value}`}</Text>;
+    return <span className="mdb-edge">{`${value}`}</span>;
   }
 
   // iri

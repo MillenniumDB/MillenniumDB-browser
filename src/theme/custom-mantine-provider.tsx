@@ -53,6 +53,9 @@ const theme = createTheme({
 
     mdbNodeLight: "#001080",
     mdbNodeDark: "#9CDCFE",
+
+    mdbEdgeLight: "#0000FF",
+    mdbEdgeDark: "#569CD6",
   },
 });
 
@@ -68,6 +71,7 @@ const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     "--mdb-iri-prefix": theme.other.mdbPrefixLight,
     "--mdb-iri-suffix": theme.other.mdbSuffixLight,
     "--mdb-node": theme.other.mdbNodeLight,
+    "--mdb-edge": theme.other.mdbEdgeLight,
   },
   dark: {
     "--mdb-string": theme.other.mdbStringDark,
@@ -79,6 +83,7 @@ const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     "--mdb-iri-prefix": theme.other.mdbPrefixDark,
     "--mdb-iri-suffix": theme.other.mdbSuffixDark,
     "--mdb-node": theme.other.mdbNodeDark,
+    "--mdb-edge": theme.other.mdbEdgeDark,
   },
 });
 

@@ -33,3 +33,7 @@
 .mdb-node {
   color: var(--mdb-node);
 }
+
+.mdb-edge {
+  color: var(--mdb-edge);
+}

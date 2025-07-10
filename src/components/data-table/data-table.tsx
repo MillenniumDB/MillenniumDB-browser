@@ -1,20 +1,23 @@
+import classes from "./data-table.module.css";
+
 import {
+  CellStyleModule,
   ClientSideRowModelApiModule,
   ClientSideRowModelModule,
   ColumnAutoSizeModule,
   ModuleRegistry,
   ValidationModule,
   type ColDef,
-  type SizeColumnsToFitGridStrategy,
+  type GridReadyEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { CustomAgGridTheme } from "../../theme/custom-ag-grid-theme";
 import { Box } from "@mantine/core";
-import { useMemo } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 
-// TODO: Register only the used features
 // TODO: Value formatter (copy/download)
 let modules = [
+  CellStyleModule,
   ClientSideRowModelApiModule,
   ClientSideRowModelModule,
   ColumnAutoSizeModule,
@@ -29,33 +32,59 @@ ModuleRegistry.registerModules(modules);
 type DataTableProps = {
   columnDefs: ColDef[];
   rowData: unknown[];
+  onGridReady?: (event: GridReadyEvent<unknown, unknown>) => void;
+  showIndex?: boolean;
 };
 
-export function DataTable({ rowData, columnDefs }: DataTableProps) {
-  const autoSizeStrategy = useMemo<SizeColumnsToFitGridStrategy>(() => {
-    return {
-      type: "fitGridWidth",
-      defaultMinWidth: 120,
-    };
-  }, []);
+const DataTable = forwardRef(
+  ({ rowData, columnDefs, onGridReady, showIndex }: DataTableProps, ref) => {
+    const gridRef = useRef<AgGridReact>(null);
 
-  return (
-    <Box h="100%" w="100%">
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={columnDefs}
-        autoSizeStrategy={autoSizeStrategy}
-        gridOptions={{
-          defaultColDef: {
-            resizable: true,
-            sortable: false,
-            filter: false,
-            editable: false,
-          },
-        }}
-        theme={CustomAgGridTheme}
-        suppressDragLeaveHidesColumns
-      />
-    </Box>
-  );
-}
+    // expose internal ref to parent
+    useImperativeHandle(ref, () => gridRef.current!, []);
+
+    const computedColumnDefs = useMemo<ColDef[]>(() => {
+      if (!columnDefs.length) return [];
+
+      if (!showIndex) {
+        return columnDefs;
+      }
+
+      const indexColDef: ColDef = {
+        colId: "__index",
+        headerName: "#",
+        valueGetter: "node.rowIndex + 1",
+        flex: 0,
+        width: 64,
+        cellClass: classes.indexCell,
+        headerClass: classes.indexHeader,
+      };
+
+      return [indexColDef, ...columnDefs];
+    }, [columnDefs, showIndex]);
+
+    return (
+      <Box h="100%" w="100%">
+        <AgGridReact
+          onGridReady={onGridReady}
+          ref={gridRef}
+          rowData={rowData}
+          columnDefs={computedColumnDefs}
+          gridOptions={{
+            defaultColDef: {
+              flex: 1,
+              resizable: true,
+              sortable: false,
+              filter: false,
+              editable: false,
+            },
+          }}
+          theme={CustomAgGridTheme}
+          suppressDragLeaveHidesColumns
+        />
+      </Box>
+    );
+  },
+);
+
+export { DataTable };

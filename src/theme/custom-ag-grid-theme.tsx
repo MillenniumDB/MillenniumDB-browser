@@ -18,9 +18,12 @@ const THEME: Partial<ThemeDefaultParams> = {
     onto: "foregroundColor",
   },
 
-  fontFamily: "var(--mantine-font-family-monospace)",
+  cellFontFamily: "var(--mantine-font-family-monospace)",
+  headerFontFamily: "var(--mantine-font-family-monospace)",
   fontSize: 12,
   spacing: 4,
+
+  wrapperBorderRadius: "var(--mantine-radius-sm)",
 };
 
 export const CustomAgGridTheme = themeQuartz.withParams(THEME);

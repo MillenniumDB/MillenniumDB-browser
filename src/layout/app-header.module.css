@@ -30,3 +30,9 @@
     display: block;
   }
 }
+
+.appLogo {
+  @mixin dark {
+    filter: invert(1);
+  }
+}
