@@ -6,6 +6,7 @@ import {
   ClientSideRowModelModule,
   ColumnAutoSizeModule,
   ModuleRegistry,
+  RowApiModule,
   ValidationModule,
   type ColDef,
   type GridReadyEvent,
@@ -21,6 +22,7 @@ let modules = [
   ClientSideRowModelApiModule,
   ClientSideRowModelModule,
   ColumnAutoSizeModule,
+  RowApiModule,
 ];
 
 if (import.meta.env.DEV) {
@@ -34,10 +36,14 @@ type DataTableProps = {
   rowData: unknown[];
   onGridReady?: (event: GridReadyEvent<unknown, unknown>) => void;
   showIndex?: boolean;
+  withBorder?: boolean;
 };
 
 const DataTable = forwardRef(
-  ({ rowData, columnDefs, onGridReady, showIndex }: DataTableProps, ref) => {
+  (
+    { rowData, columnDefs, onGridReady, showIndex, withBorder }: DataTableProps,
+    ref,
+  ) => {
     const gridRef = useRef<AgGridReact>(null);
 
     // expose internal ref to parent
@@ -79,7 +85,9 @@ const DataTable = forwardRef(
               editable: false,
             },
           }}
-          theme={CustomAgGridTheme}
+          theme={CustomAgGridTheme.withParams({
+            wrapperBorder: withBorder,
+          })}
           suppressDragLeaveHidesColumns
         />
       </Box>

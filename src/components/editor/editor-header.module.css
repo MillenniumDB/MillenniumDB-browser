@@ -1,0 +1,91 @@
+.root {
+  width: 100%;
+  display: flex;
+  flex-grow: 1;
+  gap: 0;
+  height: 36px;
+}
+
+.runContainer {
+  height: 100%;
+
+  border-bottom: 2px solid var(--mantine-color-default-border);
+
+  .runButton {
+    font-size: 14px;
+    height: 100%;
+    width: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mantine-spacing-xs);
+
+    color: var(--mantine-color-green-text);
+    &.stop {
+      color: var(--mantine-color-red-text);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mantine-primary-color-5);
+      outline-offset: -2px;
+    }
+
+    &:hover {
+      color: var(--mantine-color-green-light-color);
+      background: var(--mantine-color-green-light-hover);
+
+      &.stop {
+        color: var(--mantine-color-red-light-color);
+        background: var(--mantine-color-red-light-hover);
+      }
+    }
+  }
+}
+
+.tabs {
+  height: 100%;
+
+  flex: 1;
+  min-width: 0;
+
+  border-left: 1px solid var(--mantine-color-default-border);
+  border-right: 1px solid var(--mantine-color-default-border);
+
+  .tabsList {
+    height: 100%;
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+
+    .tab {
+      border-radius: 0;
+
+      gap: var(--mantine-spacing-xs);
+
+      display: flex;
+      align-items: center;
+
+      &[data-active] {
+        /* background: #1e1e1e; TODO: Monaco Theme */
+      }
+
+      .closeButton:hover {
+        background: var(--mantine-color-gray-light-hover);
+      }
+    }
+  }
+}
+
+.actionsContainer {
+  flex: 0;
+
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px var(--mantine-spacing-xs);
+
+  border-bottom: 2px solid var(--mantine-color-default-border);
+}

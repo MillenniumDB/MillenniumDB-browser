@@ -6,10 +6,12 @@ import { notifications } from "@mantine/notifications";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
-import { driver, Session } from "millenniumdb-driver";
+import { driver, MillenniumDBError, Session } from "millenniumdb-driver";
 import { useEffect, useRef, useState } from "react";
 import { DataTable } from "../components/data-table/data-table";
 import { MDBCellRenderer } from "../components/data-table/mdb-cell-renderer";
+import { Editor } from "../components/editor/editor";
+import { type editor } from "monaco-editor";
 
 const FLUSH_DELAY_MS = 100;
 
@@ -18,11 +20,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [columnDefs, setColumnDefs] = useState<ColDef[]>([]);
   const [rowData, setRowData] = useState<unknown[]>([]);
+  const [columnDefs, setColumnDefs] = useState<ColDef[]>([]);
   const [isGridReady, setIsGridReady] = useState<boolean>(false);
+  const [isRunning, setIsRunning] = useState<boolean>(false);
 
-  const gridRef = useRef<AgGridReact | null>(null);
+  const editorRef = useRef<{ editor: editor.IStandaloneCodeEditor }>(null);
+  const gridRef = useRef<AgGridReact>(null);
+
   const sessionRef = useRef<Session | null>(null);
   const recordsRef = useRef<object[]>([]);
 
@@ -30,11 +35,20 @@ function Index() {
     setIsGridReady(true);
   };
 
-  // stop query and clear results
+  // clear results
   const clear = () => {
-    sessionRef.current?.close();
-    setColumnDefs([]);
     setRowData([]);
+    setColumnDefs([]);
+  };
+
+  // flush buffer into grid
+  const flush = () => {
+    if (recordsRef.current.length === 0) return;
+    const records = recordsRef.current;
+    recordsRef.current = [];
+    gridRef.current?.api?.applyTransactionAsync({
+      add: records,
+    });
   };
 
   const updateColumnDefs = (variables: string[]) => {
@@ -47,12 +61,17 @@ function Index() {
     );
   };
 
-  const executeQuery = async () => {
-    const driver_ = driver("http://localhost:1234");
-    const session = driver_.session();
-    const result = session.run("MATCH (?from)-[?edge :?type]->(?to), (?node) RETURN * LIMIT 500000");
+  const handleRun = () => {
+    if (!isGridReady) return;
 
-    sessionRef.current = session;
+    clear();
+
+    setIsRunning(true);
+
+    const driver_ = driver("http://localhost:1234");
+    sessionRef.current = driver_.session();
+    const query = editorRef.current?.editor.getValue();
+    const result = sessionRef.current.run(query!);
 
     result.subscribe({
       onVariables: (variables) => {
@@ -62,6 +81,8 @@ function Index() {
         recordsRef.current.push(record.toObject());
       },
       onSuccess(summary) {
+        flush();
+
         const { executionDurationMs, resultCount, update } = summary;
 
         if (update) {
@@ -70,6 +91,7 @@ function Index() {
             title: "Update Finished",
             message: `Execution took ${executionDurationMs.toFixed(3)} ms`,
             withCloseButton: true,
+            withBorder: true,
           });
         } else {
           notifications.show({
@@ -77,43 +99,55 @@ function Index() {
             title: "Query Finished",
             message: `Found ${resultCount} result(s) in ${executionDurationMs.toFixed(3)} ms`,
             withCloseButton: true,
+            withBorder: true,
           });
         }
         console.info(summary);
         sessionRef.current?.close();
+        setIsRunning(false);
       },
-      onError(error) {
+      onError(error: MillenniumDBError) {
+        flush();
+
         notifications.show({
           color: "red",
           title: "MillenniumDB Error",
           message: error.toString(),
           withCloseButton: true,
+          withBorder: true,
         });
         console.error(error);
         sessionRef.current?.close();
+        setIsRunning(false);
       },
     });
   };
 
-  useEffect(() => {
-    if (isGridReady) {
-      executeQuery();
-    }
+  const handleStop = () => {
+    if (!isRunning) return;
 
+    sessionRef.current?.close();
+    setIsRunning(false);
+    notifications.show({
+      color: "blue",
+      title: "Query stopped",
+      message: null,
+      withCloseButton: true,
+      withBorder: true,
+    });
+  };
+
+  // close session on unmount
+  useEffect(() => {
     return () => {
       sessionRef.current?.close();
     };
-  }, [isGridReady]);
+  }, []);
 
+  // set an interval that flushes buffer
   useEffect(() => {
     const interval = setInterval(() => {
-      if (recordsRef.current.length === 0) return;
-
-      const records = recordsRef.current;
-      recordsRef.current = [];
-      gridRef.current?.api?.applyTransactionAsync({
-        add: records,
-      });
+      flush();
     }, FLUSH_DELAY_MS);
 
     return () => clearInterval(interval);
@@ -125,24 +159,33 @@ function Index() {
         orientation="horizontal"
         h="100%"
         size="sm"
-        p="sm"
-        spacing="sm"
+        color="var(--mantine-color-default-border)"
         hoverColor="var(--mantine-primary-color-light-color)"
+        radius={0}
+        spacing={0}
         variant="default"
       >
-        <Split.Pane className={classes.pane}>
-          <Box className={classes.innerPane}>TODO: Editor</Box>
+        <Split.Pane className={classes.pane} style={{ zIndex: 1 }}>
+          <Box className={classes.innerPane}>
+            <Editor
+              ref={editorRef}
+              onRun={handleRun}
+              onStop={handleStop}
+              isRunning={isRunning}
+            />
+          </Box>
         </Split.Pane>
 
-        <Split.Resizer />
+        <Split.Resizer style={{ zIndex: 0 }} />
 
-        <Split.Pane grow className={classes.pane}>
+        <Split.Pane grow className={classes.pane} style={{ zIndex: 0 }}>
           <Box className={classes.innerPane}>
             <DataTable
               ref={gridRef}
               columnDefs={columnDefs}
               rowData={rowData}
               onGridReady={onGridReady}
+              withBorder={false}
               showIndex
             />
           </Box>
