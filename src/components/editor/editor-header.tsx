@@ -22,6 +22,7 @@ type EditorTabsProps = {
   activeFile: FileDef;
   files: FileDef[];
   isRunning: boolean;
+  isRunDisabled: boolean;
   onFileChange: (fileId: string) => void;
   onFileAdd: () => void;
   onFileClose: (fileId: string) => void;
@@ -32,6 +33,7 @@ type EditorTabsProps = {
 export default function EditorHeader({
   activeFile,
   files,
+  isRunDisabled,
   onFileChange,
   onFileAdd,
   onFileClose,
@@ -78,8 +80,9 @@ export default function EditorHeader({
     <Group className={classes.root}>
       <Box className={classes.runContainer}>
         <UnstyledButton
+          disabled={isRunDisabled}
           onClick={() => (isRunning ? onStop() : onRun())}
-          className={clsx(classes.runButton, isRunning && classes.stop)}
+          className={clsx(classes.runButton, isRunning && classes.stop, isRunDisabled && classes.disabled)}
         >
           {isRunning ? (
             <IconPlayerStopFilled size={14} />

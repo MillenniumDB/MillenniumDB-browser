@@ -6,12 +6,13 @@ import { notifications } from "@mantine/notifications";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
-import { driver, MillenniumDBError, Session } from "millenniumdb-driver";
+import { MillenniumDBError, Result, Session } from "millenniumdb-driver";
 import { useEffect, useRef, useState } from "react";
 import { DataTable } from "../components/data-table/data-table";
 import { MDBCellRenderer } from "../components/data-table/mdb-cell-renderer";
 import { Editor } from "../components/editor/editor";
 import { type editor } from "monaco-editor";
+import { useMDB } from "../providers/mdb-provider";
 
 const FLUSH_DELAY_MS = 100;
 
@@ -20,15 +21,19 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { driver } = useMDB();
+
   const [rowData, setRowData] = useState<unknown[]>([]);
   const [columnDefs, setColumnDefs] = useState<ColDef[]>([]);
   const [isGridReady, setIsGridReady] = useState<boolean>(false);
+  const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
   const editorRef = useRef<{ editor: editor.IStandaloneCodeEditor }>(null);
   const gridRef = useRef<AgGridReact>(null);
 
   const sessionRef = useRef<Session | null>(null);
+  const resultRef = useRef<Result | null>(null);
   const recordsRef = useRef<object[]>([]);
 
   const onGridReady = () => {
@@ -62,16 +67,16 @@ function Index() {
   };
 
   const handleRun = () => {
-    if (!isGridReady) return;
+    if (isRunning) return;
 
     clear();
 
     setIsRunning(true);
 
-    const driver_ = driver("http://localhost:1234");
-    sessionRef.current = driver_.session();
+    const session = driver.session();
     const query = editorRef.current?.editor.getValue();
-    const result = sessionRef.current.run(query!);
+    const result = session.run(query!);
+    driver.cancel(result);
 
     result.subscribe({
       onVariables: (variables) => {
@@ -121,13 +126,29 @@ function Index() {
         setIsRunning(false);
       },
     });
+
+    sessionRef.current = session;
+    resultRef.current = result;
   };
 
   const handleStop = () => {
+    // TODO: FIX STOP
     if (!isRunning) return;
 
-    sessionRef.current?.close();
-    setIsRunning(false);
+    if (sessionRef.current) {
+      sessionRef.current.close();
+      sessionRef.current = null;
+    }
+
+    if (resultRef.current) {
+      driver.cancel(resultRef.current);
+      resultRef.current = null;
+    }
+
+    if (recordsRef.current.length) {
+      flush();
+    }
+
     notifications.show({
       color: "blue",
       title: "Query stopped",
@@ -135,6 +156,12 @@ function Index() {
       withCloseButton: true,
       withBorder: true,
     });
+
+    setIsRunning(false);
+  };
+
+  const handleMount = () => {
+    setIsEditorReady(true);
   };
 
   // close session on unmount
@@ -171,7 +198,9 @@ function Index() {
               ref={editorRef}
               onRun={handleRun}
               onStop={handleStop}
+              onMount={handleMount}
               isRunning={isRunning}
+              isRunDisabled={!isGridReady || !isEditorReady}
             />
           </Box>
         </Split.Pane>

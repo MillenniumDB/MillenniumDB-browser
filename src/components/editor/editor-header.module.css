@@ -25,12 +25,17 @@
       color: var(--mantine-color-red-text);
     }
 
+    &:disabled {
+      color: var(--mantine-color-disabled-color);
+      cursor: not-allowed;
+    }
+
     &:focus-visible {
       outline: 2px solid var(--mantine-primary-color-5);
       outline-offset: -2px;
     }
 
-    &:hover {
+    &:hover:not(:disabled) {
       color: var(--mantine-color-green-light-color);
       background: var(--mantine-color-green-light-hover);
 
