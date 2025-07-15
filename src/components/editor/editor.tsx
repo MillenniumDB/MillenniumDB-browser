@@ -12,7 +12,8 @@ import ReactMonacoEditor, { type OnMount } from "@monaco-editor/react";
 import { LoadingOverlay } from "@mantine/core";
 import EditorHeader, { type FileDef } from "./editor-header";
 import { v4 as uuidv4 } from "uuid";
-import { KeyCode, KeyMod, type editor } from "monaco-editor";
+import { type editor } from "monaco-editor";
+import { useMDB } from "@/providers/mdb-provider";
 
 type EditorProps = {
   isRunning: boolean;
@@ -24,6 +25,8 @@ type EditorProps = {
 
 const Editor = forwardRef(
   ({ onRun, onStop, onMount, isRunning, isRunDisabled }: EditorProps, ref) => {
+    const { catalog } = useMDB();
+
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
 
     // expose internal ref to parent
@@ -82,24 +85,6 @@ const Editor = forwardRef(
     };
 
     const handleEditorMount: OnMount = (editor) => {
-      editor.addAction({
-        id: "runCurrentQuery",
-        label: "Run current query",
-        keybindings: [KeyMod.CtrlCmd | KeyCode.Enter],
-        run: () => {
-          onRun();
-        },
-      });
-
-      editor.addAction({
-        id: "stopCurrentQuery",
-        label: "Stop current query",
-        keybindings: [KeyMod.CtrlCmd | KeyCode.KeyQ],
-        run: () => {
-          onStop();
-        },
-      });
-
       editorRef.current = editor;
 
       onMount();
@@ -108,6 +93,21 @@ const Editor = forwardRef(
     const isDarkMode = useMemo(() => {
       return computedColorScheme === "dark";
     }, [computedColorScheme]);
+
+    const language = useMemo(() => {
+      if (!catalog) return "plaintext";
+
+      switch (catalog.getModelString()) {
+        case "gql":
+          return "gql";
+        case "quad":
+          return "mql";
+        case "rdf":
+          return "sparql";
+        default:
+          return "plaintext";
+      }
+    }, [catalog]);
 
     return (
       <Box className={classes.root}>
@@ -130,8 +130,8 @@ const Editor = forwardRef(
             onMount={handleEditorMount}
             path={activeFile?.id}
             defaultValue={activeFile?.content}
-            defaultLanguage={"plaintext"} // TODO: driver
-            theme={isDarkMode ? "vs-dark" : "vs"} // TODO:
+            language={language}
+            theme={isDarkMode ? "mdb-dark" : "mdb-light"}
             loading={
               <LoadingOverlay
                 visible

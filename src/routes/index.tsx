@@ -8,11 +8,11 @@ import { type ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { MillenniumDBError, Result, Session } from "millenniumdb-driver";
 import { useEffect, useRef, useState } from "react";
-import { DataTable } from "../components/data-table/data-table";
-import { MDBCellRenderer } from "../components/data-table/mdb-cell-renderer";
-import { Editor } from "../components/editor/editor";
+import { DataTable } from "@/components/data-table/data-table";
+import { MDBCellRenderer } from "@/components/data-table/mdb-cell-renderer";
+import { Editor } from "@/components/editor/editor";
 import { type editor } from "monaco-editor";
-import { useMDB } from "../providers/mdb-provider";
+import { useMDB } from "@/providers/mdb-provider";
 
 const FLUSH_DELAY_MS = 100;
 
@@ -73,66 +73,79 @@ function Index() {
 
     setIsRunning(true);
 
-    const session = driver.session();
-    const query = editorRef.current?.editor.getValue();
-    const result = session.run(query!);
-    driver.cancel(result);
+    try {
+      const session = driver.session();
+      const query = editorRef.current?.editor.getValue();
+      const result = session.run(query!);
 
-    result.subscribe({
-      onVariables: (variables) => {
-        updateColumnDefs(variables);
-      },
-      onRecord(record) {
-        recordsRef.current.push(record.toObject());
-      },
-      onSuccess(summary) {
-        flush();
+      result.subscribe({
+        onVariables: (variables) => {
+          updateColumnDefs(variables);
+        },
+        onRecord(record) {
+          recordsRef.current.push(record.toObject());
+        },
+        onSuccess(summary) {
+          flush();
 
-        const { executionDurationMs, resultCount, update } = summary;
+          const { executionDurationMs, resultCount, update } = summary;
 
-        if (update) {
+          if (update) {
+            notifications.show({
+              color: "green",
+              title: "Update Finished",
+              message: `Execution took ${executionDurationMs.toFixed(3)} ms`,
+              withCloseButton: true,
+              withBorder: true,
+            });
+          } else {
+            notifications.show({
+              color: "green",
+              title: "Query Finished",
+              message: `Found ${resultCount} result(s) in ${executionDurationMs.toFixed(3)} ms`,
+              withCloseButton: true,
+              withBorder: true,
+            });
+          }
+          console.info(summary);
+          sessionRef.current?.close();
+          setIsRunning(false);
+        },
+        onError(error: MillenniumDBError) {
+          flush();
+
           notifications.show({
-            color: "green",
-            title: "Update Finished",
-            message: `Execution took ${executionDurationMs.toFixed(3)} ms`,
+            color: "red",
+            title: "MillenniumDB Error",
+            message: error.toString(),
             withCloseButton: true,
             withBorder: true,
           });
-        } else {
-          notifications.show({
-            color: "green",
-            title: "Query Finished",
-            message: `Found ${resultCount} result(s) in ${executionDurationMs.toFixed(3)} ms`,
-            withCloseButton: true,
-            withBorder: true,
-          });
-        }
-        console.info(summary);
-        sessionRef.current?.close();
-        setIsRunning(false);
-      },
-      onError(error: MillenniumDBError) {
-        flush();
+          console.error(error);
+          sessionRef.current?.close();
+          setIsRunning(false);
+        },
+      });
 
-        notifications.show({
-          color: "red",
-          title: "MillenniumDB Error",
-          message: error.toString(),
-          withCloseButton: true,
-          withBorder: true,
-        });
-        console.error(error);
-        sessionRef.current?.close();
-        setIsRunning(false);
-      },
-    });
+      sessionRef.current = session;
+      resultRef.current = result;
+    } catch (error_) {
+      console.error(error_);
 
-    sessionRef.current = session;
-    resultRef.current = result;
+      const error = error_ as Error;
+      notifications.show({
+        color: "red",
+        title: "Execution Error",
+        message: error.stack,
+        withCloseButton: true,
+        withBorder: true,
+      });
+
+      setIsRunning(false);
+    }
   };
 
   const handleStop = () => {
-    // TODO: FIX STOP
     if (!isRunning) return;
 
     if (sessionRef.current) {

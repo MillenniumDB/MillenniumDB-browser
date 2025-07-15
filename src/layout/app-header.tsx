@@ -15,10 +15,10 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import AppLogo from "../assets/logo-mdb-sm.png";
+import AppLogo from "@/assets/logo-mdb-sm.png";
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
-import { useMDB } from "../providers/mdb-provider";
+import { useMDB } from "@/providers/mdb-provider";
 import clsx from "clsx";
 
 type AppHeaderProps = {

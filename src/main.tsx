@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { MDBProvider } from "./providers/mdb-provider";
 import { CustomMantineProvider } from "./theme/custom-mantine-provider";
 
-import "./components/editor/monaco-config";
+import "./components/editor/config/monaco-config";
 
 import { routeTree } from "./routeTree.gen";
 
@@ -27,11 +27,11 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <MDBProvider>
-      <CustomMantineProvider>
-        <Notifications position="top-center" autoClose={3000} />
+    <CustomMantineProvider>
+      <Notifications position="top-center" autoClose={3000} />
+      <MDBProvider>
         <RouterProvider router={router} />
-      </CustomMantineProvider>
-    </MDBProvider>
+      </MDBProvider>
+    </CustomMantineProvider>
   </StrictMode>,
 );

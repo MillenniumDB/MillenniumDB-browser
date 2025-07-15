@@ -28,7 +28,7 @@ export const MDBProvider = ({ children }: MDBProviderProps) => {
   });
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled: boolean = false;
 
     const tryFetchCatalog = async () => {
       while (!cancelled && !value.catalog) {
@@ -47,6 +47,7 @@ export const MDBProvider = ({ children }: MDBProviderProps) => {
           }));
         } catch (err) {
           console.error("Failed to fetch catalog:", err);
+
           await new Promise((res) => setTimeout(res, RETRY_DELAY_MS));
         }
       }

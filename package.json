@@ -8,7 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "pnpm exec prettier . --write"
+    "format": "pnpm exec prettier . --write",
+    "grammar:fetch": "tsx scripts/fetch-grammar.ts",
+    "grammar:all": "pnpm run grammar:gql && pnpm run grammar:mql && pnpm run grammar:sparql",
+    "grammar:gql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript -no-listener src/grammar/gql/GQLParser.g4 src/grammar/gql/GQLLexer.g4",
+    "grammar:mql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript -no-listener src/grammar/mql/MQL_Parser.g4 src/grammar/mql/MQL_Lexer.g4",
+    "grammar:sparql": "java -jar src/grammar/antlr-4.13.1-complete.jar -Dlanguage=JavaScript -no-listener src/grammar/sparql/SparqlQueryParser.g4 src/grammar/sparql/SparqlQueryLexer.g4"
   },
   "dependencies": {
     "@gfazioli/mantine-split-pane": "^2.2.3",
@@ -21,6 +26,7 @@
     "@tanstack/react-router-devtools": "^1.125.4",
     "ag-grid-community": "^34.0.0",
     "ag-grid-react": "^34.0.0",
+    "antlr4": "^4.13.2",
     "clsx": "^2.1.1",
     "millenniumdb-driver": "^1.7.10",
     "monaco-editor": "^0.52.2",
@@ -32,6 +38,7 @@
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@tanstack/router-plugin": "^1.125.5",
+    "@types/node": "^24.0.13",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",

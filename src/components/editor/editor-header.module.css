@@ -71,7 +71,7 @@
       align-items: center;
 
       &[data-active] {
-        /* background: #1e1e1e; TODO: Monaco Theme */
+        background: var(--mantine-primary-color-light);
       }
 
       .closeButton:hover {

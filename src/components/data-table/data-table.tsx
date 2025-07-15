@@ -12,7 +12,7 @@ import {
   type GridReadyEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { CustomAgGridTheme } from "../../theme/custom-ag-grid-theme";
+import { CustomAgGridTheme } from "@/theme/custom-ag-grid-theme";
 import { Box } from "@mantine/core";
 import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 

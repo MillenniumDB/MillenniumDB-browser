@@ -1,7 +1,7 @@
 import { createRootRoute } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
-import { AppLayout } from "../layout/app-layout";
+import { AppLayout } from "@/layout/app-layout";
 
 function RootComponent() {
   return (

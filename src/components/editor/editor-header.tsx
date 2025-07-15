@@ -1,6 +1,13 @@
 import classes from "./editor-header.module.css";
 
-import { Tabs, Group, Box, CloseButton, UnstyledButton } from "@mantine/core";
+import {
+  Tabs,
+  Group,
+  Box,
+  CloseButton,
+  UnstyledButton,
+  Tooltip
+} from "@mantine/core";
 import { useEffect, useRef, type MouseEvent } from "react";
 import {
   IconDeviceFloppy,
@@ -79,18 +86,26 @@ export default function EditorHeader({
   return (
     <Group className={classes.root}>
       <Box className={classes.runContainer}>
-        <UnstyledButton
-          disabled={isRunDisabled}
-          onClick={() => (isRunning ? onStop() : onRun())}
-          className={clsx(classes.runButton, isRunning && classes.stop, isRunDisabled && classes.disabled)}
+        <Tooltip
+          label={isRunDisabled ? null : isRunning ? "Stop query" : "Run query"}
         >
-          {isRunning ? (
-            <IconPlayerStopFilled size={14} />
-          ) : (
-            <IconPlayerPlayFilled size={14} />
-          )}
-          {isRunning ? "Stop" : "Run"}
-        </UnstyledButton>
+          <UnstyledButton
+            disabled={isRunDisabled}
+            onClick={() => (isRunning ? onStop() : onRun())}
+            className={clsx(
+              classes.runButton,
+              isRunning && classes.stop,
+              isRunDisabled && classes.disabled,
+            )}
+          >
+            {isRunning ? (
+              <IconPlayerStopFilled size={14} />
+            ) : (
+              <IconPlayerPlayFilled size={14} />
+            )}
+            {isRunning ? "Stop" : "Run"}
+          </UnstyledButton>
+        </Tooltip>
       </Box>
 
       <Tabs
