@@ -5,7 +5,7 @@ import { Box } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ColDef } from "ag-grid-community";
-import type { AgGridReact } from "ag-grid-react";
+import type { AgGridReact, CustomCellRendererProps } from "ag-grid-react";
 import { MillenniumDBError, Result, Session } from "millenniumdb-driver";
 import { useEffect, useRef, useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
@@ -59,9 +59,10 @@ function Index() {
   const updateColumnDefs = (variables: string[]) => {
     setColumnDefs(
       variables.map((varName) => ({
-        cellRenderer: MDBCellRenderer,
+        cellRenderer: (props: CustomCellRendererProps) => MDBCellRenderer(props),
         field: varName,
         headerName: varName,
+        cellDataType: false,
       })),
     );
   };
@@ -224,8 +225,8 @@ function Index() {
           <Box className={classes.innerPane}>
             <DataTable
               ref={gridRef}
-              columnDefs={columnDefs}
               rowData={rowData}
+              columnDefs={columnDefs}
               onGridReady={onGridReady}
               withBorder={false}
               showIndex

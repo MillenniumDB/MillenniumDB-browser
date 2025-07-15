@@ -13,8 +13,8 @@ import {
   GraphPath,
 } from "millenniumdb-driver";
 
-export function MDBCellRenderer({ value }: CustomCellRendererProps) {
-  if (value === null) {
+const renderJsx = (value: unknown) => {
+  if (value === null || value === undefined) {
     return <span className="mdb-null">{"NULL"}</span>;
   }
 
@@ -76,7 +76,7 @@ export function MDBCellRenderer({ value }: CustomCellRendererProps) {
 
   // path
   if (value instanceof GraphPath) {
-    // TODO:
+    // TODO: paths
     return null;
   }
 
@@ -90,13 +90,16 @@ export function MDBCellRenderer({ value }: CustomCellRendererProps) {
     return <span className="mdb-numeric">{`${value}`}</span>;
   }
 
-  // TODO: arrays and objects with recursive highlight?
-
   // array
   if (Array.isArray(value)) {
-    return <span>{`[${value}]`}</span>;
+    return <span>{`List<${value.length}>`}</span>;
   }
 
   // fallback
-  return <span>{value.toString()}</span>;
+  const object = value as object;
+  return <span>{`Dict<${Object.keys(object).length}>`}</span>;
+};
+
+export function MDBCellRenderer({ value }: CustomCellRendererProps) {
+  return renderJsx(value);
 }

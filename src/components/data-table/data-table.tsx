@@ -89,6 +89,7 @@ const DataTable = forwardRef(
             wrapperBorder: withBorder,
           })}
           suppressDragLeaveHidesColumns
+          suppressFieldDotNotation // prevents issues with columns with dot
         />
       </Box>
     );
