@@ -3,7 +3,12 @@ import { CharStream, Lexer, Token } from "antlr4";
 import MQL_Lexer from "@/grammar/mql/MQL_Lexer";
 import GQLLexer from "@/grammar/gql/GQLLexer";
 import SparqlQueryLexer from "@/grammar/sparql/SparqlQueryLexer";
-import { GQLTokenToScopes, MQLTokenToScopes, SPARQLTokenToScopes, type TokenToScopes } from "./mdb-token-to-scopes";
+import {
+  GQLTokenToScopes,
+  MQLTokenToScopes,
+  SPARQLTokenToScopes,
+  type TokenToScopes,
+} from "./mdb-token-to-scopes";
 
 class MDBState implements languages.IState {
   clone(): MDBState {
@@ -21,18 +26,18 @@ export class MDBTokensProvider implements languages.TokensProvider {
 
   constructor(languageId: string) {
     switch (languageId) {
-      case "gql": {
+      case "mdb-gql": {
         this._lexerFactory = GQLLexer;
         this._tokenToScopes = GQLTokenToScopes;
 
         break;
       }
-      case "mql": {
+      case "mdb-mql": {
         this._lexerFactory = MQL_Lexer;
         this._tokenToScopes = MQLTokenToScopes;
         break;
       }
-      case "sparql": {
+      case "mdb-sparql": {
         this._lexerFactory = SparqlQueryLexer;
         this._tokenToScopes = SPARQLTokenToScopes;
         break;

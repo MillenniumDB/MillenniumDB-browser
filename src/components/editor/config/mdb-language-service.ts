@@ -19,19 +19,19 @@ export class MDBLanguageService {
   constructor(languageId: string) {
     // bind factories and accessors
     switch (languageId) {
-      case "gql": {
+      case "mdb-gql": {
         this._lexerFactory = GQLLexer;
         this._parserFactory = GQLParser;
         this._rootAccessor = "root";
         break;
       }
-      case "mql": {
+      case "mdb-mql": {
         this._lexerFactory = MQL_Lexer;
         this._parserFactory = MQL_Parser;
         this._rootAccessor = "root";
         break;
       }
-      case "sparql": {
+      case "mdb-sparql": {
         this._lexerFactory = SparqlQueryLexer;
         this._parserFactory = SparqlQueryParser;
         this._rootAccessor = "query";

@@ -1,4 +1,9 @@
-import { createTheme, type MantineColorsTuple } from "@mantine/core";
+import {
+  createTheme,
+  DEFAULT_THEME,
+  mergeMantineTheme,
+  type MantineColorsTuple,
+} from "@mantine/core";
 
 // https://mantine.dev/colors-generator/?color=C02ADF
 const brightPink: MantineColorsTuple = [
@@ -14,7 +19,7 @@ const brightPink: MantineColorsTuple = [
   "#84099c",
 ];
 
-export const theme = createTheme({
+const themeOverride = createTheme({
   colors: {
     "bright-pink": brightPink,
   },
@@ -49,5 +54,23 @@ export const theme = createTheme({
 
     mdbEdgeLight: "#0000FF",
     mdbEdgeDark: "#569CD6",
+
+    mdbLangtagLight: "#001080",
+    mdbLangtagDark: "#569CD6",
+
+    // editor only
+    mdbCommentLight: "#008000",
+    mdbCommentDark: "#6A9955",
+
+    mdbFunctionLight: "#795E26",
+    mdbFunctionDark: "#DCDCAA",
+
+    mdbKeywordLight: "#AF00DB",
+    mdbKeywordDark: "#C586C0",
+
+    mdbOperatorLight: "#000000",
+    mdbOperatorDark: "#FFFFFF",
   },
 });
+
+export const theme = mergeMantineTheme(DEFAULT_THEME, themeOverride);

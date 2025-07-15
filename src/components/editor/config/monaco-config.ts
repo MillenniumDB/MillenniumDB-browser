@@ -1,7 +1,7 @@
 // this file handles the initialization of monaco editor
 // DO NOT CHANGE IMPORT ORDER
 
-import * as monaco from "monaco-editor";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 
 import EditorWorkerModule from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import MDBWorkerModule from "./mdb.worker?worker";
@@ -28,9 +28,9 @@ loader.config({ monaco }); // use our local monaco instead of fetching the CDN
 self.MonacoEnvironment = {
   getWorker(_workerId, label) {
     switch (label) {
-      case "gql":
-      case "mql":
-      case "sparql":
+      case "mdb-gql":
+      case "mdb-mql":
+      case "mdb-sparql":
         return new MDBWorkerModule();
       default:
         return new EditorWorkerModule();
@@ -43,36 +43,51 @@ const workerAccessor = (languageId: string, ...uris: monaco.Uri[]) =>
   workerManager.getLanguageServiceWorker(languageId, ...uris);
 new MDBDiagnosticsAdapter(workerAccessor);
 
-monaco.languages.register({ id: "gql" });
-monaco.languages.onLanguage("gql", () => {
-  monaco.languages.setTokensProvider("gql", new MDBTokensProvider("gql"));
-  monaco.languages.setLanguageConfiguration("gql", GQLLanguageConfiguration);
-  monaco.languages.registerCompletionItemProvider(
-    "gql",
-    new MDBCompletionProvider("gql"),
+monaco.languages.register({ id: "mdb-gql" });
+monaco.languages.onLanguage("mdb-gql", () => {
+  monaco.languages.setTokensProvider(
+    "mdb-gql",
+    new MDBTokensProvider("mdb-gql"),
   );
-});
-
-monaco.languages.register({ id: "mql" });
-monaco.languages.onLanguage("mql", () => {
-  monaco.languages.setTokensProvider("mql", new MDBTokensProvider("mql"));
-  monaco.languages.setLanguageConfiguration("mql", MQLLanguageConfiguration);
-  monaco.languages.registerCompletionItemProvider(
-    "mql",
-    new MDBCompletionProvider("mql"),
-  );
-});
-
-monaco.languages.register({ id: "sparql" });
-monaco.languages.onLanguage("sparql", () => {
-  monaco.languages.setTokensProvider("sparql", new MDBTokensProvider("sparql"));
   monaco.languages.setLanguageConfiguration(
-    "sparql",
+    "mdb-gql",
+    GQLLanguageConfiguration,
+  );
+  monaco.languages.registerCompletionItemProvider(
+    "mdb-gql",
+    new MDBCompletionProvider("mdb-gql"),
+  );
+});
+
+monaco.languages.register({ id: "mdb-mql" });
+monaco.languages.onLanguage("mdb-mql", () => {
+  monaco.languages.setTokensProvider(
+    "mdb-mql",
+    new MDBTokensProvider("mdb-mql"),
+  );
+  monaco.languages.setLanguageConfiguration(
+    "mdb-mql",
+    MQLLanguageConfiguration,
+  );
+  monaco.languages.registerCompletionItemProvider(
+    "mdb-mql",
+    new MDBCompletionProvider("mdb-mql"),
+  );
+});
+
+monaco.languages.register({ id: "mdb-sparql" });
+monaco.languages.onLanguage("mdb-sparql", () => {
+  monaco.languages.setTokensProvider(
+    "mdb-sparql",
+    new MDBTokensProvider("mdb-sparql"),
+  );
+  monaco.languages.setLanguageConfiguration(
+    "mdb-sparql",
     SPARQLLanguageConfiguration,
   );
   monaco.languages.registerCompletionItemProvider(
-    "sparql",
-    new MDBCompletionProvider("sparql"),
+    "mdb-sparql",
+    new MDBCompletionProvider("mdb-sparql"),
   );
 });
 

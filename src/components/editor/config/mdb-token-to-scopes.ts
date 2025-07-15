@@ -98,7 +98,6 @@ const GQLTokenToScopes: TokenToScopes = (token: Token) => {
     case GQLLexer.PATH_LENGTH:
     case GQLLexer.PROPERTY:
     case GQLLexer.NOT:
-    case GQLLexer.NULL:
     case GQLLexer.NULLS:
     case GQLLexer.SHORTEST:
     case GQLLexer.SIMPLE:
@@ -114,6 +113,8 @@ const GQLTokenToScopes: TokenToScopes = (token: Token) => {
     case GQLLexer.SINGLE_QUOTED_STRING_LITERAL:
     case GQLLexer.ACCENT_QUOTED_STRING_LITERAL:
       return "string";
+    case GQLLexer.NULL:
+      return "null";
     default:
       return "";
   }
@@ -172,7 +173,7 @@ const MQLTokenToScopes: TokenToScopes = (token: Token) => {
     case MQL_Lexer.K_AS:
     case MQL_Lexer.K_BOOL:
     case MQL_Lexer.K_BY:
-    case MQL_Lexer.K_CALL:
+    case MQL_Lexer.K_CALL: // TODO: highlight procedures
     case MQL_Lexer.K_CREATE:
     case MQL_Lexer.K_DELETE:
     case MQL_Lexer.K_DESCRIBE:
@@ -196,7 +197,6 @@ const MQLTokenToScopes: TokenToScopes = (token: Token) => {
     case MQL_Lexer.K_LIMIT:
     case MQL_Lexer.K_MATCH:
     case MQL_Lexer.K_NOT:
-    case MQL_Lexer.K_NULL:
     case MQL_Lexer.K_OBJECTS:
     case MQL_Lexer.K_OFFSET:
     case MQL_Lexer.K_OPTIONAL:
@@ -220,6 +220,8 @@ const MQLTokenToScopes: TokenToScopes = (token: Token) => {
     case MQL_Lexer.K_WITH:
     case MQL_Lexer.K_YIELD:
       return "keyword";
+    case MQL_Lexer.K_NULL:
+      return "null";
     default:
       return "";
   }
@@ -230,12 +232,13 @@ const SPARQLTokenToScopes: TokenToScopes = (token: Token) => {
     case SparqlQueryLexer.COMMENT:
       return "comment";
     case SparqlQueryLexer.PNAME_NS:
+      return "iri-prefix";
     case SparqlQueryLexer.PNAME_LN:
     case SparqlQueryLexer.BLANK_NODE_LABEL:
-      return "type";
+      return "iri";
     case SparqlQueryLexer.IRIREF:
     case SparqlQueryLexer.A:
-      return "uri";
+      return "iri";
     case SparqlQueryLexer.LANGTAG:
       return "langtag";
     case SparqlQueryLexer.K_FALSE:
@@ -304,7 +307,7 @@ const SPARQLTokenToScopes: TokenToScopes = (token: Token) => {
     case SparqlQueryLexer.NAMED:
     case SparqlQueryLexer.OFFSET:
     case SparqlQueryLexer.OPTIONAL:
-    case SparqlQueryLexer.ORDEDR:
+    case SparqlQueryLexer.ORDER:
     case SparqlQueryLexer.PREFIX:
     case SparqlQueryLexer.REDUCED:
     case SparqlQueryLexer.SELECT:
@@ -383,6 +386,8 @@ const SPARQLTokenToScopes: TokenToScopes = (token: Token) => {
     case SparqlQueryLexer.URI:
     case SparqlQueryLexer.UUID:
     case SparqlQueryLexer.YEAR:
+      return "function";
+    case SparqlQueryLexer.ALPHANUMERIC_IDENTIFIER: // procedures
       return "function";
     default:
       return "";

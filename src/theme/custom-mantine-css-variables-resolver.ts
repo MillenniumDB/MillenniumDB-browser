@@ -13,6 +13,7 @@ export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     "--mdb-iri-suffix": theme.other.mdbSuffixLight,
     "--mdb-node": theme.other.mdbNodeLight,
     "--mdb-edge": theme.other.mdbEdgeLight,
+    "--mdb-langtag": theme.other.mdbLangtagLight,
   },
   dark: {
     "--mdb-string": theme.other.mdbStringDark,
@@ -25,5 +26,6 @@ export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     "--mdb-iri-suffix": theme.other.mdbSuffixDark,
     "--mdb-node": theme.other.mdbNodeDark,
     "--mdb-edge": theme.other.mdbEdgeDark,
+    "--mdb-langtag": theme.other.mdbLangtagDark,
   },
 });

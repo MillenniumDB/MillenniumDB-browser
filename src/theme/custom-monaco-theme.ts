@@ -10,51 +10,58 @@ const CustomMonacoLightTheme: editor.IStandaloneThemeData = {
   rules: [
     {
       token: "comment",
-      foreground: "#6A9955",
+      foreground: theme.other.mdbCommentLight,
       fontStyle: "italic",
     },
     {
       token: "variable",
-      foreground: "#D4D4D4",
+      foreground: "#000000",
       fontStyle: "bold",
     },
     {
       token: "keyword",
-      foreground: "#C586C0",
+      foreground: theme.other.mdbKeywordLight,
       fontStyle: "bold",
     },
     {
-      token: "uri",
-      foreground: "#4EC9B0",
+      token: "iri",
+      foreground: theme.other.mdbIriLight,
+    },
+    {
+      token: "iri-prefix",
+      foreground: theme.other.mdbIriPrefixLight,
     },
     {
       token: "langtag",
-      foreground: "#4EC9B0",
+      foreground: theme.other.mdbLangtagLight,
     },
     {
       token: "type",
-      foreground: "#569CD6",
+      foreground: theme.other.mdbTypeLight,
     },
     {
       token: "string",
-      foreground: "#CE9178",
+      foreground: theme.other.mdbStringLight,
     },
     {
       token: "number",
-      foreground: "#B5CEA8",
+      foreground: theme.other.mdbNumericLight,
     },
     {
       token: "boolean",
-      foreground: "#B5CEA8",
+      foreground: theme.other.mdbBooleanLight,
     },
     {
       token: "function",
-      foreground: "#DCDCAA",
+      foreground: theme.other.mdbFunctionLight,
     },
     {
       token: "operator",
-      foreground: "#4EC9B0",
-      fontStyle: "bold",
+      foreground: theme.other.mdbOperatorLight,
+    },
+    {
+      token: "null",
+      foreground: theme.other.mdbNullLight,
     },
   ],
 };
@@ -68,51 +75,59 @@ const CustomMonacoDarkTheme: editor.IStandaloneThemeData = {
   rules: [
     {
       token: "comment",
-      foreground: "#008000",
+      foreground: theme.other.mdbCommentDark,
       fontStyle: "italic",
     },
     {
       token: "variable",
-      foreground: "#000000",
+      foreground: "#ffffff",
       fontStyle: "bold",
     },
     {
       token: "keyword",
-      foreground: "#AF00DB",
+      foreground: theme.other.mdbKeywordDark,
       fontStyle: "bold",
     },
     {
-      token: "uri",
-      foreground: "#267F99",
+      token: "iri",
+      foreground: theme.other.mdbIriDark,
+    },
+    {
+      token: "iri-prefix",
+      foreground: theme.other.mdbIriPrefixDark,
     },
     {
       token: "langtag",
-      foreground: "#267F99",
+      foreground: theme.other.mdbLangtagDark,
     },
     {
       token: "type",
-      foreground: "#0000FF",
+      foreground: theme.other.mdbTypeDark,
     },
     {
       token: "string",
-      foreground: "#A31515",
+      foreground: theme.other.mdbStringDark,
     },
     {
       token: "number",
-      foreground: "#098658",
+      foreground: theme.other.mdbNumericDark,
     },
     {
       token: "boolean",
-      foreground: "#098658",
+      foreground: theme.other.mdbBooleanDark,
     },
     {
       token: "function",
-      foreground: "#795E26",
+      foreground: theme.other.mdbFunctionDark,
     },
     {
       token: "operator",
-      foreground: "#267F99",
+      foreground: theme.other.mdbOperatorDark,
       fontStyle: "bold",
+    },
+    {
+      token: "null",
+      foreground: theme.other.mdbNullDark,
     },
   ],
 };

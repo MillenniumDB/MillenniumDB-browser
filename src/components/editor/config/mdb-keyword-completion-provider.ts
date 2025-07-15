@@ -36,7 +36,6 @@ const GQLKeywords = [
   "PROPERTIES",
   "PROPERTY",
   "NOT",
-  "NULL",
   "SHORTEST",
   "SIMPLE",
   "RETURN",
@@ -99,7 +98,6 @@ const MQLKeywords = [
   "LIMIT",
   "MATCH",
   "NOT",
-  "NULL",
   "OBJECTS",
   "OFFSET",
   "OPTIONAL",
@@ -238,15 +236,15 @@ export class MDBCompletionProvider implements languages.CompletionItemProvider {
 
   constructor(languageId: string) {
     switch (languageId) {
-      case "gql": {
+      case "mdb-gql": {
         this._keywords = GQLKeywords;
         break;
       }
-      case "mql": {
+      case "mdb-mql": {
         this._keywords = MQLKeywords;
         break;
       }
-      case "sparql": {
+      case "mdb-sparql": {
         this._keywords = SPARQLKeywords;
         break;
       }
