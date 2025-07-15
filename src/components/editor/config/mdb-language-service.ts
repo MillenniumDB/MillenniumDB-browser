@@ -17,7 +17,6 @@ export class MDBLanguageService {
   private _rootAccessor: string;
 
   constructor(languageId: string) {
-    console.info("OK lang service");
     // bind factories and accessors
     switch (languageId) {
       case "gql": {
