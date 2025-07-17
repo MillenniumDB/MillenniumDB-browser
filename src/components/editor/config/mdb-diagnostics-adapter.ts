@@ -83,7 +83,11 @@ export class MDBDiagnosticsAdapter {
     const model = editor.getModel(resource);
     if (!model) return;
 
+    // prevent errors before setting the model
+    if (model.getLanguageId() === "plaintext") return;
+
     const worker = await this._workerAccessor(model.getLanguageId(), resource);
+
     const parsingErrors = await worker.doValidation(resource);
 
     const markers: editor.IMarkerData[] = parsingErrors.map((err) => ({

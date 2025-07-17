@@ -10,7 +10,7 @@ export type FileDef = {
 
 type ActionButtonProps = {
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
   icon: ElementType<IconProps>;
 };
 

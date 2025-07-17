@@ -23,8 +23,6 @@ import {
 } from "./mdb-language-configuration";
 import { MDBCompletionProvider } from "./mdb-keyword-completion-provider";
 
-loader.config({ monaco }); // use our local monaco instead of fetching the CDN
-
 self.MonacoEnvironment = {
   getWorker(_workerId, label) {
     switch (label) {
@@ -93,3 +91,5 @@ monaco.languages.onLanguage("mdb-sparql", () => {
 
 monaco.editor.defineTheme("mdb-light", CustomMonacoLightTheme);
 monaco.editor.defineTheme("mdb-dark", CustomMonacoDarkTheme);
+
+loader.config({ monaco }); // use our local monaco instead of fetching the CDN

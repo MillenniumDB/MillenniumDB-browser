@@ -4,49 +4,56 @@ import {
   Tabs,
   Group,
   Box,
-  CloseButton,
   UnstyledButton,
-  Tooltip
+  Tooltip,
+  ActionIcon,
 } from "@mantine/core";
-import { useEffect, useRef, type MouseEvent } from "react";
+import { useEffect, useRef } from "react";
 import {
-  IconDeviceFloppy,
+  IconCircleFilled,
   IconPlayerPlayFilled,
   IconPlayerStopFilled,
   IconPlus,
-  IconStar,
+  IconX,
 } from "@tabler/icons-react";
 import { EditorHeaderIconAction } from "./editor-header-icon-action";
 import clsx from "clsx";
-
-export type FileDef = {
-  id: string;
-  name: string;
-  content: string;
-};
+import type { FileDef } from "@/hooks/use-file-manager";
+import { SaveMenu } from "./save-menu";
+import { MyQueries } from "./my-queries";
 
 type EditorTabsProps = {
-  activeFile: FileDef;
-  files: FileDef[];
+  activeFileId?: string;
+  files: Record<string, FileDef>;
+  persistedFiles: Record<string, FileDef>;
+  openFileIds: string[];
   isRunning: boolean;
   isRunDisabled: boolean;
   onFileChange: (fileId: string) => void;
-  onFileAdd: () => void;
+  onFileCreate: () => void;
   onFileClose: (fileId: string) => void;
   onRun: () => void;
   onStop: () => void;
+  hasChanges: (id: string) => boolean;
+  onSave: (id: string, name?: string) => void;
+  onSelectQuery: (id: string) => void;
 };
 
 export default function EditorHeader({
-  activeFile,
   files,
+  persistedFiles,
+  openFileIds,
+  activeFileId,
   isRunDisabled,
   onFileChange,
-  onFileAdd,
+  onFileCreate,
   onFileClose,
   isRunning,
+  onSave,
   onRun,
   onStop,
+  onSelectQuery,
+  hasChanges,
 }: EditorTabsProps) {
   const tabsListRef = useRef<HTMLDivElement>(null);
 
@@ -57,11 +64,10 @@ export default function EditorHeader({
   };
 
   const handleAddTab = () => {
-    onFileAdd();
+    onFileCreate();
   };
 
-  const handleCloseTab = (e: MouseEvent, fileId: string) => {
-    e.stopPropagation(); // prevent tab change
+  const handleCloseTab = (fileId: string) => {
     onFileClose(fileId);
   };
 
@@ -87,10 +93,16 @@ export default function EditorHeader({
     <Group className={classes.root}>
       <Box className={classes.runContainer}>
         <Tooltip
-          label={isRunDisabled ? null : isRunning ? "Stop query" : "Run query"}
+          label={
+            activeFileId === undefined
+              ? "No query to run"
+              : isRunning
+                ? "Stop query"
+                : "Run query"
+          }
         >
           <UnstyledButton
-            disabled={isRunDisabled}
+            disabled={isRunDisabled || activeFileId === undefined}
             onClick={() => (isRunning ? onStop() : onRun())}
             className={clsx(
               classes.runButton,
@@ -110,29 +122,39 @@ export default function EditorHeader({
 
       <Tabs
         className={classes.tabs}
-        value={activeFile.id}
+        value={activeFileId}
         onChange={handleTabChange}
         variant="default"
       >
         <Tabs.List ref={tabsListRef} className={classes.tabsList}>
-          {files.map((file) => (
+          {openFileIds.map((id) => (
             <Tabs.Tab
               className={classes.tab}
-              key={file.id}
-              value={file.id}
+              key={id}
+              value={id}
+              // use a box wrapper to capture the click events correctly
               rightSection={
-                files.length > 1 && (
-                  <CloseButton
+                <Box
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCloseTab(id);
+                  }}
+                >
+                  <ActionIcon
+                    data-has-changes={hasChanges(id)}
                     className={classes.closeButton}
-                    component="span" // prevents nested button
+                    component="div" // prevents nested button warning
                     variant="subtle"
+                    color="default"
                     size="xs"
-                    onClick={(e) => handleCloseTab(e, file.id)}
-                  />
-                )
+                  >
+                    <IconCircleFilled className={classes.circle} size={12} />
+                    <IconX className={classes.x} />
+                  </ActionIcon>
+                </Box>
               }
             >
-              {file.name}
+              {`${files[id]?.name || "untitled"}${hasChanges(id) ? "*" : ""}`}
             </Tabs.Tab>
           ))}
         </Tabs.List>
@@ -144,15 +166,10 @@ export default function EditorHeader({
           onClick={handleAddTab}
           icon={IconPlus}
         />
-        <EditorHeaderIconAction
-          label="Save query"
-          onClick={() => alert("TODO:")}
-          icon={IconDeviceFloppy}
-        />
-        <EditorHeaderIconAction
-          label="My queries"
-          onClick={() => alert("TODO:")}
-          icon={IconStar}
+        <SaveMenu files={files} activeFileId={activeFileId} onSave={onSave} />
+        <MyQueries
+          persistedFiles={persistedFiles}
+          onSelectQuery={onSelectQuery}
         />
       </Box>
     </Group>

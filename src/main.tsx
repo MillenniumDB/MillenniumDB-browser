@@ -16,6 +16,7 @@ import "@mantine/core/styles.css";
 
 import "@gfazioli/mantine-split-pane/styles.css";
 import "@mantine/notifications/styles.css";
+import "@mantine/spotlight/styles.css";
 
 const router = createRouter({ routeTree });
 

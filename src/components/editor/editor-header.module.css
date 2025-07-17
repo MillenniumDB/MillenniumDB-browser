@@ -74,6 +74,30 @@
         background: var(--mantine-primary-color-light);
       }
 
+      .closeButton {
+        &[data-has-changes="true"] {
+          .x {
+            display: none;
+          }
+
+          &:hover {
+            .x {
+              display: block;
+            }
+
+            .circle {
+              display: none;
+            }
+          }
+        }
+
+        &[data-has-changes="false"] {
+          .circle {
+            display: none;
+          }
+        }
+      }
+
       .closeButton:hover {
         background: var(--mantine-color-gray-light-hover);
       }

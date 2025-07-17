@@ -14,3 +14,12 @@
   min-height: 0;
   z-index: 999999;
 }
+
+.noFileOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: calc(100%-36px);
+  top: 36px;
+}

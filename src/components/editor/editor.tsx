@@ -1,5 +1,21 @@
 import classes from "./editor.module.css";
 
+import type { FileDef } from "@/hooks/use-file-manager";
+import { useFileManager } from "@/hooks/use-file-manager";
+import { useMDB } from "@/providers/mdb-provider";
+import {
+  Anchor,
+  Box,
+  LoadingOverlay,
+  Overlay,
+  Text,
+  useComputedColorScheme,
+} from "@mantine/core";
+import ReactMonacoEditor, {
+  type OnChange,
+  type OnMount,
+} from "@monaco-editor/react";
+import type { editor } from "monaco-editor";
 import {
   forwardRef,
   useImperativeHandle,
@@ -7,13 +23,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Box, useComputedColorScheme } from "@mantine/core";
-import ReactMonacoEditor, { type OnMount } from "@monaco-editor/react";
-import { LoadingOverlay } from "@mantine/core";
-import EditorHeader, { type FileDef } from "./editor-header";
-import { v4 as uuidv4 } from "uuid";
-import { type editor } from "monaco-editor";
-import { useMDB } from "@/providers/mdb-provider";
+import EditorHeader from "./editor-header";
 
 type EditorProps = {
   isRunning: boolean;
@@ -29,6 +39,25 @@ const Editor = forwardRef(
 
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
 
+    // file management
+    const {
+      files,
+      createFile,
+      closeFile,
+      updateFile,
+      openFileIds,
+      openFile,
+      hasChanges,
+      persistedFiles,
+    } = useFileManager({
+      key: "savedQueries2",
+    });
+
+    const [activeFileId, setActiveFileId] = useState<string | undefined>();
+    const activeFile = useMemo<FileDef | undefined>(() => {
+      return activeFileId ? files[activeFileId] : undefined;
+    }, [files, activeFileId]);
+
     // expose internal ref to parent
     useImperativeHandle(
       ref,
@@ -42,52 +71,56 @@ const Editor = forwardRef(
 
     const computedColorScheme = useComputedColorScheme();
 
-    const [files, setFiles] = useState<FileDef[]>([
-      { id: "1", name: "new.rq", content: "test" },
-      { id: "2", name: "new2.rq", content: "newfile2" },
-    ]);
+    const handleCreateFile = () => {
+      const id = createFile();
+      openFile(id);
+      setActiveFileId(id);
+    };
 
-    const [activeFile, setActiveFile] = useState<FileDef>(files[0]);
-
-    const handleChangeFile = (fileId: string) => {
-      const file = files.find((f) => f.id === fileId);
-      if (file && file !== activeFile) {
-        setActiveFile(file);
+    const handleCloseFile = (id: string) => {
+      const foundIndex = openFileIds.findIndex((_id) => _id === id);
+      closeFile(id);
+      if (id === activeFileId) {
+        if (foundIndex > 0) {
+          setActiveFileId(openFileIds[foundIndex - 1]);
+        } else if (foundIndex === 0) {
+          if (openFileIds.length > 1) {
+            setActiveFileId(openFileIds[1]);
+          } else {
+            setActiveFileId(undefined);
+          }
+        } else {
+          // should never happen
+          setActiveFileId(undefined);
+        }
       }
     };
 
-    const handleAddFile = () => {
-      const newFile: FileDef = {
-        id: uuidv4(),
-        name: "untitled",
-        content: "",
-      };
-      setFiles([...files, newFile]);
-      setActiveFile(newFile);
+    const handleSaveFile = (id: string, name?: string) => {
+      updateFile({ id, name }, true);
     };
 
-    const handleFileClose = (fileId: string) => {
-      setFiles((prevFiles) => {
-        const nextFiles = prevFiles.filter((f) => fileId != f.id);
-
-        if (activeFile.id === fileId) {
-          const closedFileIndex = prevFiles.findIndex((f) => f.id === fileId);
-
-          if (closedFileIndex > 0) {
-            setActiveFile(prevFiles[closedFileIndex - 1]);
-          } else {
-            setActiveFile(nextFiles[0]);
-          }
-        }
-
-        return nextFiles;
-      });
+    const handleChangeFile = (id: string) => {
+      setActiveFileId(id);
     };
 
-    const handleEditorMount: OnMount = (editor) => {
-      editorRef.current = editor;
+    const handleEditorMount: OnMount = (
+      _editor: editor.IStandaloneCodeEditor,
+    ) => {
+      editorRef.current = _editor;
 
       onMount();
+    };
+
+    const handleEditorChange: OnChange = (value) => {
+      if (activeFileId) {
+        updateFile({ id: activeFileId, content: value });
+      }
+    };
+
+    const handleSelectQuery = (id: string) => {
+      openFile(id);
+      setActiveFileId(id);
     };
 
     const isDarkMode = useMemo(() => {
@@ -113,23 +146,49 @@ const Editor = forwardRef(
       <Box className={classes.root}>
         <Box className={classes.headerWrapper}>
           <EditorHeader
-            isRunning={isRunning}
-            activeFile={activeFile}
+            onSelectQuery={handleSelectQuery}
+            persistedFiles={persistedFiles}
+            openFileIds={openFileIds}
+            hasChanges={hasChanges}
+            activeFileId={activeFileId}
             files={files}
+            onFileCreate={handleCreateFile}
+            onFileClose={handleCloseFile}
             onFileChange={handleChangeFile}
-            onFileAdd={handleAddFile}
-            onFileClose={handleFileClose}
-            isRunDisabled={isRunDisabled}
+            onSave={handleSaveFile}
             onRun={onRun}
             onStop={onStop}
+            isRunning={isRunning}
+            isRunDisabled={isRunDisabled}
           />
         </Box>
 
         <Box className={classes.editorWrapper}>
+          {activeFileId === undefined && (
+            <Overlay
+              variant="blur"
+              className={classes.noFileOverlay}
+              color="#000"
+              backgroundOpacity={0.05}
+              blur={2}
+            >
+              <Text>
+                {"Start by "}
+                <Anchor
+                  component="button"
+                  underline="always"
+                  onClick={() => handleCreateFile()}
+                >
+                  {"creating a new query"}
+                </Anchor>
+              </Text>
+            </Overlay>
+          )}
           <ReactMonacoEditor
             onMount={handleEditorMount}
-            path={activeFile?.id}
-            defaultValue={activeFile?.content}
+            onChange={handleEditorChange}
+            path={activeFile?.id || ""}
+            value={activeFile?.content || ""}
             language={language}
             theme={isDarkMode ? "mdb-dark" : "mdb-light"}
             loading={
@@ -142,6 +201,7 @@ const Editor = forwardRef(
               />
             }
             options={{
+              readOnly: activeFileId === undefined,
               minimap: {
                 enabled: false,
               },
