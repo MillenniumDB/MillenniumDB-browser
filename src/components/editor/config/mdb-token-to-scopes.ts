@@ -135,6 +135,7 @@ const MQLTokenToScopes: TokenToScopes = (token: Token) => {
     case MQL_Lexer.EDGE_ID:
       return "variable";
     case MQL_Lexer.TYPE:
+    case MQL_Lexer.KEY:
       return "type";
     case MQL_Lexer.K_FALSE:
     case MQL_Lexer.K_TRUE:

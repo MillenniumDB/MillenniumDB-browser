@@ -14,6 +14,7 @@ export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     "--mdb-node": theme.other.mdbNodeLight,
     "--mdb-edge": theme.other.mdbEdgeLight,
     "--mdb-langtag": theme.other.mdbLangtagLight,
+    "--mdb-function": theme.other.mdbFunctionLight,
   },
   dark: {
     "--mdb-string": theme.other.mdbStringDark,
@@ -27,5 +28,6 @@ export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     "--mdb-node": theme.other.mdbNodeDark,
     "--mdb-edge": theme.other.mdbEdgeDark,
     "--mdb-langtag": theme.other.mdbLangtagDark,
+    "--mdb-function": theme.other.mdbFunctionDark,
   },
 });

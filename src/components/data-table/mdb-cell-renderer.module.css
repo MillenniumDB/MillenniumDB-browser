@@ -1,0 +1,35 @@
+.string {
+  color: var(--mdb-string);
+}
+
+.iri {
+  color: var(--mdb-iri);
+}
+
+.numeric {
+  color: var(--mdb-numeric);
+}
+
+.boolean {
+  color: var(--mdb-boolean);
+}
+
+.null {
+  color: var(--mdb-null);
+}
+
+.function {
+  color: var(--mdb-function);
+}
+
+.node {
+  color: var(--mdb-node);
+}
+
+.edge {
+  color: var(--mdb-edge);
+}
+
+.langtag {
+  color: var(--mdb-langtag);
+}
