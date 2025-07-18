@@ -8,7 +8,7 @@ import {
   spotlight,
   type SpotlightActionData,
 } from "@mantine/spotlight";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type MyQueriesProps = {
   persistedFiles: Record<string, FileDef>;
@@ -16,28 +16,44 @@ type MyQueriesProps = {
 };
 
 export function MyQueries({ persistedFiles, onSelectQuery }: MyQueriesProps) {
-  const actions = useMemo<SpotlightActionData[]>(() => {
-    return Object.values(persistedFiles).map((f) => ({
-      id: f.id,
-      label: f.name,
-      description: f.content,
-      onClick: () => onSelectQuery(f.id),
-    }));
-  }, [onSelectQuery, persistedFiles]);
+  const [query, setQuery] = useState("");
+
+  const items = useMemo(() => {
+    return Object.values(persistedFiles)
+      .filter((f) => {
+        const normalizedQuery = query.toLowerCase().trim();
+        const normalizedName = f.name.toLowerCase().trim();
+        const normalizedContent = f.content.toLowerCase().trim();
+        return (
+          normalizedName.includes(normalizedQuery) ||
+          normalizedContent.includes(normalizedQuery)
+        );
+      })
+      .map((f) => (
+        <Spotlight.Action
+          key={f.id}
+          label={f.name}
+          description={f.content}
+          onClick={() => onSelectQuery(f.id)}
+        />
+      ));
+  }, [onSelectQuery, persistedFiles, query]);
 
   return (
     <>
-      <Spotlight
-        actions={actions}
-        nothingFound="No queries found"
-        highlightQuery
-        scrollable
-        maxHeight={350}
-        searchProps={{
-          leftSection: <IconSearch size={20} stroke={1.5} />,
-          placeholder: "Search a query...",
-        }}
-      />
+      <Spotlight.Root query={query} onQueryChange={setQuery}>
+        <Spotlight.Search
+          placeholder="Search..."
+          leftSection={<IconSearch stroke={1.5} />}
+        />
+        <Spotlight.ActionsList>
+          {items.length > 0 ? (
+            items
+          ) : (
+            <Spotlight.Empty>No queries found</Spotlight.Empty>
+          )}
+        </Spotlight.ActionsList>
+      </Spotlight.Root>
 
       <EditorHeaderIconAction
         label="My queries"

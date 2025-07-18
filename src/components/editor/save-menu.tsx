@@ -1,11 +1,12 @@
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import { EditorHeaderIconAction } from "./editor-header-icon-action";
 import type { FileDef } from "@/hooks/use-file-manager";
-import { Menu, Box, Input } from "@mantine/core";
+import { Menu, Box, TextInput, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Modal, Button } from "@mantine/core";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { notifications } from "@mantine/notifications";
+import { useForm } from "@mantine/form";
 
 // TODO: optionally overwrite
 
@@ -17,7 +18,30 @@ type SaveMenuProps = {
 
 export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
   const [opened, { open, close }] = useDisclosure(false);
-  const [value, setValue] = useState("");
+
+  const form = useForm({
+    mode: "uncontrolled",
+    // validateInputOnChange: true,
+    initialValues: { name: "" },
+
+    validate: {
+      name: (value) => {
+        if (value.length === 0) {
+          return "Must not be empty";
+        }
+
+        if (value.trimStart() !== value) {
+          return "Must not start with whitespaces";
+        }
+
+        if (value.trimEnd() !== value) {
+          return "Must not end with whitespaces";
+        }
+
+        return null;
+      },
+    },
+  });
 
   const activeFile = useMemo<FileDef | undefined>(
     () => (activeFileId ? files[activeFileId] : undefined),
@@ -42,8 +66,6 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
       withCloseButton: true,
       withBorder: true,
     });
-
-    setValue("");
   };
 
   const handleSaveAs = (name: string) => {
@@ -58,30 +80,27 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
       withCloseButton: true,
       withBorder: true,
     });
+  };
 
-    setValue("");
+  const handleSubmit = (values: { name: string }) => {
+    const { name } = values;
+    handleSaveAs(name);
+    close();
   };
 
   return (
     <>
       <Modal opened={opened} onClose={close} title="Save as" centered size="md">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (value.length === 0) return;
-            handleSaveAs(value);
-            close();
-          }}
-        >
-          <Input
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <TextInput
+            label="Query name"
+            placeholder="Query name"
+            key={form.key("name")}
+            {...form.getInputProps("name")}
             data-autofocus
-            placeholder="Query title"
-            value={value}
-            onChange={(e) => setValue(e.currentTarget.value)}
             mb="xs"
           />
-
-          <Button fullWidth type="submit" disabled={value.length === 0}>
+          <Button fullWidth type="submit">
             Save
           </Button>
         </form>
@@ -90,7 +109,14 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
       <Menu shadow="md">
         <Menu.Target>
           {/* box wrapper to correctly set the menu position */}
-          <Box h="100%">
+          <Box
+            h="100%"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <EditorHeaderIconAction
               label="Save query"
               icon={IconDeviceFloppy}
@@ -99,10 +125,10 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
         </Menu.Target>
 
         <Menu.Dropdown>
-          <Menu.Item disabled={!activeFile} onClick={handleSave}>
+          <Menu.Item disabled={activeFile === undefined} onClick={handleSave}>
             Save
           </Menu.Item>
-          <Menu.Item disabled={!activeFile} onClick={open}>
+          <Menu.Item disabled={activeFile === undefined} onClick={open}>
             Save as...
           </Menu.Item>
         </Menu.Dropdown>

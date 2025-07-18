@@ -114,6 +114,8 @@
   align-items: center;
   justify-content: center;
 
+  gap: 2px;
+
   padding: 4px var(--mantine-spacing-xs);
 
   border-bottom: 2px solid var(--mantine-color-default-border);

@@ -50,7 +50,7 @@ const Editor = forwardRef(
       hasChanges,
       persistedFiles,
     } = useFileManager({
-      key: "savedQueries2",
+      key: "savedQueries",
     });
 
     const [activeFileId, setActiveFileId] = useState<string | undefined>();
