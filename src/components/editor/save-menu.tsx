@@ -1,7 +1,7 @@
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import { EditorHeaderIconAction } from "./editor-header-icon-action";
 import type { FileDef } from "@/hooks/use-file-manager";
-import { Menu, Box, TextInput, Tooltip } from "@mantine/core";
+import { Menu, Box, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Modal, Button } from "@mantine/core";
 import { useMemo } from "react";
@@ -21,7 +21,6 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
 
   const form = useForm({
     mode: "uncontrolled",
-    // validateInputOnChange: true,
     initialValues: { name: "" },
 
     validate: {
@@ -86,6 +85,7 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
     const { name } = values;
     handleSaveAs(name);
     close();
+    form.reset();
   };
 
   return (
@@ -100,6 +100,7 @@ export function SaveMenu({ activeFileId, files, onSave }: SaveMenuProps) {
             data-autofocus
             mb="xs"
           />
+
           <Button fullWidth type="submit">
             Save
           </Button>

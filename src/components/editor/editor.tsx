@@ -43,6 +43,7 @@ const Editor = forwardRef(
     const {
       files,
       createFile,
+      removeFile,
       closeFile,
       updateFile,
       openFileIds,
@@ -97,11 +98,23 @@ const Editor = forwardRef(
     };
 
     const handleSaveFile = (id: string, name?: string) => {
-      updateFile({ id, name }, true);
+      if (name) {
+        // TODO: create new
+        alert("TODO");
+        // const id = createFile({ name });
+        // updateFile({ id }, true);
+      } else {
+        updateFile({ id }, true);
+      }
     };
 
     const handleChangeFile = (id: string) => {
       setActiveFileId(id);
+    };
+
+    const handleDeleteFile = (id: string) => {
+      handleCloseFile(id);
+      removeFile(id);
     };
 
     const handleEditorMount: OnMount = (
@@ -146,6 +159,7 @@ const Editor = forwardRef(
       <Box className={classes.root}>
         <Box className={classes.headerWrapper}>
           <EditorHeader
+            onDeleteQuery={handleDeleteFile}
             onSelectQuery={handleSelectQuery}
             persistedFiles={persistedFiles}
             openFileIds={openFileIds}

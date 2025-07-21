@@ -1,21 +1,21 @@
-// TODO: key error
-
-import { IconSearch, IconStar } from "@tabler/icons-react";
+import { IconSearch, IconStar, IconTrash } from "@tabler/icons-react";
 import { EditorHeaderIconAction } from "./editor-header-icon-action";
 import type { FileDef } from "@/hooks/use-file-manager";
-import {
-  Spotlight,
-  spotlight,
-  type SpotlightActionData,
-} from "@mantine/spotlight";
+import { Spotlight, spotlight } from "@mantine/spotlight";
 import { useMemo, useState } from "react";
+import { ActionIcon, Tooltip } from "@mantine/core";
 
 type MyQueriesProps = {
   persistedFiles: Record<string, FileDef>;
   onSelectQuery: (id: string) => void;
+  onDeleteQuery: (id: string) => void;
 };
 
-export function MyQueries({ persistedFiles, onSelectQuery }: MyQueriesProps) {
+export function MyQueries({
+  persistedFiles,
+  onSelectQuery,
+  onDeleteQuery,
+}: MyQueriesProps) {
   const [query, setQuery] = useState("");
 
   const items = useMemo(() => {
@@ -35,9 +35,24 @@ export function MyQueries({ persistedFiles, onSelectQuery }: MyQueriesProps) {
           label={f.name}
           description={f.content}
           onClick={() => onSelectQuery(f.id)}
+          rightSection={
+            <Tooltip label="Delete" zIndex={"var(--mantine-z-index-max)"}>
+              <ActionIcon
+                component="div"
+                variant="subtle"
+                color="var(--mantine-color-bright)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteQuery(f.id);
+                }}
+              >
+                <IconTrash />
+              </ActionIcon>
+            </Tooltip>
+          }
         />
       ));
-  }, [onSelectQuery, persistedFiles, query]);
+  }, [onSelectQuery, onDeleteQuery, persistedFiles, query]);
 
   return (
     <>

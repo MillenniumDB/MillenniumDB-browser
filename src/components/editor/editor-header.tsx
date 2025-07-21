@@ -37,6 +37,7 @@ type EditorTabsProps = {
   hasChanges: (id: string) => boolean;
   onSave: (id: string, name?: string) => void;
   onSelectQuery: (id: string) => void;
+  onDeleteQuery: (id: string) => void;
 };
 
 export default function EditorHeader({
@@ -53,6 +54,7 @@ export default function EditorHeader({
   onRun,
   onStop,
   onSelectQuery,
+  onDeleteQuery,
   hasChanges,
 }: EditorTabsProps) {
   const tabsListRef = useRef<HTMLDivElement>(null);
@@ -170,6 +172,7 @@ export default function EditorHeader({
         <MyQueries
           persistedFiles={persistedFiles}
           onSelectQuery={onSelectQuery}
+          onDeleteQuery={onDeleteQuery}
         />
       </Box>
     </Group>

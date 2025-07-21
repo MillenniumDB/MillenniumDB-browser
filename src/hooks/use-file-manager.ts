@@ -28,17 +28,25 @@ export function useFileManager({ key }: FileManagerProps) {
   }, [key, persistedFiles]);
 
   // Create a new file and return its id
-  const createFile = ({
-    name,
-    content,
-  }: {
-    name?: string;
-    content?: string;
-  } = {}): string => {
+  const createFile = (
+    {
+      name,
+      content,
+    }: {
+      name?: string;
+      content?: string;
+    } = {},
+    persist: boolean = false,
+  ): string => {
     const id = uuidv4();
     const newFile: FileDef = { id, name: name ?? "", content: content ?? "" };
     setFiles((prev) => {
       const updated = { ...prev, [id]: newFile };
+      if (persist) {
+        setPersistedFiles((prev) => {
+          return { ...prev, [id]: newFile };
+        });
+      }
       return updated;
     });
     return id;

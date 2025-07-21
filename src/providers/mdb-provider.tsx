@@ -24,7 +24,7 @@ const RETRY_DELAY_MS = 1000;
 
 export const MDBProvider = ({ children }: MDBProviderProps) => {
   const [value, setValue] = useState<MDBContextType>({
-    driver: mdbDriver("http://localhost:1234"), // TODO: parametric endpoint
+    driver: mdbDriver(window.ENV.MDB_URL),
   });
 
   useEffect(() => {
