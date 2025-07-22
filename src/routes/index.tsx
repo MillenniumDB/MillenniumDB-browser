@@ -1,18 +1,21 @@
 import classes from "./index.module.css";
 
-import { Split } from "@gfazioli/mantine-split-pane";
-import { Box } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
-import { createFileRoute } from "@tanstack/react-router";
-import { type ColDef } from "ag-grid-community";
-import type { AgGridReact, CustomCellRendererProps } from "ag-grid-react";
-import { MillenniumDBError, Result, Session } from "millenniumdb-driver";
-import { useEffect, useRef, useState } from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { MDBCellRenderer } from "@/components/data-table/mdb-cell-renderer";
+import type { DetailsEntry } from "@/components/data-table/row-details-modal";
+import { RowDetailsModal } from "@/components/data-table/row-details-modal";
 import { Editor } from "@/components/editor/editor";
-import { type editor } from "monaco-editor";
 import { useMDB } from "@/providers/mdb-provider";
+import { Split } from "@gfazioli/mantine-split-pane";
+import { Box } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
+import { createFileRoute } from "@tanstack/react-router";
+import { type ColDef, type RowDoubleClickedEvent } from "ag-grid-community";
+import type { AgGridReact, CustomCellRendererProps } from "ag-grid-react";
+import { MillenniumDBError, Result, Session } from "millenniumdb-driver";
+import { type editor } from "monaco-editor";
+import { useEffect, useRef, useState } from "react";
 
 const FLUSH_DELAY_MS = 100;
 
@@ -22,6 +25,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { driver } = useMDB();
+
+  const [opened, { open, close }] = useDisclosure(false);
+  const [detailsData, setDetailsData] = useState<DetailsEntry[]>([]);
 
   const [rowData, setRowData] = useState<unknown[]>([]);
   const [columnDefs, setColumnDefs] = useState<ColDef[]>([]);
@@ -180,6 +186,19 @@ function Index() {
     setIsEditorReady(true);
   };
 
+  const handleRowDoubleClicked = (event: RowDoubleClickedEvent) => {
+    const { data } = event;
+    setDetailsData(
+      columnDefs.map((cd) => ({ field: cd.field!, value: data[cd.field!] })),
+    );
+    open();
+  };
+
+  const handleRowDetailsModalClose = () => {
+    setDetailsData([]);
+    close();
+  };
+
   // close session on unmount
   useEffect(() => {
     return () => {
@@ -197,46 +216,54 @@ function Index() {
   }, []);
 
   return (
-    <Box className={classes.root}>
-      <Split
-        orientation="horizontal"
-        h="100%"
-        size="sm"
-        color="var(--mantine-color-default-border)"
-        hoverColor="var(--mantine-primary-color-light-color)"
-        radius={0}
-        spacing={0}
-        variant="default"
-      >
-        <Split.Pane className={classes.pane} style={{ zIndex: 1 }}>
-          <Box className={classes.innerPane}>
-            <Editor
-              ref={editorRef}
-              onRun={handleRun}
-              onStop={handleStop}
-              onMount={handleMount}
-              isRunning={isRunning}
-              isRunDisabled={!isGridReady || !isEditorReady}
-            />
-          </Box>
-        </Split.Pane>
+    <>
+      <RowDetailsModal
+        detailsData={detailsData}
+        opened={opened}
+        close={handleRowDetailsModalClose}
+      />
+      <Box className={classes.root}>
+        <Split
+          orientation="horizontal"
+          h="100%"
+          size="sm"
+          color="var(--mantine-color-default-border)"
+          hoverColor="var(--mantine-primary-color-light-color)"
+          radius={0}
+          spacing={0}
+          variant="default"
+        >
+          <Split.Pane className={classes.pane} style={{ zIndex: 1 }}>
+            <Box className={classes.innerPane}>
+              <Editor
+                ref={editorRef}
+                onRun={handleRun}
+                onStop={handleStop}
+                onMount={handleMount}
+                isRunning={isRunning}
+                isRunDisabled={!isGridReady || !isEditorReady}
+              />
+            </Box>
+          </Split.Pane>
 
-        <Split.Resizer style={{ zIndex: 0 }} />
+          <Split.Resizer style={{ zIndex: 0 }} />
 
-        <Split.Pane grow className={classes.pane} style={{ zIndex: 0 }}>
-          <Box className={classes.innerPane}>
-            <DataTable
-              ref={gridRef}
-              rowData={rowData}
-              columnDefs={columnDefs}
-              onGridReady={onGridReady}
-              withBorder={false}
-              disableExport={isRunning || !columnDefs.length}
-              showIndex
-            />
-          </Box>
-        </Split.Pane>
-      </Split>
-    </Box>
+          <Split.Pane grow className={classes.pane} style={{ zIndex: 0 }}>
+            <Box className={classes.innerPane}>
+              <DataTable
+                ref={gridRef}
+                rowData={rowData}
+                columnDefs={columnDefs}
+                onGridReady={onGridReady}
+                onRowDoubleClicked={handleRowDoubleClicked}
+                withBorder={false}
+                disableExport={isRunning || !columnDefs.length}
+                showIndex
+              />
+            </Box>
+          </Split.Pane>
+        </Split>
+      </Box>
+    </>
   );
 }
