@@ -78,8 +78,12 @@ const renderJsx = (value: unknown) => {
 
   // path
   if (value instanceof GraphPath) {
-    // TODO: paths
-    return null;
+    return (
+      <span>
+        <span className={classes.function}>{"Path"}</span>
+        <span>{`<${value.length}>`}</span>
+      </span>
+    );
   }
 
   // builtin

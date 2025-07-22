@@ -30,7 +30,7 @@ export function EditorHeaderIconAction({
         onClick={onClick}
         disabled={disabled}
       >
-        <Icon width="75%" height="75%" />
+        <Icon size={20} stroke={2} />
       </ActionIcon>
     </Tooltip>
   );

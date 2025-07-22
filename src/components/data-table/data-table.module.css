@@ -5,3 +5,9 @@
 .indexHeader {
   color: var(--mantine-color-dimmed);
 }
+
+.floatingActionGroup {
+  position: absolute;
+  right: var(--mantine-spacing-sm);
+  bottom: var(--mantine-spacing-sm);
+}

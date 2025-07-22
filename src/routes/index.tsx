@@ -59,7 +59,8 @@ function Index() {
   const updateColumnDefs = (variables: string[]) => {
     setColumnDefs(
       variables.map((varName) => ({
-        cellRenderer: (props: CustomCellRendererProps) => MDBCellRenderer(props),
+        cellRenderer: (props: CustomCellRendererProps) =>
+          MDBCellRenderer(props),
         field: varName,
         headerName: varName,
         cellDataType: false,

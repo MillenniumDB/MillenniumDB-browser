@@ -99,10 +99,20 @@ const Editor = forwardRef(
 
     const handleSaveFile = (id: string, name?: string) => {
       if (name) {
-        // TODO: create new
-        alert("TODO");
-        // const id = createFile({ name });
-        // updateFile({ id }, true);
+        // a name was provided
+        const currentFile = files[id];
+        if (!currentFile.name) {
+          // untitled
+          updateFile({ name, id }, true);
+        } else {
+          // saving a new copy
+          const newId = createFile(
+            { name, content: currentFile.content },
+            true,
+          );
+          openFile(newId);
+          setActiveFileId(newId);
+        }
       } else {
         updateFile({ id }, true);
       }

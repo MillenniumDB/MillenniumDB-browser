@@ -5,6 +5,7 @@ import {
   ClientSideRowModelApiModule,
   ClientSideRowModelModule,
   ColumnAutoSizeModule,
+  CsvExportModule,
   ModuleRegistry,
   RowApiModule,
   ValidationModule,
@@ -13,11 +14,25 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { CustomAgGridTheme } from "@/theme/custom-ag-grid-theme";
-import { Box } from "@mantine/core";
+import { ActionIcon, Box, Tooltip } from "@mantine/core";
 import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import { IconDownload } from "@tabler/icons-react";
+import {
+  DateTime,
+  Decimal,
+  GraphAnon,
+  GraphEdge,
+  GraphNode,
+  GraphPath,
+  IRI,
+  SimpleDate,
+  StringDatatype,
+  StringLang,
+  Time,
+} from "millenniumdb-driver";
 
-// TODO: Value formatter (copy/download)
 let modules = [
+  CsvExportModule,
   CellStyleModule,
   ClientSideRowModelApiModule,
   ClientSideRowModelModule,
@@ -69,6 +84,101 @@ const DataTable = forwardRef(
       return [indexColDef, ...columnDefs];
     }, [columnDefs, showIndex]);
 
+    const handleDownload = () => {
+      console.log(
+        gridRef.current?.api.getDataAsCsv({
+          suppressQuotes: true,
+          processCellCallback(params) {
+            const { value } = params;
+            if (value === null || value === undefined) {
+              return "NULL";
+            }
+
+            // nodes
+            if (value instanceof GraphNode) {
+              return value.id;
+            } else if (value instanceof GraphAnon) {
+              return value.id;
+            }
+
+            // edge
+            if (value instanceof GraphEdge) {
+              return value.id;
+            }
+
+            // iri
+            if (value instanceof IRI) {
+              const { iri } = value;
+              return `<${iri}>`;
+            }
+
+            // rdf literal
+            if (value instanceof StringDatatype) {
+              return value.toString();
+            } else if (value instanceof StringLang) {
+              return value.toString();
+            }
+
+            // date
+            if (
+              value instanceof SimpleDate ||
+              value instanceof DateTime ||
+              value instanceof Time
+            ) {
+              return value.toString();
+            } else if (value instanceof Decimal) {
+              return value.toString();
+            }
+
+            // path
+            if (value instanceof GraphPath) {
+              let res = `(${value.start})`;
+              if (!value.length) {
+                return res;
+              }
+
+              for (const segment of value.segments) {
+                const typeStr = segment.type.id;
+                switch (segment.direction) {
+                  case "left":
+                    res += `<-[:${typeStr}]-`;
+                    break;
+                  case "right":
+                    res += `-[:${typeStr}]->`;
+                    break;
+                  default: // case "undirected":
+                    res += `-[:${typeStr}]-`;
+                    break;
+                }
+                res += `(${segment.to})`;
+              }
+
+              return res;
+            }
+
+            // builtin
+            const type = typeof value;
+            if (type === "string") {
+              return `"${value}"`;
+            } else if (type === "boolean") {
+              return value.toString();
+            } else if (type === "bigint" || type === "number") {
+              return value.toString();
+            }
+
+            // array
+            if (Array.isArray(value)) {
+              return `[${value}]`;
+            }
+
+            // fallback
+            const object = value as object;
+            return JSON.stringify(object);
+          },
+        }),
+      );
+    };
+
     return (
       <Box h="100%" w="100%">
         <AgGridReact
@@ -91,6 +201,13 @@ const DataTable = forwardRef(
           suppressDragLeaveHidesColumns
           suppressFieldDotNotation // prevents issues with columns with dot
         />
+        <ActionIcon.Group className={classes.floatingActionGroup}>
+          <Tooltip label="Export">
+            <ActionIcon variant="default" size="lg" onClick={handleDownload}>
+              <IconDownload size={20} stroke={1.5} />
+            </ActionIcon>
+          </Tooltip>
+        </ActionIcon.Group>
       </Box>
     );
   },
