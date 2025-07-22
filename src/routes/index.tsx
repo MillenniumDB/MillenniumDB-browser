@@ -58,7 +58,8 @@ function Index() {
 
   const updateColumnDefs = (variables: string[]) => {
     setColumnDefs(
-      variables.map((varName) => ({
+      variables.map((varName, idx) => ({
+        colId: idx.toString(),
         cellRenderer: (props: CustomCellRendererProps) =>
           MDBCellRenderer(props),
         field: varName,
@@ -230,6 +231,7 @@ function Index() {
               columnDefs={columnDefs}
               onGridReady={onGridReady}
               withBorder={false}
+              disableExport={isRunning || !columnDefs.length}
               showIndex
             />
           </Box>
