@@ -8,8 +8,6 @@ import { useMemo } from "react";
 import { notifications } from "@mantine/notifications";
 import { useForm } from "@mantine/form";
 
-// TODO: optionally overwrite
-
 type SaveMenuProps = {
   files: Record<string, FileDef>;
   activeFileId?: string;
