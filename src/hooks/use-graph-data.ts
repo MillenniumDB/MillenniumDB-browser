@@ -22,12 +22,12 @@ export type MDBLink = {
 };
 
 type UseGraphDataOptions = {
-  initialGraphData: GraphData<MDBNode, MDBLink>;
+  initialGraphData?: GraphData<MDBNode, MDBLink>;
 };
 
 export function useGraphData({
   initialGraphData = { nodes: [], links: [] },
-}: UseGraphDataOptions) {
+}: UseGraphDataOptions = {}) {
   const [graphData, setGraphData] =
     useState<GraphData<MDBNode, MDBLink>>(initialGraphData);
 
@@ -61,6 +61,7 @@ export function useGraphData({
     }
   }, []);
 
+  // TODO: fix remove link logic
   const removeLink = useCallback((source: NodeId, target: NodeId) => {
     const id: LinkId = `${source}->${target}`;
     if (!linkMap.current.has(id)) return;
@@ -74,7 +75,7 @@ export function useGraphData({
     (id: NodeId) => {
       if (!nodeMap.current.has(id)) return;
 
-      // remove all links its links
+      // remove all its links
       const out = outgoing.current.get(id) || new Set();
       for (const target of out) {
         removeLink(id, target);
