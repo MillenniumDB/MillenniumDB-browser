@@ -118,6 +118,10 @@ export function useGraphData({
     );
   }, []);
 
+  // Initialize data structures with initial graph data
+  initialGraphData.nodes.forEach((node) => addNode(node));
+  initialGraphData.links.forEach((link) => addLink(link));
+
   return {
     graphData,
     update,

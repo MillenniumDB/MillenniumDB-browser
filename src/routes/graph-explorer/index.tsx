@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import ForceGraph2D from "react-force-graph-2d";
 import { Box, useMantineTheme } from "@mantine/core";
@@ -6,11 +6,37 @@ import { useElementSize } from "@mantine/hooks";
 import { useGraphData } from "@/hooks/use-graph-data";
 import { useGraphColorPalette } from "@/hooks/use-graph-color-palette";
 
+
+// Example graph data, replace with actual data fetching logic
+const graphDatabase = { nodes: [], links: [] };
+
+function getOutgoingLinks(nodeId: string, graphDatabase) {
+  return graphDatabase.links.filter(
+    (link) => link.source === nodeId
+  );
+}
+
+function getOutgoingNodes(nodeId: string, graphDatabase) {
+  const outgoingLinks = getOutgoingLinks(nodeId, graphDatabase);
+  return graphDatabase.nodes.filter((node) =>
+    outgoingLinks.some((link) => link.target === node.id)
+  );
+}
+
 function GraphExplorer() {
-  const { ref, width, height } = useElementSize();
+  const { ref: boxRef, width, height } = useElementSize();
   const theme = useMantineTheme();
   const colorPalette = useGraphColorPalette();
-  const { graphData } = useGraphData();
+  const { graphData, addNode, addLink, update } = useGraphData();
+
+  const onNodeClick = useCallback((node) => {
+    if (!node) return;
+    const outgoingNodes = getOutgoingNodes(node.id, graphDatabase);
+    outgoingNodes.forEach((outNode) => addNode(outNode));
+    const outgoingLinks = getOutgoingLinks(node.id, graphDatabase);
+    outgoingLinks.forEach((link) => addLink(link));
+    update();
+  }, [addNode, addLink, update]);
 
   const typeColorMap = useRef(new Map<string, string>());
 
@@ -51,8 +77,8 @@ function GraphExplorer() {
     // Draw the border
     ctx.beginPath();
     ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = theme.colors.dark[6];
-    ctx.lineWidth = 2 / globalScale;
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 1;
     ctx.stroke();
 
     // Draw the label
@@ -67,13 +93,16 @@ function GraphExplorer() {
   };
 
   return (
-    <Box ref={ref} h="calc(100vh - var(--app-shell-header-height))" bg="white">
+    <Box ref={boxRef} h="calc(100vh - var(--app-shell-header-height))" bg="white">
       <ForceGraph2D
         graphData={graphData}
         width={width}
         height={height}
         linkDirectionalArrowLength={4}
         nodeCanvasObject={nodeCanvasObject}
+        onNodeClick={onNodeClick}
+        linkColor={() => theme.colors.gray[4]}
+        linkDirectionalArrowRelPos={1}
       />
     </Box>
   );
