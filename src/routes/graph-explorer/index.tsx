@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import ForceGraph2D from "react-force-graph-2d";
-import { Box, useMantineTheme } from "@mantine/core";
+import { Box, Menu, useMantineTheme } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
 import { useGraphData } from "@/hooks/use-graph-data";
 import { useGraphColorPalette } from "@/hooks/use-graph-color-palette";
+import { ContextMenu } from "@/components/graph-explorer/context-menu";
+import { IconFileDescription, IconTrash } from "@tabler/icons-react";
 
 
 // Example graph data, replace with actual data fetching logic
@@ -29,6 +31,12 @@ function GraphExplorer() {
   const colorPalette = useGraphColorPalette();
   const { graphData, addNode, addLink, update } = useGraphData();
 
+  const [contextMenuState, setContextMenuState] = useState({
+    opened: false,
+    x: 0,
+    y: 0,
+  });
+
   const onNodeClick = useCallback((node) => {
     if (!node) return;
     const outgoingNodes = getOutgoingNodes(node.id, graphDatabase);
@@ -40,14 +48,18 @@ function GraphExplorer() {
 
   const typeColorMap = useRef(new Map<string, string>());
 
-  const getColorForType = useCallback((type?: string) => {
-    if (!type) return theme.colors.gray[6]; // default color
-    if (!typeColorMap.current.has(type)) {
-      const nextColor = colorPalette[typeColorMap.current.size % colorPalette.length];
-      typeColorMap.current.set(type, nextColor);
-    }
-    return typeColorMap.current.get(type)!;
-  }, [colorPalette, theme.colors.gray]);
+  const getColorForType = useCallback(
+    (type?: string) => {
+      if (!type) return theme.colors.gray[6]; // default color
+      if (!typeColorMap.current.has(type)) {
+        const nextColor =
+          colorPalette[typeColorMap.current.size % colorPalette.length];
+        typeColorMap.current.set(type, nextColor);
+      }
+      return typeColorMap.current.get(type)!;
+    },
+    [colorPalette, theme.colors.gray],
+  );
 
   const nodeCanvasObject = (node, ctx, globalScale) => {
     const radius = 4;
@@ -92,14 +104,62 @@ function GraphExplorer() {
     node.__bckgDimensions = [radius * 2, fontSize + 4];
   };
 
+  // const handleZoom = useCallback(() => {
+  //   // prevents error on state order
+  //   requestAnimationFrame(() => {
+  //     setContextMenuState((prev) => ({
+  //       ...prev,
+  //       opened: false,
+  //     }));
+  //   });
+  // }, []);
+
+  const handleNodeRightClick = useCallback((node, event: MouseEvent) => {
+    const { clientX, clientY } = event;
+    setContextMenuState((prev) => ({
+      ...prev,
+      opened: true,
+      x: clientX,
+      y: clientY,
+    }));
+  }, []);
+
   return (
     <Box ref={boxRef} h="calc(100vh - var(--app-shell-header-height))" bg="white">
+      <ContextMenu
+        opened={contextMenuState.opened}
+        x={contextMenuState.x}
+        y={contextMenuState.y}
+        onClose={() =>
+          setContextMenuState((prev) => ({ ...prev, opened: false }))
+        }
+        menuItems={
+          <>
+            <Menu.Item
+              onClick={() => console.log("TODO: Node details")}
+              leftSection={<IconFileDescription size={14} />}
+            >
+              {"Node details"}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              color="red"
+              onClick={() => console.log("TODO: Node remove")}
+              leftSection={<IconTrash size={14} />}
+            >
+              {"Remove node"}
+            </Menu.Item>
+          </>
+        }
+      />
       <ForceGraph2D
         graphData={graphData}
         width={width}
         height={height}
         linkDirectionalArrowLength={4}
         nodeCanvasObject={nodeCanvasObject}
+        onNodeRightClick={handleNodeRightClick}
+        onBackgroundRightClick={() => {}}
         onNodeClick={onNodeClick}
         linkColor={() => theme.colors.gray[4]}
         linkDirectionalArrowRelPos={1}
