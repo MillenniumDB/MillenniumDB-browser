@@ -52,6 +52,10 @@ export function useGraphData({
     incoming.current.clear();
   }, []);
 
+  const getNodeById = useCallback((id: string)=> {
+    return nodeMap.current.get(id);
+  }, [nodeMap])
+
   const addNode = useCallback((node: MDBNode) => {
     const { id } = node;
     if (!nodeMap.current.has(id)) {
@@ -124,6 +128,7 @@ export function useGraphData({
 
   return {
     graphData,
+    getNodeById,
     update,
     clear,
     addNode,
