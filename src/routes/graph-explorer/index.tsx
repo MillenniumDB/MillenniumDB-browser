@@ -7,6 +7,7 @@ import { useGraphData } from "@/hooks/use-graph-data";
 import { useGraphColorPalette } from "@/hooks/use-graph-color-palette";
 import { ContextMenu } from "@/components/graph-explorer/context-menu";
 import { IconFileDescription, IconTrash } from "@tabler/icons-react";
+import { Split } from "@gfazioli/mantine-split-pane";
 
 
 // Example graph data, replace with actual data fetching logic
@@ -26,7 +27,7 @@ function getOutgoingNodes(nodeId: string, graphDatabase) {
 }
 
 function GraphExplorer() {
-  const { ref: boxRef, width, height } = useElementSize();
+  const { ref: graphBoxRef, width, height } = useElementSize();
   const theme = useMantineTheme();
   const colorPalette = useGraphColorPalette();
   const { graphData, addNode, addLink, update } = useGraphData();
@@ -87,11 +88,11 @@ function GraphExplorer() {
     }
 
     // Draw the border
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // ctx.beginPath();
+    // ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+    // ctx.strokeStyle = "white";
+    // ctx.lineWidth = 1;
+    // ctx.stroke();
 
     // Draw the label
     ctx.font = `${fontSize}px Sans-Serif`;
@@ -125,45 +126,70 @@ function GraphExplorer() {
   }, []);
 
   return (
-    <Box ref={boxRef} h="calc(100vh - var(--app-shell-header-height))" bg="white">
-      <ContextMenu
-        opened={contextMenuState.opened}
-        x={contextMenuState.x}
-        y={contextMenuState.y}
-        onClose={() =>
-          setContextMenuState((prev) => ({ ...prev, opened: false }))
-        }
-        menuItems={
-          <>
-            <Menu.Item
-              onClick={() => console.log("TODO: Node details")}
-              leftSection={<IconFileDescription size={14} />}
-            >
-              {"Node details"}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item
-              color="red"
-              onClick={() => console.log("TODO: Node remove")}
-              leftSection={<IconTrash size={14} />}
-            >
-              {"Remove node"}
-            </Menu.Item>
-          </>
-        }
-      />
-      <ForceGraph2D
-        graphData={graphData}
-        width={width}
-        height={height}
-        linkDirectionalArrowLength={4}
-        nodeCanvasObject={nodeCanvasObject}
-        onNodeRightClick={handleNodeRightClick}
-        onBackgroundRightClick={() => {}}
-        onNodeClick={onNodeClick}
-        linkColor={() => theme.colors.gray[4]}
-        linkDirectionalArrowRelPos={1}
-      />
+    <Box h="calc(100vh - var(--app-shell-header-height))">
+      <Split
+        h="100%"
+        color="var(--mantine-color-default-border)"
+        hoverColor="var(--mantine-primary-color-light-color)"
+        radius={0}
+        spacing={0}
+        variant="default"
+      >
+        <Split.Pane grow>
+          <Box ref={graphBoxRef} h="100%">
+            <ContextMenu
+              opened={contextMenuState.opened}
+              x={contextMenuState.x}
+              y={contextMenuState.y}
+              onClose={() =>
+                setContextMenuState((prev) => ({ ...prev, opened: false }))
+              }
+              menuItems={
+                <>
+                  <Menu.Item
+                    onClick={() => console.log("TODO: Node details")}
+                    leftSection={<IconFileDescription size={14} />}
+                  >
+                    {"Node details"}
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item
+                    color="red"
+                    onClick={() => console.log("TODO: Node remove")}
+                    leftSection={<IconTrash size={14} />}
+                  >
+                    {"Remove node"}
+                  </Menu.Item>
+                </>
+              }
+            />
+            <ForceGraph2D
+              graphData={graphData}
+              width={width}
+              height={height}
+              linkDirectionalArrowLength={4}
+              nodeCanvasObject={nodeCanvasObject}
+              onNodeRightClick={handleNodeRightClick}
+              onBackgroundRightClick={() => {}}
+              onNodeClick={onNodeClick}
+              linkColor={() => theme.colors.gray[4]}
+              linkDirectionalArrowRelPos={1}
+            />
+          </Box>
+        </Split.Pane>
+
+        <Split.Resizer />
+
+        <Split.Pane initialWidth="33%">
+          <Box h="100%" p="md">
+            <h2>Graph Explorer</h2>
+            <p>
+              Right-click on nodes to explore their details or remove them from
+              the graph.
+            </p>
+          </Box>
+        </Split.Pane>
+      </Split>
     </Box>
   );
 }
