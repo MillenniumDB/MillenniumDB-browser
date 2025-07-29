@@ -36,6 +36,10 @@ export function useGraphData({
   const outgoing = useRef(new Map<NodeId, Set<NodeId>>());
   const incoming = useRef(new Map<NodeId, Set<NodeId>>());
 
+  const getNode = (id: string): NodeObject<MDBNode> | undefined => {
+    return nodeMap.current.get(id);
+  };
+
   // updates the graphData state according to the maps
   const update = useCallback(() => {
     setGraphData({
@@ -131,5 +135,6 @@ export function useGraphData({
     addLink,
     getOutgoing,
     getIncoming,
+    getNode,
   };
 }
