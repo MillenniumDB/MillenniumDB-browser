@@ -6,7 +6,7 @@ import ForceGraph2D, {
   type NodeObject,
 } from "react-force-graph-2d";
 import { Box, Button, Menu, useMantineTheme } from "@mantine/core";
-import { useElementSize } from "@mantine/hooks";
+import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   useGraphData,
   type MDBLink,
@@ -15,14 +15,20 @@ import {
 } from "@/hooks/use-graph-data";
 import { useGraphColorPalette } from "@/hooks/use-graph-color-palette";
 import { ContextMenu } from "@/components/graph-explorer/context-menu";
-import { IconFileDescription, IconTrash } from "@tabler/icons-react";
+import {
+  IconFileDescription,
+  IconNewSection,
+  IconPointer,
+  IconTrash,
+} from "@tabler/icons-react";
 import {
   BoxSelection,
   type OnBoxSelectionEnd,
   type OnBoxSelectionMove,
   type OnBoxSelectionStart,
 } from "@/components/graph-explorer/box-selection";
-import { HEADER_HEIGHT } from "@/layout/app-layout";
+import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
+import { Toolbar, type CursorMode } from "@/components/graph-explorer/toolbar";
 
 // Example graph data, replace with actual data fetching logic
 const graphDatabase = {
@@ -138,8 +144,6 @@ function getOutgoingNodes(nodeId: string, graphDatabase) {
   );
 }
 
-type MouseMode = "select" | "expand";
-
 function GraphExplorer() {
   const { ref: boxRef, width, height } = useElementSize();
   const theme = useMantineTheme();
@@ -151,12 +155,14 @@ function GraphExplorer() {
     },
   });
 
+  const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
+
   const graphRef = useRef<
     | ForceGraphMethods<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
     | undefined
   >(undefined);
 
-  const [mouseMode, setMouseMode] = useState<MouseMode>("select");
+  const [activeMode, setActiveMode] = useState<CursorMode>("default");
 
   const [selecting, setSelecting] = useState(false);
 
@@ -179,7 +185,7 @@ function GraphExplorer() {
       if (!node) return;
       const { id } = node;
 
-      if (mouseMode === "select") {
+      if (activeMode === "select") {
         if (event.ctrlKey || event.shiftKey || event.altKey) {
           setSelectedNodeIds((prev) => {
             const next = new Set(prev);
@@ -195,7 +201,7 @@ function GraphExplorer() {
             selectedNodeIds.has(id) && selectedNodeIds.size === 1;
           setSelectedNodeIds(unselect ? new Set() : new Set([id]));
         }
-      } else if (mouseMode === "expand") {
+      } else if (activeMode === "expand") {
         const outgoingNodes = getOutgoingNodes(id, graphDatabase);
         outgoingNodes.forEach((outNode: MDBNode) => addNode(outNode));
         const outgoingLinks = getOutgoingLinks(id, graphDatabase);
@@ -203,7 +209,7 @@ function GraphExplorer() {
         update();
       }
     },
-    [mouseMode, selectedNodeIds, update, addNode, addLink],
+    [activeMode, selectedNodeIds, update, addNode, addLink],
   );
 
   const typeColorMap = useRef(new Map<string, string>());
@@ -336,12 +342,14 @@ function GraphExplorer() {
     ({ minX, maxX, minY, maxY }) => {
       if (!graphRef.current) return;
 
+      const xOffset = smallerThanXs ? 0 : NAVBAR_WIDTH;
+
       const minGraphCoords = graphRef.current.screen2GraphCoords(
-        minX,
+        minX - xOffset,
         minY - HEADER_HEIGHT,
       );
       const maxGraphCoords = graphRef.current.screen2GraphCoords(
-        maxX,
+        maxX - xOffset,
         maxY - HEADER_HEIGHT,
       );
 
@@ -463,6 +471,27 @@ function GraphExplorer() {
         onNodeRightClick={handleNodeRightClick}
         onNodeDrag={handleNodeDrag}
         onNodeDragEnd={handleNodeDragEnd}
+      />
+
+      <Toolbar
+        toolbarItems={[
+          {
+            onClick: () => setActiveMode("default"),
+            icon: IconPointer,
+            label: "Default",
+            mode: "default",
+          },
+          {
+            onClick: () => {
+              setSelecting(true);
+              setActiveMode("select");
+            },
+            icon: IconNewSection,
+            label: "Box selection",
+            mode: "select",
+          },
+        ]}
+        activeMode={activeMode}
       />
     </Box>
   );

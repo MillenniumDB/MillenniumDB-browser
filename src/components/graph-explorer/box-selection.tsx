@@ -95,7 +95,7 @@ export function BoxSelection({
       {/* Overlay */}
       <Box
         style={{
-          zIndex: "var(--mantine-z-index-max)",
+          zIndex: "calc(var(--mantine-z-index-modal) - 1)",
           position: "fixed",
           top: 0,
           bottom: 0,
