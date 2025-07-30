@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import ForceGraph2D, {
   type ForceGraphMethods,
@@ -9,6 +9,7 @@ import { Box, Menu, useMantineTheme } from "@mantine/core";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   useGraphData,
+  type LinkId,
   type MDBLink,
   type MDBNode,
   type NodeId,
@@ -31,7 +32,6 @@ import type { GraphNode } from "millenniumdb-driver";
 import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
-
 
 // Example graph data, replace with actual data fetching logic
 const graphDatabase = {
@@ -73,6 +73,90 @@ const graphDatabase = {
     },
   ],
   links: [
+    {
+      id: "x",
+      source: "n3",
+      target: "n1",
+      name: "X",
+    },
+    {
+      id: "a",
+      source: "n3",
+      target: "n1",
+      name: "A",
+    },
+    {
+      id: "b",
+      source: "n3",
+      target: "n1",
+      name: "B",
+    },
+    {
+      id: "c",
+      source: "n3",
+      target: "n1",
+      name: "C",
+    },
+    {
+      id: "d",
+      source: "n3",
+      target: "n1",
+      name: "D",
+    },
+    {
+      id: "e",
+      source: "n3",
+      target: "n1",
+      name: "E",
+    },
+    {
+      id: "f",
+      source: "n3",
+      target: "n1",
+      name: "F",
+    },
+    {
+      id: "self1",
+      source: "n0",
+      target: "n0",
+      name: "Self1",
+    },
+    {
+      id: "self2",
+      source: "n0",
+      target: "n0",
+      name: "Self2",
+    },
+    {
+      id: "self3",
+      source: "n0",
+      target: "n0",
+      name: "Self3",
+    },
+    {
+      id: "self4",
+      source: "n0",
+      target: "n0",
+      name: "Self4",
+    },
+    {
+      id: "self5",
+      source: "n0",
+      target: "n0",
+      name: "Self5",
+    },
+    {
+      id: "self6",
+      source: "n0",
+      target: "n0",
+      name: "Self6",
+    },
+    {
+      id: "self7",
+      source: "n0",
+      target: "n0",
+      name: "Self7",
+    },
     {
       id: "l0",
       source: "n1",
@@ -160,6 +244,7 @@ function GraphExplorer() {
     | ForceGraphMethods<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
     | undefined
   >(undefined);
+
   const { ref: graphBoxRef, width, height } = useElementSize();
 
   const theme = useMantineTheme();
@@ -380,6 +465,59 @@ function GraphExplorer() {
     setCursorMode("default");
   }, []);
 
+  useEffect(() => {
+    fgRef.current?.d3Force("center", null);
+  }, []);
+
+  // maps LinkIds to their curvature
+  const curvatureMap = useMemo<Map<LinkId, number>>(() => {
+    const numConnectionsMap: Map<string, number> = new Map();
+    const numSelfConnectionsMap: Map<string, number> = new Map();
+
+    const nextCurvatureMap: Map<LinkId, number> = new Map();
+    for (const { id, source, target } of graphData.links) {
+      const selfCurvatureDelta = 0.4; // factor for self links
+      const curvatureDelta = 0.2; // factor for other links
+
+      let curvature = 0;
+
+      if (source === target) {
+        // self links
+        const count = numSelfConnectionsMap.get(source) ?? 0;
+
+        const index = Math.floor(count / 2) + 1; // 1, 1, 2, 2, ...
+        const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, ...
+        curvature = sign * index * selfCurvatureDelta;
+
+        numSelfConnectionsMap.set(source, count + 1);
+      } else {
+        // other links
+        const [a, b] = [source, target].sort();
+        const key = `${a}-${b}`;
+        const count = numConnectionsMap.get(key) ?? 0;
+
+        if (count > 0) {
+          const index = Math.floor((count - 1) / 2) + 1; // 0, 1, 1, 2, 2, ...
+          const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, 1, ...
+          curvature = sign * index * curvatureDelta;
+        }
+
+        numConnectionsMap.set(key, count + 1);
+      }
+
+      nextCurvatureMap.set(id, curvature);
+    }
+    return nextCurvatureMap;
+  }, [graphData.links]);
+
+  const handleLinkCurvature = useCallback(
+    (link: LinkObject<MDBLink>) => {
+      const { id } = link;
+      return curvatureMap.get(id) ?? 0;
+    },
+    [curvatureMap],
+  );
+
   return (
     <Box h="calc(100vh - var(--app-shell-header-height))">
       <Split
@@ -439,7 +577,7 @@ function GraphExplorer() {
                 )
               }
             />
-            <ForceGraph2D
+            <ForceGraph2D<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
               ref={fgRef}
               graphData={graphData}
               width={width}
@@ -449,6 +587,7 @@ function GraphExplorer() {
               onBackgroundRightClick={() => {}}
               linkColor={() => theme.colors.gray[4]}
               linkDirectionalArrowRelPos={1}
+              linkCurvature={handleLinkCurvature}
               onBackgroundClick={handleBackgroundClick}
               onNodeClick={handleNodeClick}
               onNodeRightClick={handleNodeRightClick}
@@ -466,7 +605,10 @@ function GraphExplorer() {
                 {
                   onClick: () => {
                     setCursorMode("box-select");
-                    setSelection((prev) => ({ ...prev, boxSelectionActive: true }));
+                    setSelection((prev) => ({
+                      ...prev,
+                      boxSelectionActive: true,
+                    }));
                   },
                   icon: IconNewSection,
                   label: "Box selection",
