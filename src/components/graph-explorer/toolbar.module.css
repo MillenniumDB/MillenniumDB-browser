@@ -1,5 +1,5 @@
 .root {
-  position: fixed;
+  position: absolute;
   bottom: var(--mantine-spacing-sm);
   left: 50%;
   transform: translate(-50%, -50%);
