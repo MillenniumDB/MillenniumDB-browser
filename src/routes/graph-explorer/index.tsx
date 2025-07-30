@@ -5,7 +5,12 @@ import ForceGraph2D, {
   type LinkObject,
   type NodeObject,
 } from "react-force-graph-2d";
-import { Box, Menu, useMantineTheme } from "@mantine/core";
+import {
+  Box,
+  Menu,
+  useComputedColorScheme,
+  useMantineTheme,
+} from "@mantine/core";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   useGraphData,
@@ -28,7 +33,6 @@ import {
   IconPointer,
   IconTrash,
 } from "@tabler/icons-react";
-import type { GraphNode } from "millenniumdb-driver";
 import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
@@ -77,37 +81,37 @@ const graphDatabase = {
       id: "x",
       source: "n3",
       target: "n1",
-      name: "X",
+      name: "Likes",
     },
     {
       id: "a",
       source: "n3",
       target: "n1",
-      name: "A",
+      name: "Comment",
     },
     {
       id: "b",
       source: "n3",
       target: "n1",
-      name: "B",
+      name: "Follow",
     },
     {
       id: "c",
       source: "n3",
       target: "n1",
-      name: "C",
+      name: "isFriendsWith",
     },
     {
       id: "d",
       source: "n3",
       target: "n1",
-      name: "D",
+      name: "wasWith",
     },
     {
       id: "e",
       source: "n3",
       target: "n1",
-      name: "E",
+      name: "isFriendsWith",
     },
     {
       id: "f",
@@ -251,6 +255,11 @@ function GraphExplorer() {
   const colorPalette = useGraphColorPalette();
   const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
 
+  const computedColorScheme = useComputedColorScheme();
+  const isDarkMode = useMemo(() => {
+    return computedColorScheme === "dark";
+  }, [computedColorScheme]);
+
   const { graphData, addNode, addLink, update, getNode } = useGraphData({
     initialGraphData: graphDatabase,
   });
@@ -268,6 +277,47 @@ function GraphExplorer() {
   });
 
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
+
+  // maps LinkIds to their curvature
+  const curvatureMap = useMemo<Map<LinkId, number>>(() => {
+    const numConnectionsMap: Map<string, number> = new Map();
+    const numSelfConnectionsMap: Map<string, number> = new Map();
+
+    const nextCurvatureMap: Map<LinkId, number> = new Map();
+    for (const { id, source, target } of graphData.links) {
+      const selfCurvatureDelta = 0.3; // factor for self links
+      const curvatureDelta = 0.2; // factor for other links
+
+      let curvature = 0;
+
+      if (source === target) {
+        // self links
+        const count = numSelfConnectionsMap.get(source) ?? 0;
+
+        const index = Math.floor(count / 2) + 1; // 1, 1, 2, 2, ...
+        const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, ...
+        curvature = sign * index * selfCurvatureDelta;
+
+        numSelfConnectionsMap.set(source, count + 1);
+      } else {
+        // other links
+        const [a, b] = [source, target].sort();
+        const key = `${a}-${b}`;
+        const count = numConnectionsMap.get(key) ?? 0;
+
+        if (count > 0) {
+          const index = Math.floor((count - 1) / 2) + 1; // 0, 1, 1, 2, 2, ...
+          const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, 1, ...
+          curvature = sign * index * curvatureDelta;
+        }
+
+        numConnectionsMap.set(key, count + 1);
+      }
+
+      nextCurvatureMap.set(id, curvature);
+    }
+    return nextCurvatureMap;
+  }, [graphData.links]);
 
   const typeColorMap = useRef(new Map<string, string>());
 
@@ -334,6 +384,107 @@ function GraphExplorer() {
     // Set the background dimensions for the node
     node.__bckgDimensions = [radius * 2, fontSize + 4];
   };
+
+  const linkCanvasObject = useCallback(
+    (
+      link: LinkObject<MDBNode, MDBLink>,
+      ctx: CanvasRenderingContext2D,
+      globalScale: number,
+    ) => {
+      const { id, source, target } = link as {
+        id: LinkId;
+        source: NodeObject<MDBNode>;
+        target: NodeObject<MDBNode>;
+      };
+
+      if (!source.x || !source.y || !target.x || !target.y) return;
+
+      const curvature = curvatureMap.get(id) ?? 0;
+      const fontSize = Math.max(10 / globalScale, 2); // TODO: could be a fixed value instead
+      const text = link.name;
+
+      ctx.save();
+
+      ctx.font = `${fontSize}px Sans-Serif`;
+
+      const textWidth = ctx.measureText(text).width;
+      const [bgWidth, bgHeight] = [textWidth, fontSize].map(
+        (n) => n + 0.5 * fontSize,
+      );
+
+      // bezier midpoint
+      let bx: number;
+      let by: number;
+      let textAngle: number = 0;
+
+      if (source.id === target.id) {
+        // self link
+        const curvature = curvatureMap.get(id) ?? 0;
+
+        // loop parameters
+        const radius = 75 * Math.abs(curvature);
+        const angle = curvature > 0 ? -Math.PI / 4 : (3 * Math.PI) / 4;
+
+        // bezier control point (offset from node center)
+        const cx = source.x + Math.cos(angle) * radius;
+        const cy = source.y + Math.sin(angle) * radius;
+
+        // bezier midpoint at t = 0.5
+        const t = 0.5;
+        bx = (1 - t) ** 2 * source.x + 2 * (1 - t) * t * cx + t ** 2 * source.x;
+        by = (1 - t) ** 2 * source.y + 2 * (1 - t) * t * cy + t ** 2 * source.y;
+      } else {
+        // other links
+
+        // normal vector
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const nx = -dy / len;
+        const ny = dx / len;
+
+        // bezier control point
+        const mx = (source.x + target.x) / 2;
+        const my = (source.y + target.y) / 2;
+        const cx = mx - curvature * len * nx;
+        const cy = my - curvature * len * ny;
+
+        // bézier midpoint at t = 0.5
+        const t = 0.5;
+        bx = (1 - t) ** 2 * source.x + 2 * (1 - t) * t * cx + t ** 2 * target.x;
+        by = (1 - t) ** 2 * source.y + 2 * (1 - t) * t * cy + t ** 2 * target.y;
+
+        // tangent vector at t = 0.5
+        const dxdt = 2 * (1 - t) * (cx - source.x) + 2 * t * (target.x - cx);
+        const dydt = 2 * (1 - t) * (cy - source.y) + 2 * t * (target.y - cy);
+        textAngle = Math.atan2(dydt, dxdt);
+
+        if (textAngle > Math.PI / 2 || textAngle < -Math.PI / 2) {
+          // adjust angle to be always left-right/top-down
+          textAngle += Math.PI;
+        }
+      }
+
+      ctx.translate(bx, by);
+      ctx.rotate(textAngle);
+
+      if (isDarkMode) {
+        ctx.fillStyle = "rgba(0,0,0,0.75)";
+      } else {
+        ctx.fillStyle = "rgba(255,255,255,.75)";
+      }
+
+      ctx.fillRect(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight);
+
+      ctx.fillStyle = isDarkMode ? "#fff" : "#000";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, 0, 0);
+
+      ctx.restore();
+    },
+    [curvatureMap, isDarkMode],
+  );
 
   const handleBackgroundClick = useCallback(() => {
     setSelection((prev) => ({ ...prev, selectedNodeIds: new Set() }));
@@ -469,47 +620,6 @@ function GraphExplorer() {
     fgRef.current?.d3Force("center", null);
   }, []);
 
-  // maps LinkIds to their curvature
-  const curvatureMap = useMemo<Map<LinkId, number>>(() => {
-    const numConnectionsMap: Map<string, number> = new Map();
-    const numSelfConnectionsMap: Map<string, number> = new Map();
-
-    const nextCurvatureMap: Map<LinkId, number> = new Map();
-    for (const { id, source, target } of graphData.links) {
-      const selfCurvatureDelta = 0.4; // factor for self links
-      const curvatureDelta = 0.2; // factor for other links
-
-      let curvature = 0;
-
-      if (source === target) {
-        // self links
-        const count = numSelfConnectionsMap.get(source) ?? 0;
-
-        const index = Math.floor(count / 2) + 1; // 1, 1, 2, 2, ...
-        const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, ...
-        curvature = sign * index * selfCurvatureDelta;
-
-        numSelfConnectionsMap.set(source, count + 1);
-      } else {
-        // other links
-        const [a, b] = [source, target].sort();
-        const key = `${a}-${b}`;
-        const count = numConnectionsMap.get(key) ?? 0;
-
-        if (count > 0) {
-          const index = Math.floor((count - 1) / 2) + 1; // 0, 1, 1, 2, 2, ...
-          const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, 1, ...
-          curvature = sign * index * curvatureDelta;
-        }
-
-        numConnectionsMap.set(key, count + 1);
-      }
-
-      nextCurvatureMap.set(id, curvature);
-    }
-    return nextCurvatureMap;
-  }, [graphData.links]);
-
   const handleLinkCurvature = useCallback(
     (link: LinkObject<MDBLink>) => {
       const { id } = link;
@@ -577,13 +687,15 @@ function GraphExplorer() {
                 )
               }
             />
-            <ForceGraph2D<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
+            <ForceGraph2D<MDBNode, MDBLink>
               ref={fgRef}
               graphData={graphData}
               width={width}
               height={height}
               linkDirectionalArrowLength={4}
               nodeCanvasObject={nodeCanvasObject}
+              linkCanvasObject={linkCanvasObject}
+              linkCanvasObjectMode={() => "after"}
               onBackgroundRightClick={() => {}}
               linkColor={() => theme.colors.gray[4]}
               linkDirectionalArrowRelPos={1}
