@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import ForceGraph2D, {
   type ForceGraphMethods,
   type LinkObject,
   type NodeObject,
 } from "react-force-graph-2d";
-import { Box, Menu, useMantineTheme } from "@mantine/core";
+import { Badge, Box, Code, Flex, Menu, Text, Title, useMantineTheme } from "@mantine/core";
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   useGraphData,
@@ -26,11 +26,12 @@ import {
   IconNewSection,
   IconPointer,
   IconTrash,
+  IconListDetails,
 } from "@tabler/icons-react";
-import type { GraphNode } from "millenniumdb-driver";
 import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
+import { GraphSidebar } from "@/components/graph-explorer/graph-sidebar";
 
 
 // Example graph data, replace with actual data fetching logic
@@ -40,36 +41,77 @@ const graphDatabase = {
       id: "n0",
       name: "Chile",
       types: ["Country"],
+      properties: {
+        population: 19000000,
+        area: 756102,
+        capital: "Santiago",
+      },
     },
     {
       id: "n1",
       name: "Santiago",
       types: ["City"],
+      properties: {
+        population: 7000000,
+        area: 641.4,
+        country: "Chile",
+      },
     },
     {
       id: "n2",
       name: "Pontificia Universidad Católica de Chile",
       types: ["University", "Private"],
+      properties: {
+        founded: 1888,
+        students: 30000,
+        location: "Santiago",
+      },
     },
     {
       id: "n3",
       name: "Universidad de Chile",
       types: ["University", "Public"],
+      properties: {
+        founded: 1842,
+        students: 40000,
+        location: "Santiago",
+      },
     },
     {
       id: "n4",
       name: "Juan Pérez",
       types: ["Person", "Male", "Student"],
+      properties: {
+        age: 22,
+        major: "Computer Science",
+        university: "Pontificia Universidad Católica de Chile",
+        hobbies: "Programming, Reading",
+        veryLongProperty: "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Excepturi at accusamus rem quos cumque id sapiente repellendus architecto ratione natus error iste consequuntur, est facere vero maxime dolores quaerat consequatur. Voluptas, cum optio neque eaque quas saepe magni vitae nulla nostrum quo aspernatur unde libero odio ipsam nam minima ab iste blanditiis praesentium! Nesciunt quaerat suscipit voluptatum voluptas perspiciatis nulla alias doloribus ducimus cum neque numquam accusantium ut odio ullam officia inventore praesentium harum molestiae eum architecto veritatis culpa sed, nihil expedita? Voluptates velit ea minima recusandae nesciunt excepturi aliquam asperiores vel. A, incidunt reiciendis. Vero voluptates praesentium fugit dolor.",
+        exampleProperty1: "Example value 1",
+        exampleProperty2: "Example value 2",
+        exampleProperty3: "Example value 3",
+        exampleProperty4: "Example value 4",
+      },
     },
     {
       id: "n5",
       name: "María González",
       types: ["Person", "Female", "Student"],
+      properties: {
+        age: 21,
+        major: "Engineering",
+        university: "Universidad de Chile",
+      },
     },
     {
       id: "n6",
       name: "Ana López",
       types: ["Person", "Female", "Professor"],
+      properties: {
+        age: 45,
+        department: "Computer Science",
+        university: "Pontificia Universidad Católica de Chile",
+      },
     },
   ],
   links: [
@@ -78,71 +120,106 @@ const graphDatabase = {
       source: "n1",
       target: "n0",
       name: "Located in",
+      properties: {
+        since: 1541,
+      },
     },
     {
       id: "l1",
       source: "n2",
       target: "n1",
       name: "Located in",
+      properties: {
+        since: 1888,
+      },
     },
     {
       id: "l2",
       source: "n3",
       target: "n1",
       name: "Located in",
+      properties: {
+        since: 1842,
+      },
     },
     {
       id: "l3",
       source: "n4",
       target: "n2",
       name: "Student at",
+      properties: {
+        since: 2020,
+      },
     },
     {
       id: "l4",
       source: "n5",
       target: "n3",
       name: "Student at",
+      properties: {
+        since: 2019,
+      },
     },
     {
       id: "l5",
       source: "n6",
       target: "n2",
       name: "Student at",
+      properties: {
+        since: 2021,
+      },
     },
     {
       id: "l6",
       source: "n4",
       target: "n5",
       name: "Friends with",
+      properties: {
+        since: 2022,
+      },
     },
     {
       id: "l7",
       source: "n5",
       target: "n4",
       name: "Friends with",
+      properties: {
+        since: 2022,
+      },
     },
     {
       id: "l8",
       source: "n4",
       target: "n6",
       name: "Friends with",
+      properties: {
+        since: 2023,
+      },
     },
     {
       id: "l9",
       source: "n6",
       target: "n4",
       name: "Friends with",
+      properties: {
+        since: 2023,
+      },
     },
   ],
 };
 
-export type CursorMode = "default" | "box-select";
+export type CursorMode = "default" | "box-select" | "node-details";
 
 export type SelectionState = {
   selectedNodeIds: Set<string>;
   boxSelectedNodeIds: Set<string>;
   boxSelectionActive: boolean;
 };
+
+type SidebarObjectDetails =
+  | { type: "node"; data: MDBNode }
+  | { type: "edge"; data: MDBLink }
+  | null;
 
 function getOutgoingLinks(nodeId: string, graphDatabase) {
   return graphDatabase.links.filter((link) => link.source === nodeId);
@@ -181,6 +258,8 @@ function GraphExplorer() {
     boxSelectedNodeIds: new Set(),
     boxSelectionActive: false,
   });
+
+  const [sidebarObjectDetails, setSidebarObjectDetails] = useState<SidebarObjectDetails>(null);
 
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
 
@@ -274,7 +353,17 @@ function GraphExplorer() {
           break;
         case "box-select":
           break;
+        case "node-details":
+          setSidebarObjectDetails({ type: "node", data: node });
       }
+    },
+    [cursorMode],
+  );
+
+  const handleLinkClick = useCallback(
+    (link: LinkObject<MDBNode, MDBLink>) => {
+      if (cursorMode === "node-details")
+        setSidebarObjectDetails({ type: "edge", data: link });
     },
     [cursorMode],
   );
@@ -454,6 +543,7 @@ function GraphExplorer() {
               onNodeRightClick={handleNodeRightClick}
               onNodeDrag={handleNodeDrag}
               onNodeDragEnd={handleNodeDragEnd}
+              onLinkClick={handleLinkClick}
             />
             <Toolbar
               toolbarItems={[
@@ -472,6 +562,12 @@ function GraphExplorer() {
                   label: "Box selection",
                   cursorMode: "box-select",
                 },
+                {
+                  onClick: () => setCursorMode("node-details"),
+                  icon: IconListDetails,
+                  label: "Node details",
+                  cursorMode: "node-details",
+                },
               ]}
               activeCursorMode={cursorMode}
             />
@@ -480,14 +576,11 @@ function GraphExplorer() {
 
         <Split.Resizer />
 
-        <Split.Pane initialWidth="33%">
-          <Box h="100%" p="md">
-            <h2>Graph Explorer</h2>
-            <p>
-              Right-click on nodes to explore their details or remove them from
-              the graph.
-            </p>
-          </Box>
+        <Split.Pane initialWidth="33%" style={{ overflowY: "auto" }}>
+          <GraphSidebar
+            objectDetails={sidebarObjectDetails}
+            getColorForType={getColorForType}
+          />
         </Split.Pane>
       </Split>
     </Box>
