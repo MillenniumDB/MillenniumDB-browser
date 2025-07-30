@@ -33,6 +33,7 @@ import {
   IconPointer,
   IconTrash,
   IconListDetails,
+  IconArrowsMaximize,
 } from "@tabler/icons-react";
 import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
@@ -298,7 +299,11 @@ const graphDatabase = {
   ],
 };
 
-export type CursorMode = "default" | "box-select" | "node-details";
+export type CursorMode =
+  | "default"
+  | "box-select"
+  | "object-details"
+  | "expand-node";
 
 export type SelectionState = {
   selectedNodeIds: Set<string>;
@@ -339,7 +344,7 @@ function GraphExplorer() {
   }, [computedColorScheme]);
 
   const { graphData, addNode, addLink, update, getNode } = useGraphData({
-    initialGraphData: graphDatabase,
+    initialGraphData: { nodes: [graphDatabase.nodes[4]], links: [] },
   });
 
   const [contextMenuState, setContextMenuState] = useState({
@@ -590,16 +595,26 @@ function GraphExplorer() {
           break;
         case "box-select":
           break;
-        case "node-details":
+        case "object-details":
           setSidebarObjectDetails({ type: "node", data: node });
+          break;
+        case "expand-node":
+          {
+            const outgoingNodes = getOutgoingNodes(node.id, graphDatabase);
+            outgoingNodes.forEach((outNode) => addNode(outNode));
+            const outgoingLinks = getOutgoingLinks(node.id, graphDatabase);
+            outgoingLinks.forEach((link) => addLink(link));
+            update();
+          }
+          break;
       }
     },
-    [cursorMode],
+    [cursorMode, addNode, addLink, update],
   );
 
   const handleLinkClick = useCallback(
     (link: LinkObject<MDBNode, MDBLink>) => {
-      if (cursorMode === "node-details")
+      if (cursorMode === "object-details")
         setSidebarObjectDetails({ type: "edge", data: link });
     },
     [cursorMode],
@@ -818,10 +833,16 @@ function GraphExplorer() {
                   cursorMode: "box-select",
                 },
                 {
-                  onClick: () => setCursorMode("node-details"),
+                  onClick: () => setCursorMode("object-details"),
                   icon: IconListDetails,
-                  label: "Node details",
-                  cursorMode: "node-details",
+                  label: "Object details",
+                  cursorMode: "object-details",
+                },
+                {
+                  onClick: () => setCursorMode("expand-node"),
+                  icon: IconArrowsMaximize,
+                  label: "Expand node",
+                  cursorMode: "expand-node",
                 },
               ]}
               activeCursorMode={cursorMode}
