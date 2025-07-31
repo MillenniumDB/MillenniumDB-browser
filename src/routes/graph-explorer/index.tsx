@@ -315,7 +315,6 @@ const graphDatabase = {
 export type CursorMode =
   | "default"
   | "box-select"
-  | "object-details"
   | "expand-node";
 
 export type SelectionState = {
@@ -596,9 +595,6 @@ function GraphExplorer() {
           break;
         case "box-select":
           break;
-        case "object-details":
-          setSidebarObjectDetails({ type: "node", data: node });
-          break;
         case "expand-node":
           {
             const outgoingNodes = getOutgoingNodes(node.id, graphDatabase);
@@ -611,14 +607,6 @@ function GraphExplorer() {
       }
     },
     [cursorMode, addNode, addLink, update],
-  );
-
-  const handleLinkClick = useCallback(
-    (link: LinkObject<MDBNode, MDBLink>) => {
-      if (cursorMode === "object-details")
-        setSidebarObjectDetails({ type: "edge", data: link });
-    },
-    [cursorMode],
   );
 
   const handleNodeRightClick = useCallback(
@@ -824,7 +812,6 @@ function GraphExplorer() {
               onNodeRightClick={handleNodeRightClick}
               onNodeDrag={handleNodeDrag}
               onNodeDragEnd={handleNodeDragEnd}
-              onLinkClick={handleLinkClick}
             />
             <Toolbar
               toolbarItems={[
@@ -845,12 +832,6 @@ function GraphExplorer() {
                   icon: IconNewSection,
                   label: "Box selection",
                   cursorMode: "box-select",
-                },
-                {
-                  onClick: () => setCursorMode("object-details"),
-                  icon: IconListDetails,
-                  label: "Object details",
-                  cursorMode: "object-details",
                 },
                 {
                   onClick: () => setCursorMode("expand-node"),
