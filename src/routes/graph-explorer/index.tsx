@@ -40,7 +40,6 @@ import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
 import { GraphSidebar } from "@/components/graph-explorer/graph-sidebar";
 
-
 // Example graph data, replace with actual data fetching logic
 const graphDatabase = {
   nodes: [
@@ -93,7 +92,8 @@ const graphDatabase = {
         major: "Computer Science",
         university: "Pontificia Universidad Católica de Chile",
         hobbies: "Programming, Reading",
-        veryLongProperty: "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Excepturi at accusamus rem quos cumque id sapiente repellendus architecto ratione natus error iste consequuntur, est facere vero maxime dolores quaerat consequatur. Voluptas, cum optio neque eaque quas saepe magni vitae nulla nostrum quo aspernatur unde libero odio ipsam nam minima ab iste blanditiis praesentium! Nesciunt quaerat suscipit voluptatum voluptas perspiciatis nulla alias doloribus ducimus cum neque numquam accusantium ut odio ullam officia inventore praesentium harum molestiae eum architecto veritatis culpa sed, nihil expedita? Voluptates velit ea minima recusandae nesciunt excepturi aliquam asperiores vel. A, incidunt reiciendis. Vero voluptates praesentium fugit dolor.",
+        veryLongProperty:
+          "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Excepturi at accusamus rem quos cumque id sapiente repellendus architecto ratione natus error iste consequuntur, est facere vero maxime dolores quaerat consequatur. Voluptas, cum optio neque eaque quas saepe magni vitae nulla nostrum quo aspernatur unde libero odio ipsam nam minima ab iste blanditiis praesentium! Nesciunt quaerat suscipit voluptatum voluptas perspiciatis nulla alias doloribus ducimus cum neque numquam accusantium ut odio ullam officia inventore praesentium harum molestiae eum architecto veritatis culpa sed, nihil expedita? Voluptates velit ea minima recusandae nesciunt excepturi aliquam asperiores vel. A, incidunt reiciendis. Vero voluptates praesentium fugit dolor.",
         exampleProperty1: "Example value 1",
         exampleProperty2: "Example value 2",
         exampleProperty3: "Example value 3",
@@ -373,18 +373,26 @@ function GraphExplorer() {
 
       let curvature = 0;
 
-      if (source === target) {
+      // source/target can be either a string or converted to a MDBLink afterwards
+      const sourceId: string =
+        typeof source === "string" ? source : (source as { id: string }).id;
+      const targetId: string =
+        typeof target === "string" ? target : (target as { id: string }).id;
+
+      console.log(sourceId, targetId);
+
+      if (sourceId === targetId) {
         // self links
-        const count = numSelfConnectionsMap.get(source) ?? 0;
+        const count = numSelfConnectionsMap.get(sourceId) ?? 0;
 
         const index = Math.floor(count / 2) + 1; // 1, 1, 2, 2, ...
         const sign = count % 2 === 1 ? 1 : -1; // 1, -1, 1, -1, ...
         curvature = sign * index * selfCurvatureDelta;
 
-        numSelfConnectionsMap.set(source, count + 1);
+        numSelfConnectionsMap.set(sourceId, count + 1);
       } else {
         // other links
-        const [a, b] = [source, target].sort();
+        const [a, b] = [sourceId, targetId].sort();
         const key = `${a}-${b}`;
         const count = numConnectionsMap.get(key) ?? 0;
 
@@ -399,10 +407,12 @@ function GraphExplorer() {
 
       nextCurvatureMap.set(id, curvature);
     }
-    return nextCurvatureMap;
-  }, [graphData.links]);
 
-  const [sidebarObjectDetails, setSidebarObjectDetails] = useState<SidebarObjectDetails>(null);
+    return nextCurvatureMap;
+  }, [graphData]);
+
+  const [sidebarObjectDetails, setSidebarObjectDetails] =
+    useState<SidebarObjectDetails>(null);
 
   const typeColorMap = useRef(new Map<string, string>());
 
