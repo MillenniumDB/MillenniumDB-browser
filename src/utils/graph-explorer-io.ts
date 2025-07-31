@@ -22,7 +22,7 @@ type ExportGraph = {
   links: ExportLink[];
 };
 
-xport const exportGraphData = (graphData: GraphData<MDBNode, MDBLink>) :string=> {
+export const exportGraphData = (graphData: GraphData<MDBNode, MDBLink>) :string=> {
   const toExport: ExportGraph = { nodes: [], links: [] };
 
   for (const { id, name, types, x, y, fx, fy } of graphData.nodes) {
