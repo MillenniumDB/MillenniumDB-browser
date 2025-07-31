@@ -19,7 +19,6 @@ import {
   type MDBNode,
   type NodeId,
 } from "@/hooks/use-graph-data";
-import { useGraphColorPalette } from "@/hooks/use-graph-color-palette";
 import { ContextMenu } from "@/components/graph-explorer/context-menu";
 import {
   BoxSelection,
@@ -39,6 +38,7 @@ import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
 import { GraphSidebar } from "@/components/graph-explorer/graph-sidebar";
+import { getGraphTheme, type GraphTheme } from "@/theme/custom-graph-theme";
 
 
 // Example graph data, replace with actual data fetching logic
@@ -120,6 +120,13 @@ const graphDatabase = {
         university: "Pontificia Universidad Católica de Chile",
       },
     },
+    {
+      id: "n7",
+      name: "Node without types",
+      properties: {
+        description: "This is a node without types",
+      }
+    }
   ],
   links: [
     {
@@ -296,6 +303,12 @@ const graphDatabase = {
         since: 2023,
       },
     },
+    {
+      id: "l10",
+      source: "n7",
+      target: "n0",
+      name: "test",
+    }
   ],
 };
 
@@ -328,6 +341,9 @@ function getOutgoingNodes(nodeId: string, graphDatabase) {
 }
 
 function GraphExplorer() {
+  const { graphData, addNode, addLink, update, getNode } = useGraphData({
+    initialGraphData: graphDatabase,
+  });
   const fgRef = useRef<
     | ForceGraphMethods<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
     | undefined
@@ -335,17 +351,14 @@ function GraphExplorer() {
   const { ref: graphBoxRef, width, height } = useElementSize();
 
   const theme = useMantineTheme();
-  const colorPalette = useGraphColorPalette();
-  const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
-
   const computedColorScheme = useComputedColorScheme();
-  const isDarkMode = useMemo(() => {
-    return computedColorScheme === "dark";
-  }, [computedColorScheme]);
+  const graphTheme: GraphTheme = useMemo(() => {
+    return getGraphTheme(computedColorScheme, theme);
+  }, [computedColorScheme, theme]);
 
-  const { graphData, addNode, addLink, update, getNode } = useGraphData({
-    initialGraphData: { nodes: [graphDatabase.nodes[4]], links: [] },
-  });
+  const typeColorMap = useRef(new Map<string, string>());
+
+  const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
 
   const [contextMenuState, setContextMenuState] = useState({
     opened: false,
@@ -359,6 +372,7 @@ function GraphExplorer() {
     boxSelectionActive: false,
   });
 
+  const [sidebarObjectDetails, setSidebarObjectDetails] = useState<SidebarObjectDetails>(null);
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
 
   // maps LinkIds to their curvature
@@ -402,21 +416,19 @@ function GraphExplorer() {
     return nextCurvatureMap;
   }, [graphData.links]);
 
-  const [sidebarObjectDetails, setSidebarObjectDetails] = useState<SidebarObjectDetails>(null);
-
-  const typeColorMap = useRef(new Map<string, string>());
-
   const getColorForType = useCallback(
     (type?: string) => {
-      if (!type) return theme.colors.gray[6]; // default color
+      if (!type) return graphTheme.node.defaultColor;
       if (!typeColorMap.current.has(type)) {
         const nextColor =
-          colorPalette[typeColorMap.current.size % colorPalette.length];
+          graphTheme.node.colorPalette[
+            typeColorMap.current.size % graphTheme.node.colorPalette.length
+          ];
         typeColorMap.current.set(type, nextColor);
       }
       return typeColorMap.current.get(type)!;
     },
-    [colorPalette, theme.colors.gray],
+    [graphTheme.node.colorPalette, graphTheme.node.defaultColor],
   );
 
   const nodeCanvasObject = (node, ctx, globalScale) => {
@@ -445,25 +457,23 @@ function GraphExplorer() {
     }
 
     // Draw the border
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+    const isSelected = selection.selectedNodeIds.has(node.id);
+    const isBoxSelected = selection.boxSelectedNodeIds.has(node.id);
 
-    if (selection.selectedNodeIds.has(node.id)) {
-      ctx.strokeStyle = "red";
-    } else if (selection.boxSelectedNodeIds.has(node.id)) {
-      ctx.strokeStyle = "blue";
-    } else {
-      ctx.strokeStyle = "white";
+    if (isSelected || isBoxSelected) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, radius + 1, 0, 2 * Math.PI);
+
+      ctx.strokeStyle = graphTheme.node.selectedBorderColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
     }
-
-    ctx.lineWidth = 1;
-    ctx.stroke();
 
     // Draw the label
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    ctx.fillStyle = "black";
+    ctx.fillStyle = graphTheme.node.fontColor;
     ctx.fillText(label, node.x, node.y + radius + 1);
 
     // Set the background dimensions for the node
@@ -553,22 +563,18 @@ function GraphExplorer() {
       ctx.translate(bx, by);
       ctx.rotate(textAngle);
 
-      if (isDarkMode) {
-        ctx.fillStyle = "rgba(0,0,0,0.75)";
-      } else {
-        ctx.fillStyle = "rgba(255,255,255,.75)";
-      }
+      ctx.fillStyle = graphTheme.edge.backgroundColor;
 
       ctx.fillRect(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight);
 
-      ctx.fillStyle = isDarkMode ? "#fff" : "#000";
+      ctx.fillStyle = graphTheme.edge.fontColor;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(text, 0, 0);
 
       ctx.restore();
     },
-    [curvatureMap, isDarkMode],
+    [curvatureMap, graphTheme.edge.backgroundColor, graphTheme.edge.fontColor],
   );
 
   const handleBackgroundClick = useCallback(() => {
@@ -797,12 +803,13 @@ function GraphExplorer() {
               graphData={graphData}
               width={width}
               height={height}
+              backgroundColor={graphTheme.backgroundColor}
               linkDirectionalArrowLength={4}
               nodeCanvasObject={nodeCanvasObject}
               linkCanvasObject={linkCanvasObject}
               linkCanvasObjectMode={() => "after"}
               onBackgroundRightClick={() => {}}
-              linkColor={() => theme.colors.gray[4]}
+              linkColor={() => graphTheme.edge.color}
               linkDirectionalArrowRelPos={1}
               linkCurvature={handleLinkCurvature}
               onBackgroundClick={handleBackgroundClick}
