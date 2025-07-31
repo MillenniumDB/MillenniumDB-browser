@@ -6,8 +6,12 @@ import ForceGraph2D, {
   type NodeObject,
 } from "react-force-graph-2d";
 import {
+  ActionIcon,
   Box,
+  Divider,
+  FileButton,
   Menu,
+  Tooltip,
   useComputedColorScheme,
   useMantineTheme,
 } from "@mantine/core";
@@ -34,11 +38,20 @@ import {
   IconTrash,
   IconListDetails,
   IconArrowsMaximize,
+  IconFileExport,
+  IconFileImport,
+  IconDownload,
+  IconUpload,
 } from "@tabler/icons-react";
 import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
 import { GraphSidebar } from "@/components/graph-explorer/graph-sidebar";
+import {
+  exportGraphData,
+  processImportedGraph,
+} from "@/utils/graph-explorer-io";
+import { notifications } from "@mantine/notifications";
 
 // Example graph data, replace with actual data fetching logic
 const graphDatabase = {
@@ -343,7 +356,7 @@ function GraphExplorer() {
     return computedColorScheme === "dark";
   }, [computedColorScheme]);
 
-  const { graphData, addNode, addLink, update, getNode } = useGraphData({
+  const { graphData, addNode, addLink, update, getNode, clear } = useGraphData({
     initialGraphData: { nodes: [graphDatabase.nodes[4]], links: [] },
   });
 
@@ -741,6 +754,73 @@ function GraphExplorer() {
     [curvatureMap],
   );
 
+  const handleExportGraphState = () => {
+    const filename = exportGraphData(graphData);
+
+    notifications.show({
+      color: "green",
+      title: `Successfully exported as "${filename}"`,
+      message: "", // TODO: report nubmer of exported things
+      withCloseButton: true,
+      withBorder: true,
+    });
+  };
+
+  const handleImportGraphState = (file: File | null) => {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+
+        const processed = processImportedGraph(parsed);
+
+        clear();
+        for (const node of processed.nodes) {
+          addNode(node);
+        }
+        for (const link of processed.links) {
+          addLink(link);
+        }
+
+        update();
+
+        notifications.show({
+          color: "green",
+          title: `Successfully imported`,
+          message: "", // TODO: report number of imported things
+          withCloseButton: true,
+          withBorder: true,
+        });
+      } catch (err) {
+        console.error("Failed to import graph data:", err);
+        notifications.show({
+          color: "red",
+          title: "MillenniumDB Error",
+          message: `Import error: ${err}`,
+          withCloseButton: true,
+          withBorder: true,
+        });
+      }
+    };
+
+    reader.onerror = () => {
+      console.error("Failed to read the file");
+      notifications.show({
+        color: "red",
+        title: "MillenniumDB Error",
+        message: "Failed to read file",
+        withCloseButton: true,
+        withBorder: true,
+      });
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <Box h="calc(100vh - var(--app-shell-header-height))">
       <Split
@@ -821,7 +901,7 @@ function GraphExplorer() {
               onLinkClick={handleLinkClick}
             />
             <Toolbar
-              toolbarItems={[
+              cursorToolbarItems={[
                 {
                   onClick: () => setCursorMode("default"),
                   icon: IconPointer,
@@ -853,6 +933,31 @@ function GraphExplorer() {
                   cursorMode: "expand-node",
                 },
               ]}
+              rightSection={
+                <>
+                  <Divider orientation="vertical" />
+                  <Tooltip label="Export graph data">
+                    <ActionIcon
+                      variant="default"
+                      onClick={handleExportGraphState}
+                    >
+                      <IconDownload size={20} stroke={1.5} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Import graph data">
+                    <FileButton
+                      onChange={handleImportGraphState}
+                      accept="application/json"
+                    >
+                      {(props) => (
+                        <ActionIcon {...props} variant="default">
+                          <IconUpload size={20} stroke={1.5} />
+                        </ActionIcon>
+                      )}
+                    </FileButton>
+                  </Tooltip>
+                </>
+              }
               activeCursorMode={cursorMode}
             />
           </Box>
