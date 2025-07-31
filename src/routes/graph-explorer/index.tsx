@@ -379,8 +379,6 @@ function GraphExplorer() {
       const targetId: string =
         typeof target === "string" ? target : (target as { id: string }).id;
 
-      console.log(sourceId, targetId);
-
       if (sourceId === targetId) {
         // self links
         const count = numSelfConnectionsMap.get(sourceId) ?? 0;
