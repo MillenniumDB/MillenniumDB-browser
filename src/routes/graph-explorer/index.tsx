@@ -324,11 +324,6 @@ export type SelectionState = {
   boxSelectionActive: boolean;
 };
 
-type SidebarObjectDetails =
-  | { type: "node"; data: MDBNode }
-  | { type: "edge"; data: MDBLink }
-  | null;
-
 function getOutgoingLinks(nodeId: string, graphDatabase) {
   return graphDatabase.links.filter((link) => link.source === nodeId);
 }
@@ -371,8 +366,7 @@ function GraphExplorer() {
     boxSelectedNodeIds: new Set(),
     boxSelectionActive: false,
   });
-
-  const [sidebarObjectDetails, setSidebarObjectDetails] = useState<SidebarObjectDetails>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
 
   // maps LinkIds to their curvature
@@ -459,8 +453,9 @@ function GraphExplorer() {
     // Draw the border
     const isSelected = selection.selectedNodeIds.has(node.id);
     const isBoxSelected = selection.boxSelectedNodeIds.has(node.id);
+    const isHovered = node.id === hoveredNodeId;
 
-    if (isSelected || isBoxSelected) {
+    if (isSelected || isBoxSelected || isHovered) {
       ctx.beginPath();
       ctx.arc(node.x, node.y, radius + 1, 0, 2 * Math.PI);
 
@@ -639,6 +634,17 @@ function GraphExplorer() {
     [],
   );
 
+  const handleNodeHover = useCallback(
+    (node: NodeObject<MDBNode> | null) => {
+      if (cursorMode === "default") {
+        setHoveredNodeId(node ? node.id : null);
+      } else if (cursorMode === "expand-node") {
+        graphBoxRef.current?.style.setProperty("cursor", node ? "pointer" : "default");
+      }
+    },
+    [cursorMode, graphBoxRef],
+  );
+
   const handleNodeDrag = useCallback(
     (node: NodeObject<MDBNode>, translate: { x: number; y: number }) => {
       if (selection.selectedNodeIds.has(node.id)) {
@@ -814,6 +820,7 @@ function GraphExplorer() {
               linkCurvature={handleLinkCurvature}
               onBackgroundClick={handleBackgroundClick}
               onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
               onNodeRightClick={handleNodeRightClick}
               onNodeDrag={handleNodeDrag}
               onNodeDragEnd={handleNodeDragEnd}
@@ -859,9 +866,10 @@ function GraphExplorer() {
 
         <Split.Resizer />
 
-        <Split.Pane initialWidth="33%" style={{ overflowY: "auto" }}>
+        <Split.Pane initialWidth="25%" style={{ overflowY: "auto" }}>
           <GraphSidebar
-            objectDetails={sidebarObjectDetails}
+            selection={selection}
+            graphNodes={graphData.nodes}
             getColorForType={getColorForType}
           />
         </Split.Pane>
