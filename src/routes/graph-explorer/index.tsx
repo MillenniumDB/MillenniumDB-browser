@@ -23,7 +23,6 @@ import {
   type MDBNode,
   type NodeId,
 } from "@/hooks/use-graph-data";
-import { useGraphColorPalette } from "@/hooks/use-graph-color-palette";
 import { ContextMenu } from "@/components/graph-explorer/context-menu";
 import {
   BoxSelection,
@@ -47,6 +46,7 @@ import { Toolbar } from "@/components/graph-explorer/toolbar";
 import { HEADER_HEIGHT, NAVBAR_WIDTH } from "@/layout/app-layout";
 import { Split } from "@gfazioli/mantine-split-pane";
 import { GraphSidebar } from "@/components/graph-explorer/graph-sidebar";
+import { getGraphTheme, type GraphTheme } from "@/theme/custom-graph-theme";
 import {
   exportGraphData,
   processImportedGraph,
@@ -133,6 +133,13 @@ const graphDatabase = {
         university: "Pontificia Universidad Católica de Chile",
       },
     },
+    {
+      id: "n7",
+      name: "Node without types",
+      properties: {
+        description: "This is a node without types",
+      }
+    }
   ],
   links: [
     {
@@ -309,13 +316,18 @@ const graphDatabase = {
         since: 2023,
       },
     },
+    {
+      id: "l10",
+      source: "n7",
+      target: "n0",
+      name: "test",
+    }
   ],
 };
 
 export type CursorMode =
   | "default"
   | "box-select"
-  | "object-details"
   | "expand-node";
 
 export type SelectionState = {
@@ -323,11 +335,6 @@ export type SelectionState = {
   boxSelectedNodeIds: Set<string>;
   boxSelectionActive: boolean;
 };
-
-type SidebarObjectDetails =
-  | { type: "node"; data: MDBNode }
-  | { type: "edge"; data: MDBLink }
-  | null;
 
 function getOutgoingLinks(nodeId: string, graphDatabase) {
   return graphDatabase.links.filter((link) => link.source === nodeId);
@@ -341,6 +348,9 @@ function getOutgoingNodes(nodeId: string, graphDatabase) {
 }
 
 function GraphExplorer() {
+  const { graphData, addNode, addLink, update, getNode, clear } = useGraphData({
+    initialGraphData: { nodes: [graphDatabase.nodes[4]], links: [] },
+  });
   const fgRef = useRef<
     | ForceGraphMethods<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
     | undefined
@@ -348,17 +358,13 @@ function GraphExplorer() {
   const { ref: graphBoxRef, width, height } = useElementSize();
 
   const theme = useMantineTheme();
-  const colorPalette = useGraphColorPalette();
-  const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
-
   const computedColorScheme = useComputedColorScheme();
-  const isDarkMode = useMemo(() => {
-    return computedColorScheme === "dark";
-  }, [computedColorScheme]);
+  const graphTheme: GraphTheme = useMemo(() => {
+    return getGraphTheme(computedColorScheme, theme);
+  }, [computedColorScheme, theme]);
 
-  const { graphData, addNode, addLink, update, getNode, clear } = useGraphData({
-    initialGraphData: { nodes: [graphDatabase.nodes[4]], links: [] },
-  });
+  const typeColorMap = useRef(new Map<string, string>());
+  const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
 
   const [contextMenuState, setContextMenuState] = useState({
     opened: false,
@@ -371,7 +377,7 @@ function GraphExplorer() {
     boxSelectedNodeIds: new Set(),
     boxSelectionActive: false,
   });
-
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
 
   // maps LinkIds to their curvature
@@ -422,22 +428,19 @@ function GraphExplorer() {
     return nextCurvatureMap;
   }, [graphData]);
 
-  const [sidebarObjectDetails, setSidebarObjectDetails] =
-    useState<SidebarObjectDetails>(null);
-
-  const typeColorMap = useRef(new Map<string, string>());
-
   const getColorForType = useCallback(
     (type?: string) => {
-      if (!type) return theme.colors.gray[6]; // default color
+      if (!type) return graphTheme.node.defaultColor;
       if (!typeColorMap.current.has(type)) {
         const nextColor =
-          colorPalette[typeColorMap.current.size % colorPalette.length];
+          graphTheme.node.colorPalette[
+            typeColorMap.current.size % graphTheme.node.colorPalette.length
+          ];
         typeColorMap.current.set(type, nextColor);
       }
       return typeColorMap.current.get(type)!;
     },
-    [colorPalette, theme.colors.gray],
+    [graphTheme.node.colorPalette, graphTheme.node.defaultColor],
   );
 
   const nodeCanvasObject = (node, ctx, globalScale) => {
@@ -466,25 +469,24 @@ function GraphExplorer() {
     }
 
     // Draw the border
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+    const isSelected = selection.selectedNodeIds.has(node.id);
+    const isBoxSelected = selection.boxSelectedNodeIds.has(node.id);
+    const isHovered = node.id === hoveredNodeId;
 
-    if (selection.selectedNodeIds.has(node.id)) {
-      ctx.strokeStyle = "red";
-    } else if (selection.boxSelectedNodeIds.has(node.id)) {
-      ctx.strokeStyle = "blue";
-    } else {
-      ctx.strokeStyle = "white";
+    if (isSelected || isBoxSelected || isHovered) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, radius + 1, 0, 2 * Math.PI);
+
+      ctx.strokeStyle = graphTheme.node.selectedBorderColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
     }
-
-    ctx.lineWidth = 1;
-    ctx.stroke();
 
     // Draw the label
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    ctx.fillStyle = "black";
+    ctx.fillStyle = graphTheme.node.fontColor;
     ctx.fillText(label, node.x, node.y + radius + 1);
 
     // Set the background dimensions for the node
@@ -574,22 +576,18 @@ function GraphExplorer() {
       ctx.translate(bx, by);
       ctx.rotate(textAngle);
 
-      if (isDarkMode) {
-        ctx.fillStyle = "rgba(0,0,0,0.75)";
-      } else {
-        ctx.fillStyle = "rgba(255,255,255,.75)";
-      }
+      ctx.fillStyle = graphTheme.edge.backgroundColor;
 
       ctx.fillRect(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight);
 
-      ctx.fillStyle = isDarkMode ? "#fff" : "#000";
+      ctx.fillStyle = graphTheme.edge.fontColor;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(text, 0, 0);
 
       ctx.restore();
     },
-    [curvatureMap, isDarkMode],
+    [curvatureMap, graphTheme.edge.backgroundColor, graphTheme.edge.fontColor],
   );
 
   const handleBackgroundClick = useCallback(() => {
@@ -616,9 +614,6 @@ function GraphExplorer() {
           break;
         case "box-select":
           break;
-        case "object-details":
-          setSidebarObjectDetails({ type: "node", data: node });
-          break;
         case "expand-node":
           {
             const outgoingNodes = getOutgoingNodes(node.id, graphDatabase);
@@ -633,14 +628,6 @@ function GraphExplorer() {
     [cursorMode, addNode, addLink, update],
   );
 
-  const handleLinkClick = useCallback(
-    (link: LinkObject<MDBNode, MDBLink>) => {
-      if (cursorMode === "object-details")
-        setSidebarObjectDetails({ type: "edge", data: link });
-    },
-    [cursorMode],
-  );
-
   const handleNodeRightClick = useCallback(
     (_node: NodeObject<MDBNode>, event: MouseEvent) => {
       const { clientX, clientY } = event;
@@ -652,6 +639,17 @@ function GraphExplorer() {
       }));
     },
     [],
+  );
+
+  const handleNodeHover = useCallback(
+    (node: NodeObject<MDBNode> | null) => {
+      if (cursorMode === "default") {
+        setHoveredNodeId(node ? node.id : null);
+      } else if (cursorMode === "expand-node") {
+        graphBoxRef.current?.style.setProperty("cursor", node ? "pointer" : "default");
+      }
+    },
+    [cursorMode, graphBoxRef],
   );
 
   const handleNodeDrag = useCallback(
@@ -885,20 +883,21 @@ function GraphExplorer() {
               graphData={graphData}
               width={width}
               height={height}
+              backgroundColor={graphTheme.backgroundColor}
               linkDirectionalArrowLength={4}
               nodeCanvasObject={nodeCanvasObject}
               linkCanvasObject={linkCanvasObject}
               linkCanvasObjectMode={() => "after"}
               onBackgroundRightClick={() => {}}
-              linkColor={() => theme.colors.gray[4]}
+              linkColor={() => graphTheme.edge.color}
               linkDirectionalArrowRelPos={1}
               linkCurvature={handleLinkCurvature}
               onBackgroundClick={handleBackgroundClick}
               onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
               onNodeRightClick={handleNodeRightClick}
               onNodeDrag={handleNodeDrag}
               onNodeDragEnd={handleNodeDragEnd}
-              onLinkClick={handleLinkClick}
             />
             <Toolbar
               cursorToolbarItems={[
@@ -919,12 +918,6 @@ function GraphExplorer() {
                   icon: IconNewSection,
                   label: "Box selection",
                   cursorMode: "box-select",
-                },
-                {
-                  onClick: () => setCursorMode("object-details"),
-                  icon: IconListDetails,
-                  label: "Object details",
-                  cursorMode: "object-details",
                 },
                 {
                   onClick: () => setCursorMode("expand-node"),
@@ -965,9 +958,10 @@ function GraphExplorer() {
 
         <Split.Resizer />
 
-        <Split.Pane initialWidth="33%" style={{ overflowY: "auto" }}>
+        <Split.Pane initialWidth="25%" style={{ overflowY: "auto" }}>
           <GraphSidebar
-            objectDetails={sidebarObjectDetails}
+            selection={selection}
+            graphNodes={graphData.nodes}
             getColorForType={getColorForType}
           />
         </Split.Pane>
