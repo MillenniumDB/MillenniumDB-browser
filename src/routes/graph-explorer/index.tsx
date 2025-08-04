@@ -52,278 +52,9 @@ import {
   processImportedGraph,
 } from "@/utils/graph-explorer-io";
 import { notifications } from "@mantine/notifications";
-
-// Example graph data, replace with actual data fetching logic
-const graphDatabase = {
-  nodes: [
-    {
-      id: "n0",
-      name: "Chile",
-      types: ["Country"],
-      properties: {
-        population: 19000000,
-        area: 756102,
-        capital: "Santiago",
-      },
-    },
-    {
-      id: "n1",
-      name: "Santiago",
-      types: ["City"],
-      properties: {
-        population: 7000000,
-        area: 641.4,
-        country: "Chile",
-      },
-    },
-    {
-      id: "n2",
-      name: "Pontificia Universidad Católica de Chile",
-      types: ["University", "Private"],
-      properties: {
-        founded: 1888,
-        students: 30000,
-        location: "Santiago",
-      },
-    },
-    {
-      id: "n3",
-      name: "Universidad de Chile",
-      types: ["University", "Public"],
-      properties: {
-        founded: 1842,
-        students: 40000,
-        location: "Santiago",
-      },
-    },
-    {
-      id: "n4",
-      name: "Juan Pérez",
-      types: ["Person", "Male", "Student"],
-      properties: {
-        age: 22,
-        major: "Computer Science",
-        university: "Pontificia Universidad Católica de Chile",
-        hobbies: "Programming, Reading",
-        veryLongProperty:
-          "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Excepturi at accusamus rem quos cumque id sapiente repellendus architecto ratione natus error iste consequuntur, est facere vero maxime dolores quaerat consequatur. Voluptas, cum optio neque eaque quas saepe magni vitae nulla nostrum quo aspernatur unde libero odio ipsam nam minima ab iste blanditiis praesentium! Nesciunt quaerat suscipit voluptatum voluptas perspiciatis nulla alias doloribus ducimus cum neque numquam accusantium ut odio ullam officia inventore praesentium harum molestiae eum architecto veritatis culpa sed, nihil expedita? Voluptates velit ea minima recusandae nesciunt excepturi aliquam asperiores vel. A, incidunt reiciendis. Vero voluptates praesentium fugit dolor.",
-        exampleProperty1: "Example value 1",
-        exampleProperty2: "Example value 2",
-        exampleProperty3: "Example value 3",
-        exampleProperty4: "Example value 4",
-      },
-    },
-    {
-      id: "n5",
-      name: "María González",
-      types: ["Person", "Female", "Student"],
-      properties: {
-        age: 21,
-        major: "Engineering",
-        university: "Universidad de Chile",
-      },
-    },
-    {
-      id: "n6",
-      name: "Ana López",
-      types: ["Person", "Female", "Professor"],
-      properties: {
-        age: 45,
-        department: "Computer Science",
-        university: "Pontificia Universidad Católica de Chile",
-      },
-    },
-    {
-      id: "n7",
-      name: "Node without types",
-      properties: {
-        description: "This is a node without types",
-      }
-    }
-  ],
-  links: [
-    {
-      id: "x",
-      source: "n3",
-      target: "n1",
-      name: "Likes",
-    },
-    {
-      id: "a",
-      source: "n3",
-      target: "n1",
-      name: "Comment",
-    },
-    {
-      id: "b",
-      source: "n3",
-      target: "n1",
-      name: "Follow",
-    },
-    {
-      id: "c",
-      source: "n3",
-      target: "n1",
-      name: "isFriendsWith",
-    },
-    {
-      id: "d",
-      source: "n3",
-      target: "n1",
-      name: "wasWith",
-    },
-    {
-      id: "e",
-      source: "n3",
-      target: "n1",
-      name: "isFriendsWith",
-    },
-    {
-      id: "f",
-      source: "n3",
-      target: "n1",
-      name: "F",
-    },
-    {
-      id: "self1",
-      source: "n0",
-      target: "n0",
-      name: "Self1",
-    },
-    {
-      id: "self2",
-      source: "n0",
-      target: "n0",
-      name: "Self2",
-    },
-    {
-      id: "self3",
-      source: "n0",
-      target: "n0",
-      name: "Self3",
-    },
-    {
-      id: "self4",
-      source: "n0",
-      target: "n0",
-      name: "Self4",
-    },
-    {
-      id: "self5",
-      source: "n0",
-      target: "n0",
-      name: "Self5",
-    },
-    {
-      id: "self6",
-      source: "n0",
-      target: "n0",
-      name: "Self6",
-    },
-    {
-      id: "self7",
-      source: "n0",
-      target: "n0",
-      name: "Self7",
-    },
-    {
-      id: "l0",
-      source: "n1",
-      target: "n0",
-      name: "Located in",
-      properties: {
-        since: 1541,
-      },
-    },
-    {
-      id: "l1",
-      source: "n2",
-      target: "n1",
-      name: "Located in",
-      properties: {
-        since: 1888,
-      },
-    },
-    {
-      id: "l2",
-      source: "n3",
-      target: "n1",
-      name: "Located in",
-      properties: {
-        since: 1842,
-      },
-    },
-    {
-      id: "l3",
-      source: "n4",
-      target: "n2",
-      name: "Student at",
-      properties: {
-        since: 2020,
-      },
-    },
-    {
-      id: "l4",
-      source: "n5",
-      target: "n3",
-      name: "Student at",
-      properties: {
-        since: 2019,
-      },
-    },
-    {
-      id: "l5",
-      source: "n6",
-      target: "n2",
-      name: "Student at",
-      properties: {
-        since: 2021,
-      },
-    },
-    {
-      id: "l6",
-      source: "n4",
-      target: "n5",
-      name: "Friends with",
-      properties: {
-        since: 2022,
-      },
-    },
-    {
-      id: "l7",
-      source: "n5",
-      target: "n4",
-      name: "Friends with",
-      properties: {
-        since: 2022,
-      },
-    },
-    {
-      id: "l8",
-      source: "n4",
-      target: "n6",
-      name: "Friends with",
-      properties: {
-        since: 2023,
-      },
-    },
-    {
-      id: "l9",
-      source: "n6",
-      target: "n4",
-      name: "Friends with",
-      properties: {
-        since: 2023,
-      },
-    },
-    {
-      id: "l10",
-      source: "n7",
-      target: "n0",
-      name: "test",
-    }
-  ],
-};
+import { fetchOutgoingConnections } from "@/lib/queries";
+import { useMDB } from "@/providers/mdb-provider";
+import { fetchNodeDetails } from "@/lib/queries";
 
 export type CursorMode =
   | "default"
@@ -336,21 +67,26 @@ export type SelectionState = {
   boxSelectionActive: boolean;
 };
 
-function getOutgoingLinks(nodeId: string, graphDatabase) {
-  return graphDatabase.links.filter((link) => link.source === nodeId);
-}
-
-function getOutgoingNodes(nodeId: string, graphDatabase) {
-  const outgoingLinks = getOutgoingLinks(nodeId, graphDatabase);
-  return graphDatabase.nodes.filter((node) =>
-    outgoingLinks.some((link) => link.target === node.id),
-  );
-}
-
 function GraphExplorer() {
-  const { graphData, addNode, addLink, update, getNode, clear } = useGraphData({
-    initialGraphData: { nodes: [graphDatabase.nodes[4]], links: [] },
-  });
+  const { driver } = useMDB();
+  const { graphData, addNode, addLink, update, getNode, clear } = useGraphData();
+
+  useEffect(() => {
+    const loadInitialNode = async () => {
+      const nodeDetails = await fetchNodeDetails(driver, "Q1");
+      if (nodeDetails) {
+        addNode({
+          id: nodeDetails.id,
+          name: nodeDetails.name,
+          labels: nodeDetails.labels,
+        });
+        update();
+      }
+    };
+
+    loadInitialNode();
+  }, [driver, addNode, update]);
+
   const fgRef = useRef<
     | ForceGraphMethods<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
     | undefined
@@ -363,7 +99,7 @@ function GraphExplorer() {
     return getGraphTheme(computedColorScheme, theme);
   }, [computedColorScheme, theme]);
 
-  const typeColorMap = useRef(new Map<string, string>());
+  const labelColorMap = useRef(new Map<string, string>());
   const smallerThanXs = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
 
   const [contextMenuState, setContextMenuState] = useState({
@@ -428,34 +164,34 @@ function GraphExplorer() {
     return nextCurvatureMap;
   }, [graphData]);
 
-  const getColorForType = useCallback(
-    (type?: string) => {
-      if (!type) return graphTheme.node.defaultColor;
-      if (!typeColorMap.current.has(type)) {
+  const getColorForLabel = useCallback(
+    (label?: string) => {
+      if (!label) return graphTheme.node.defaultColor;
+      if (!labelColorMap.current.has(label)) {
         const nextColor =
           graphTheme.node.colorPalette[
-            typeColorMap.current.size % graphTheme.node.colorPalette.length
+            labelColorMap.current.size % graphTheme.node.colorPalette.length
           ];
-        typeColorMap.current.set(type, nextColor);
+        labelColorMap.current.set(label, nextColor);
       }
-      return typeColorMap.current.get(type)!;
+      return labelColorMap.current.get(label)!;
     },
     [graphTheme.node.colorPalette, graphTheme.node.defaultColor],
   );
 
   const nodeCanvasObject = (node, ctx, globalScale) => {
     const radius = 4;
-    const types = node.types ?? [];
+    const labels = node.labels ?? [];
     const label = node.name;
     const fontSize = 12 / globalScale;
 
     // Draw the node as a pie chart
-    const slices = types.length > 0 ? types.length : 1;
+    const slices = labels.length > 0 ? labels.length : 1;
     const anglePerSlice = (2 * Math.PI) / slices;
 
     for (let i = 0; i < slices; i++) {
-      const type = types[i] ?? undefined;
-      const color = getColorForType(type);
+      const label = labels[i] ?? undefined;
+      const color = getColorForLabel(label);
 
       const startAngle = i * anglePerSlice;
       const endAngle = startAngle + anglePerSlice;
@@ -595,7 +331,7 @@ function GraphExplorer() {
   }, []);
 
   const handleNodeClick = useCallback(
-    (node: NodeObject<MDBNode>, event: MouseEvent) => {
+    async (node: NodeObject<MDBNode>, event: MouseEvent) => {
       switch (cursorMode) {
         case "default":
           setSelection((prev) => {
@@ -614,18 +350,19 @@ function GraphExplorer() {
           break;
         case "box-select":
           break;
-        case "expand-node":
-          {
-            const outgoingNodes = getOutgoingNodes(node.id, graphDatabase);
-            outgoingNodes.forEach((outNode) => addNode(outNode));
-            const outgoingLinks = getOutgoingLinks(node.id, graphDatabase);
-            outgoingLinks.forEach((link) => addLink(link));
-            update();
+        case "expand-node": {
+          const outgoing = await fetchOutgoingConnections(driver, node.id);
+          console.log(outgoing);
+          for (const { edge, target } of outgoing) {
+            addNode(target);
+            addLink(edge);
           }
+          update();
           break;
+        }
       }
     },
-    [cursorMode, addNode, addLink, update],
+    [cursorMode, addNode, addLink, update, driver],
   );
 
   const handleNodeRightClick = useCallback(
@@ -958,11 +695,10 @@ function GraphExplorer() {
 
         <Split.Resizer />
 
-        <Split.Pane initialWidth="25%" style={{ overflowY: "auto" }}>
+        <Split.Pane initialWidth="25%">
           <GraphSidebar
-            selection={selection}
-            graphNodes={graphData.nodes}
-            getColorForType={getColorForType}
+            selectedNodes={selection.selectedNodeIds}
+            getColorForLabel={getColorForLabel}
           />
         </Split.Pane>
       </Split>
