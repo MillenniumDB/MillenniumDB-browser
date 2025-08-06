@@ -1,4 +1,4 @@
-import type { Driver } from "millenniumdb-driver";
+import { GraphNode as MDBGraphNode, type Driver } from "millenniumdb-driver";
 import type { GraphNode, GraphLink } from "@/hooks/use-graph-data";
 
 export type NodeDetails = {
@@ -87,4 +87,49 @@ export async function fetchOutgoingConnections(
   );
 
   return connections;
+}
+
+export function searchNodes(
+  driver: Driver,
+  keyword: string,
+  signal: AbortSignal
+): Promise<GraphNode[]> {
+  return new Promise((resolve, reject) => {
+    signal.addEventListener("abort", () => {
+      reject(new Error("Request aborted"));
+    });
+
+    (async () => {
+      const session = driver.session();
+      const query = `
+        MATCH (?x)
+        WHERE REGEX(?x.Mister, "${keyword}", "i")
+        RETURN ?x, ?x.Mister
+        LIMIT 50
+      `;
+      const result = await session.run(query);
+      const records = await result.records();
+      console.log(records);
+      await session.close();
+
+      const nodes = await Promise.all(
+        records.map(async (record): Promise<GraphNode | null> => {
+          const { x: nodeRaw } = record.toObject() as { x: { id: string } };
+
+          if (!(nodeRaw instanceof MDBGraphNode)) {
+            return null;
+          }
+
+          const details = await fetchNodeDetails(driver, nodeRaw.id);
+          return {
+            id: nodeRaw.id,
+            name: nodeRaw.id,
+            labels: details?.labels,
+          };
+        })
+      );
+
+      resolve(nodes.filter((n): n is GraphNode => n !== null));
+    })().catch(reject);
+  });
 }

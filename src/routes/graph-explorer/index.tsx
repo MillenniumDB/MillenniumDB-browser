@@ -55,6 +55,7 @@ import { notifications } from "@mantine/notifications";
 import { fetchOutgoingConnections } from "@/lib/queries";
 import { useMDB } from "@/providers/mdb-provider";
 import { fetchNodeDetails } from "@/lib/queries";
+import NodeSearch from "@/components/graph-explorer/node-search";
 
 export type CursorMode =
   | "default"
@@ -568,6 +569,7 @@ function GraphExplorer() {
       >
         <Split.Pane grow>
           <Box ref={graphBoxRef} h="100%">
+            <NodeSearch addNode={addNode} update={update} />
             {selection.boxSelectionActive && (
               <BoxSelection
                 onBoxSelectionStart={handleBoxSelectionStart}
