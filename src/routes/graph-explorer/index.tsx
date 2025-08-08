@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import ForceGraph2D, {
   type ForceGraphMethods,
-  type LinkObject,
-  type NodeObject,
 } from "react-force-graph-2d";
 import {
   ActionIcon,
@@ -18,9 +16,9 @@ import {
 import { useElementSize, useMediaQuery } from "@mantine/hooks";
 import {
   useGraphData,
+  type GraphLink,
+  type GraphNode,
   type LinkId,
-  type MDBLink,
-  type MDBNode,
   type NodeId,
 } from "@/hooks/use-graph-data";
 import { ContextMenu } from "@/components/graph-explorer/context-menu";
@@ -35,10 +33,7 @@ import {
   IconNewSection,
   IconPointer,
   IconTrash,
-  IconListDetails,
   IconArrowsMaximize,
-  IconFileExport,
-  IconFileImport,
   IconDownload,
   IconUpload,
 } from "@tabler/icons-react";
@@ -89,7 +84,7 @@ function GraphExplorer() {
   }, [driver, addNode, update]);
 
   const fgRef = useRef<
-    | ForceGraphMethods<NodeObject<MDBNode>, LinkObject<MDBNode, MDBLink>>
+    | ForceGraphMethods<GraphNode, GraphLink>
     | undefined
   >(undefined);
   const { ref: graphBoxRef, width, height } = useElementSize();
@@ -180,7 +175,11 @@ function GraphExplorer() {
     [graphTheme.node.colorPalette, graphTheme.node.defaultColor],
   );
 
-  const nodeCanvasObject = (node, ctx, globalScale) => {
+  const nodeCanvasObject = (
+    node: GraphNode,
+    ctx: CanvasRenderingContext2D,
+    globalScale: number
+  ) => {
     const radius = 4;
     const labels = node.labels ?? [];
     const label = node.name;
@@ -198,8 +197,8 @@ function GraphExplorer() {
       const endAngle = startAngle + anglePerSlice;
 
       ctx.beginPath();
-      ctx.moveTo(node.x, node.y);
-      ctx.arc(node.x, node.y, radius, startAngle, endAngle);
+      ctx.moveTo(node.x!, node.y!);
+      ctx.arc(node.x!, node.y!, radius, startAngle, endAngle);
       ctx.closePath();
       ctx.fillStyle = color;
       ctx.fill();
@@ -212,7 +211,7 @@ function GraphExplorer() {
 
     if (isSelected || isBoxSelected || isHovered) {
       ctx.beginPath();
-      ctx.arc(node.x, node.y, radius + 1, 0, 2 * Math.PI);
+      ctx.arc(node.x!, node.y!, radius + 1, 0, 2 * Math.PI);
 
       ctx.strokeStyle = graphTheme.node.selectedBorderColor;
       ctx.lineWidth = 1;
@@ -224,7 +223,7 @@ function GraphExplorer() {
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillStyle = graphTheme.node.fontColor;
-    ctx.fillText(label, node.x, node.y + radius + 1);
+    ctx.fillText(label, node.x!, node.y! + radius + 1);
 
     // Set the background dimensions for the node
     node.__bckgDimensions = [radius * 2, fontSize + 4];
@@ -232,14 +231,14 @@ function GraphExplorer() {
 
   const linkCanvasObject = useCallback(
     (
-      link: LinkObject<MDBNode, MDBLink>,
+      link: GraphLink,
       ctx: CanvasRenderingContext2D,
       globalScale: number,
     ) => {
       const { id, source, target } = link as {
         id: LinkId;
-        source: NodeObject<MDBNode>;
-        target: NodeObject<MDBNode>;
+        source: GraphNode;
+        target: GraphNode;
       };
 
       if (!source.x || !source.y || !target.x || !target.y) return;
@@ -332,7 +331,7 @@ function GraphExplorer() {
   }, []);
 
   const handleNodeClick = useCallback(
-    async (node: NodeObject<MDBNode>, event: MouseEvent) => {
+    async (node: GraphNode, event: MouseEvent) => {
       switch (cursorMode) {
         case "default":
           setSelection((prev) => {
@@ -367,7 +366,7 @@ function GraphExplorer() {
   );
 
   const handleNodeRightClick = useCallback(
-    (_node: NodeObject<MDBNode>, event: MouseEvent) => {
+    (_node: GraphNode, event: MouseEvent) => {
       const { clientX, clientY } = event;
       setContextMenuState((prev) => ({
         ...prev,
@@ -380,7 +379,7 @@ function GraphExplorer() {
   );
 
   const handleNodeHover = useCallback(
-    (node: NodeObject<MDBNode> | null) => {
+    (node: GraphNode | null) => {
       if (cursorMode === "default") {
         setHoveredNodeId(node ? node.id : null);
       } else if (cursorMode === "expand-node") {
@@ -391,7 +390,7 @@ function GraphExplorer() {
   );
 
   const handleNodeDrag = useCallback(
-    (node: NodeObject<MDBNode>, translate: { x: number; y: number }) => {
+    (node: GraphNode, translate: { x: number; y: number }) => {
       if (selection.selectedNodeIds.has(node.id)) {
         for (const selectedNodeId of selection.selectedNodeIds) {
           if (selectedNodeId === node.id) continue;
@@ -408,7 +407,7 @@ function GraphExplorer() {
     [getNode, selection.selectedNodeIds],
   );
 
-  const handleNodeDragEnd = useCallback((node: NodeObject<MDBNode>) => {
+  const handleNodeDragEnd = useCallback((node: GraphNode) => {
     // fix nodes after drag
     node.fx = node.x;
     node.fy = node.y;
@@ -483,7 +482,7 @@ function GraphExplorer() {
   }, []);
 
   const handleLinkCurvature = useCallback(
-    (link: LinkObject<MDBLink>) => {
+    (link: GraphLink) => {
       const { id } = link;
       return curvatureMap.get(id) ?? 0;
     },
@@ -617,7 +616,7 @@ function GraphExplorer() {
                 )
               }
             />
-            <ForceGraph2D<MDBNode, MDBLink>
+            <ForceGraph2D<GraphNode, GraphLink>
               ref={fgRef}
               graphData={graphData}
               width={width}
