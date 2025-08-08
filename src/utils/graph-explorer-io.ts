@@ -1,4 +1,4 @@
-import type { MDBLink, MDBNode } from "@/hooks/use-graph-data";
+import type { GraphLink, GraphNode } from "@/hooks/use-graph-data";
 import type { GraphData } from "react-force-graph-2d";
 
 type ExportNode = {
@@ -22,7 +22,7 @@ type ExportGraph = {
   links: ExportLink[];
 };
 
-export const exportGraphData = (graphData: GraphData<MDBNode, MDBLink>) :string=> {
+export const exportGraphData = (graphData: GraphData<GraphNode, GraphLink>) :string=> {
   const toExport: ExportGraph = { nodes: [], links: [] };
 
   for (const { id, name, types, x, y, fx, fy } of graphData.nodes) {

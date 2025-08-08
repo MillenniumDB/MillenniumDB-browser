@@ -1,7 +1,7 @@
 import type { CursorMode } from "@/routes/graph-explorer";
 import classes from "./toolbar.module.css";
 
-import { ActionIcon, Divider, FileButton, Paper, Tooltip } from "@mantine/core";
+import { ActionIcon, Paper, Tooltip } from "@mantine/core";
 import { type IconProps } from "@tabler/icons-react";
 import type { ElementType, ReactNode } from "react";
 
