@@ -1,7 +1,11 @@
 import { GraphNode as MDBGraphNode, type Driver } from "millenniumdb-driver";
 import type { GraphNode, GraphLink } from "@/hooks/use-graph-data";
+import { getNodeDisplayName } from "@/utils/graph-format";
+import type { NodeConfig } from "@/routes/graph-explorer";
 
-export type NodeDetails = {
+const SEARCH_LIMIT = 50;
+
+export type GraphNodeDetails = {
   id: string;
   name: string;
   type: string;
@@ -9,10 +13,17 @@ export type NodeDetails = {
   properties?: Record<string, unknown>;
 };
 
+export type GraphNodeSearchResult = {
+  id: string;
+  result: string;
+  category: string;
+};
+
 export async function fetchNodeDetails(
   driver: Driver,
-  nodeId: string
-): Promise<NodeDetails | null> {
+  nodeId: string,
+  nodeConfig: NodeConfig,
+): Promise<GraphNodeDetails | null> {
   const session = driver.session();
   const query = `DESCRIBE ${nodeId}`;
   const result = await session.run(query);
@@ -31,18 +42,40 @@ export async function fetchNodeDetails(
     properties: Record<string, unknown>;
   };
 
+  const name = getNodeDisplayName(
+    raw.object.id,
+    raw.properties,
+    nodeConfig
+  );
+
   return {
     id: raw.object.id,
-    name: raw.object.id,
+    name: name,
     type: "Named Node",
     labels: raw.labels,
     properties: raw.properties,
   };
 }
 
+export async function fetchGraphNode(
+  driver: Driver,
+  nodeId: string,
+  nodeConfig: NodeConfig
+): Promise<GraphNode | null> {
+  const details = await fetchNodeDetails(driver, nodeId, nodeConfig);
+  if (!details) return null;
+
+  return {
+    id: details.id,
+    name: details.name,
+    labels: details.labels || [],
+  };
+}
+
 export async function fetchOutgoingConnections(
   driver: Driver,
-  nodeId: string
+  nodeId: string,
+  nodeConfig: NodeConfig,
 ): Promise<Array<{ edge: GraphLink; target: GraphNode }>> {
   const session = driver.session();
   const query = `
@@ -57,21 +90,15 @@ export async function fetchOutgoingConnections(
 
   const connections = await Promise.all(
     records.map(async (record) => {
-      const {
-        e: edgeRaw,
-        y: nodeRaw,
-        t: edgeTypeRaw,
-      } = record.toObject() as {
-        e: { id: string };
-        y: { id: string };
-        t: { id: string };
-      };
+      const edgeRaw = record.get("e");
+      const nodeRaw = record.get("y");
+      const edgeTypeRaw = record.get("t");
 
-      const details = await fetchNodeDetails(driver, nodeRaw.id);
+      const details = await fetchNodeDetails(driver, nodeRaw.id, nodeConfig);
 
       const target: GraphNode = {
         id: nodeRaw.id,
-        name: nodeRaw.id,
+        name: details?.name || nodeRaw.id,
         labels: details?.labels,
       };
 
@@ -92,44 +119,101 @@ export async function fetchOutgoingConnections(
 export function searchNodes(
   driver: Driver,
   keyword: string,
-  signal: AbortSignal
-): Promise<GraphNode[]> {
+  signal: AbortSignal,
+  nodeConfig: NodeConfig
+): Promise<GraphNodeSearchResult[]> {
   return new Promise((resolve, reject) => {
-    signal.addEventListener("abort", () => {
-      reject(new Error("Request aborted"));
-    });
+    const onAbort = () => reject(new Error("Request aborted"));
+    signal.addEventListener("abort", onAbort);
 
     (async () => {
       const session = driver.session();
-      const query = `
-        MATCH (?x)
-        WHERE REGEX(?x.Mister, "${keyword}", "i")
-        RETURN ?x, ?x.Mister
-        LIMIT 50
-      `;
-      const result = await session.run(query);
-      const records = await result.records();
-      console.log(records);
-      await session.close();
+      try {
+        const results: GraphNodeSearchResult[] = [];
+        const seen = new Set<string>();
 
-      const nodes = await Promise.all(
-        records.map(async (record): Promise<GraphNode | null> => {
-          const { x: nodeRaw } = record.toObject() as { x: { id: string } };
+        // Search by node properties
+        const safeKeyword = keyword.replace(/"/g, '\\"');
 
-          if (!(nodeRaw instanceof MDBGraphNode)) {
-            return null;
+        for (const prop of nodeConfig.namePropertiesKeys) {
+          if (signal.aborted) return;
+          const remaining = SEARCH_LIMIT - results.length;
+          if (remaining <= 0) break;
+
+          const query = `
+            MATCH (?x)
+            WHERE REGEX(?x.${prop}, "${safeKeyword}", "i")
+            RETURN ?x, ?x.${prop}
+            LIMIT ${remaining}
+          `;
+
+          const result = await session.run(query);
+          const records = await result.records();
+          console.log(records);
+
+          for (const record of records) {
+            if (signal.aborted) return;
+
+            const nodeRaw = record.get("x");
+            const propValue = record.get(`x.${prop}`);
+
+            if (!(nodeRaw instanceof MDBGraphNode)) continue;
+            const id = nodeRaw.id;
+            if (seen.has(id)) continue;
+
+            const result = String(propValue);
+            if (result == null) continue;
+
+            results.push({ id, category: prop, result });
+            seen.add(id);
+
+            if (results.length >= SEARCH_LIMIT) break;
           }
+        }
 
-          const details = await fetchNodeDetails(driver, nodeRaw.id);
-          return {
-            id: nodeRaw.id,
-            name: nodeRaw.id,
-            labels: details?.labels,
-          };
-        })
-      );
+        // Search by node ID
+        if (signal.aborted) return;
+        const remaining = SEARCH_LIMIT - results.length;
+        if (remaining <= 0) {
+          resolve(results);
+          return;
+        }
 
-      resolve(nodes.filter((n): n is GraphNode => n !== null));
-    })().catch(reject);
+        const query = keyword === "" ? `
+          MATCH (?x)
+          RETURN ?x
+          LIMIT ${remaining}
+        ` : `
+          MATCH (?x)
+          WHERE ?x == ${keyword}
+          RETURN ?x
+        `;
+
+        const result = await session.run(query);
+        const records = await result.records();
+        console.log(records);
+        for (const record of records) {
+          if (signal.aborted) return;
+
+          const nodeRaw = record.get("x");
+          if (!(nodeRaw instanceof MDBGraphNode)) continue;
+
+          const id = nodeRaw.id;
+          if (seen.has(id)) continue;
+
+          results.push({ id, category: "Node Identifier", result: id });
+          seen.add(id);
+
+          if (results.length >= SEARCH_LIMIT) break;
+        }
+
+        resolve(results);
+      } catch (err) {
+        reject(err);
+      } finally {
+        await session.close();
+        signal.removeEventListener("abort", onAbort);
+      }
+    })();
   });
 }

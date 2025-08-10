@@ -49,7 +49,6 @@ import {
 import { notifications } from "@mantine/notifications";
 import { fetchOutgoingConnections } from "@/lib/queries";
 import { useMDB } from "@/providers/mdb-provider";
-import { fetchNodeDetails } from "@/lib/queries";
 import NodeSearch from "@/components/graph-explorer/node-search";
 
 export type CursorMode =
@@ -63,25 +62,20 @@ export type SelectionState = {
   boxSelectionActive: boolean;
 };
 
+export type NodeConfig = {
+  namePropertiesKeys: string[];
+};
+
+export type GraphConfig = {
+  node: NodeConfig;
+};
+
 function GraphExplorer() {
   const { driver } = useMDB();
   const { graphData, addNode, addLink, update, getNode, clear } = useGraphData();
-
-  useEffect(() => {
-    const loadInitialNode = async () => {
-      const nodeDetails = await fetchNodeDetails(driver, "Q1");
-      if (nodeDetails) {
-        addNode({
-          id: nodeDetails.id,
-          name: nodeDetails.name,
-          labels: nodeDetails.labels,
-        });
-        update();
-      }
-    };
-
-    loadInitialNode();
-  }, [driver, addNode, update]);
+  const [config, ] = useState<GraphConfig>(
+    { node: { namePropertiesKeys: ["lucky", "polliwogs", "personify"] } }
+  );
 
   const fgRef = useRef<
     | ForceGraphMethods<GraphNode, GraphLink>
@@ -351,8 +345,7 @@ function GraphExplorer() {
         case "box-select":
           break;
         case "expand-node": {
-          const outgoing = await fetchOutgoingConnections(driver, node.id);
-          console.log(outgoing);
+          const outgoing = await fetchOutgoingConnections(driver, node.id, config.node);
           for (const { edge, target } of outgoing) {
             addNode(target);
             addLink(edge);
@@ -362,7 +355,7 @@ function GraphExplorer() {
         }
       }
     },
-    [cursorMode, addNode, addLink, update, driver],
+    [cursorMode, addNode, addLink, update, driver, config.node],
   );
 
   const handleNodeRightClick = useCallback(
@@ -568,7 +561,7 @@ function GraphExplorer() {
       >
         <Split.Pane grow>
           <Box ref={graphBoxRef} h="100%">
-            <NodeSearch addNode={addNode} update={update} />
+            <NodeSearch config={config} addNode={addNode} update={update} />
             {selection.boxSelectionActive && (
               <BoxSelection
                 onBoxSelectionStart={handleBoxSelectionStart}
@@ -698,6 +691,7 @@ function GraphExplorer() {
 
         <Split.Pane initialWidth="25%">
           <GraphSidebar
+            config={config}
             selectedNodes={selection.selectedNodeIds}
             getColorForLabel={getColorForLabel}
           />
