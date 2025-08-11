@@ -11,18 +11,20 @@ import {
 // import { IconArrowNarrowRight } from "@tabler/icons-react";
 import { useMDB } from "@/providers/mdb-provider";
 import { fetchNodeDetails } from "@/lib/queries";
-import type { NodeDetails } from "@/lib/queries";
+import type { GraphNodeDetails } from "@/lib/queries";
+import type { GraphConfig } from "@/routes/graph-explorer";
 
 type SidebarContentData =
   | { type: "empty" }
   | { type: "multiple" }
   | { type: "notFound" }
   | { type: "error" }
-  | { type: "node"; node: NodeDetails }
+  | { type: "node"; node: GraphNodeDetails }
   | null;
 
 export function GraphSidebar(
-  { selectedNodes, getColorForLabel }: {
+  { config, selectedNodes, getColorForLabel }: {
+    config: GraphConfig;
     selectedNodes: Set<string>;
     getColorForLabel: (label?: string) => string;
   }
@@ -46,12 +48,11 @@ export function GraphSidebar(
     if (selectedNodeId) {
       setLoading(true);
 
-      fetchNodeDetails(driver, selectedNodeId)
+      fetchNodeDetails(driver, selectedNodeId, config.node)
         .then((details) => {
           if (!details) {
             setContent({ type: "notFound" });
           } else {
-            console.log("Node details:", details);
             setContent({ type: "node", node: details });
           }
         })
@@ -61,7 +62,7 @@ export function GraphSidebar(
         })
         .finally(() => setLoading(false));
     }
-  }, [selectedNodes, selectedNodeId, driver]);
+  }, [selectedNodes, selectedNodeId, driver, config.node]);
 
   return (
     <Box pos="relative" style={{ height: "100%", overflowY: "auto" }}>
@@ -107,9 +108,11 @@ function SidebarContent({
         <Flex align="baseline" gap="md">
           <Title order={2} mb="sm">
             {node.name}
-            <Text component="span" c="dimmed" ml="sm">
-              {node.id}
-            </Text>
+            {node.name !== node.id && (
+              <Text component="span" c="dimmed" ml="sm">
+                {node.id}
+              </Text>
+            )}
           </Title>
         </Flex>
         <Code display="inline-block">{node.type}</Code>

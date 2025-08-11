@@ -1,30 +1,33 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Box,
   CloseButton,
   Combobox,
   Loader,
+  Text,
   TextInput,
   useCombobox
 } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-import { searchNodes } from '@/lib/queries';
+import { fetchGraphNode, searchNodes, type GraphNodeSearchResult } from '@/lib/queries';
 import { useMDB } from '@/providers/mdb-provider';
 import type { GraphNode } from '@/hooks/use-graph-data';
+import type { GraphConfig } from '@/routes/graph-explorer';
 
 interface NodeSearchProps {
   addNode: (node: GraphNode) => void;
   update: () => void;
+  config: GraphConfig;
 }
 
-export default function NodeSearch({ addNode, update }: NodeSearchProps) {
+export default function NodeSearch({ config, addNode, update }: NodeSearchProps) {
   const { driver } = useMDB();
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
 
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<GraphNode[] | null>(null);
+  const [data, setData] = useState<GraphNodeSearchResult[] | null>(null);
   const [value, setValue] = useState('');
   const [empty, setEmpty] = useState(false);
   const abortController = useRef<AbortController | undefined>(null);
@@ -34,21 +37,38 @@ export default function NodeSearch({ addNode, update }: NodeSearchProps) {
     abortController.current = new AbortController();
     setLoading(true);
 
-    searchNodes(driver, query, abortController.current.signal)
-      .then((result) => {
-        setData(result);
+    searchNodes(driver, query, abortController.current.signal, config.node)
+      .then((results) => {
+        setData(results);
         setLoading(false);
-        setEmpty(result.length === 0);
+        setEmpty(results.length === 0);
         abortController.current = undefined;
       })
       .catch(() => {});
   };
 
-  const options = (data || []).map((node) => (
-    <Combobox.Option value={node.id} key={node.id}>
-      {node.id}
-    </Combobox.Option>
+  const groupedData = data?.reduce<Record<string, GraphNodeSearchResult[]>>((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {}) ?? {};
+
+  const options = Object.entries(groupedData).map(([category, items]) => (
+    <Combobox.Group label={category} key={category}>
+      {items.map((option) => (
+        <Combobox.Option value={option.id} key={option.id}>
+          <Text size="sm" fw={500}>{option.result}</Text>
+          {option.result !== option.id && (
+            <Text size="xs" c="dimmed">{option.id}</Text>
+          )}
+        </Combobox.Option>
+      ))}
+    </Combobox.Group>
   ));
+
+  useEffect(() => {
+    setData(null);
+  }, [config.node.namePropertiesKeys]);
 
   return (
     <Box
@@ -59,12 +79,13 @@ export default function NodeSearch({ addNode, update }: NodeSearchProps) {
       style={{ zIndex: 'var(--mantine-z-index-modal)', width: '33%' }}
     >
       <Combobox
-        onOptionSubmit={(optionValue) => {
-          setValue(optionValue);
+        onOptionSubmit={async (optionValue) => {
+          const option = data?.find((item) => item.id === optionValue);
           combobox.closeDropdown();
-          const node = data?.find((n) => n.id === optionValue);
+          if (!option) return;
+          setValue(option.result);
+          const node = await fetchGraphNode(driver, option.id, config.node);
           if (node) {
-            console.log('Adding node:', node);
             addNode(node);
             update();
           }
