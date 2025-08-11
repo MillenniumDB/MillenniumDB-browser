@@ -47,9 +47,10 @@ import {
   processImportedGraph,
 } from "@/utils/graph-explorer-io";
 import { notifications } from "@mantine/notifications";
-import { fetchOutgoingConnections } from "@/lib/queries";
+import { fetchGraphNode, fetchOutgoingConnections } from "@/lib/queries";
 import { useMDB } from "@/providers/mdb-provider";
 import NodeSearch from "@/components/graph-explorer/node-search";
+import GraphSettings from "@/components/graph-explorer/graph-settings";
 
 export type CursorMode =
   | "default"
@@ -72,9 +73,18 @@ export type GraphConfig = {
 
 function GraphExplorer() {
   const { driver } = useMDB();
-  const { graphData, addNode, addLink, update, getNode, clear } = useGraphData();
-  const [config, ] = useState<GraphConfig>(
-    { node: { namePropertiesKeys: ["lucky", "polliwogs", "personify"] } }
+  const {
+    graphData,
+    addNode,
+    addLink,
+    update,
+    getNode,
+    clear,
+    getNodeIds,
+    updateNodeName,
+  } = useGraphData();
+  const [config, setGraphConfig] = useState<GraphConfig>(
+    { node: { namePropertiesKeys: [] } }
   );
 
   const fgRef = useRef<
@@ -482,6 +492,30 @@ function GraphExplorer() {
     [curvatureMap],
   );
 
+  // Update the graph data when the config changes
+  useEffect(() => {
+    let cancelled = false;
+
+    const updateNodeNames = async () => {
+      const ids = getNodeIds();
+      const updates = await Promise.all(
+        ids.map(async (id) => {
+          const node = await fetchGraphNode(driver, id, config.node);
+          if (!node) return null;
+          const name = node.name;
+          return { id, name };
+        })
+      );
+      if (cancelled) return;
+      for (const u of updates.filter((u) => u !== null))
+        updateNodeName(u.id, u.name);
+      update();
+    };
+
+    updateNodeNames();
+    return () => { cancelled = true; };
+  }, [config, driver, getNodeIds, updateNodeName, update]);
+
   const handleExportGraphState = () => {
     const filename = exportGraphData(graphData);
 
@@ -562,6 +596,10 @@ function GraphExplorer() {
         <Split.Pane grow>
           <Box ref={graphBoxRef} h="100%">
             <NodeSearch config={config} addNode={addNode} update={update} />
+            <GraphSettings
+              config={config}
+              setGraphConfig={setGraphConfig}
+            />
             {selection.boxSelectionActive && (
               <BoxSelection
                 onBoxSelectionStart={handleBoxSelectionStart}

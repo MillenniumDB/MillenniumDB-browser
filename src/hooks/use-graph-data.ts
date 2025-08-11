@@ -46,6 +46,12 @@ export function useGraphData({
       nodes: Array.from(nodeMap.current.values()),
       links: Array.from(linkMap.current.values()),
     });
+    console.log(
+      {
+        nodes: Array.from(nodeMap.current.values()),
+        links: Array.from(linkMap.current.values()),
+      }
+    )
   }, []);
 
   // clear all the data structures
@@ -119,6 +125,20 @@ export function useGraphData({
     );
   }, []);
 
+  const getNodeIds = useCallback((): NodeId[] => {
+    return Array.from(nodeMap.current.keys());
+  }, []);
+
+  const updateNodeName = useCallback(
+    (id: NodeId, name: string) => {
+      const node = nodeMap.current.get(id);
+      if (node) {
+        node.name = name;
+      }
+    },
+    [],
+  );
+
   // Initialize data structures with initial graph data
   initialGraphData.nodes.forEach((node) => addNode(node));
   initialGraphData.links.forEach((link) => addLink(link));
@@ -133,5 +153,7 @@ export function useGraphData({
     getOutgoing,
     getIncoming,
     getNode,
+    getNodeIds,
+    updateNodeName,
   };
 }

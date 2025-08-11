@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Box,
   CloseButton,
@@ -65,6 +65,10 @@ export default function NodeSearch({ config, addNode, update }: NodeSearchProps)
       ))}
     </Combobox.Group>
   ));
+
+  useEffect(() => {
+    setData(null);
+  }, [config.node.namePropertiesKeys]);
 
   return (
     <Box

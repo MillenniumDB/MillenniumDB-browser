@@ -149,7 +149,6 @@ export function searchNodes(
 
           const result = await session.run(query);
           const records = await result.records();
-          console.log(records);
 
           for (const record of records) {
             if (signal.aborted) return;
@@ -191,7 +190,6 @@ export function searchNodes(
 
         const result = await session.run(query);
         const records = await result.records();
-        console.log(records);
         for (const record of records) {
           if (signal.aborted) return;
 
