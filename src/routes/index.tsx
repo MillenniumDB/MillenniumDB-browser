@@ -13,7 +13,7 @@ import { notifications } from "@mantine/notifications";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ColDef, type RowDoubleClickedEvent } from "ag-grid-community";
 import type { AgGridReact, CustomCellRendererProps } from "ag-grid-react";
-import { MillenniumDBError, Result, Session } from "millenniumdb-driver";
+import { MillenniumDBError, Result, Session } from "@millenniumdb/driver";
 import { type editor } from "monaco-editor";
 import { useEffect, useRef, useState } from "react";
 

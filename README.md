@@ -10,6 +10,8 @@ For both development and production the environment variables can be set at `pub
 window.ENV = {
   # the URL of the remote MDB instance
   MDB_URL: "http://localhost:1234",
+  # used for node search and label visualization
+  SEARCH_PROPERTIES: ["name"],
 };
 ```
 

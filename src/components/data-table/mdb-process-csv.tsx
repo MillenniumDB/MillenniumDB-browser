@@ -11,7 +11,7 @@ import {
   StringDatatype,
   StringLang,
   Time,
-} from "millenniumdb-driver";
+} from "@millenniumdb/driver";
 
 export function MDBValueToString(value: unknown): string {
   if (value === null || value === undefined) {

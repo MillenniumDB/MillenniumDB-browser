@@ -13,7 +13,7 @@ import {
   GraphNode,
   GraphEdge,
   GraphPath,
-} from "millenniumdb-driver";
+} from "@millenniumdb/driver";
 
 const renderJsx = (value: unknown) => {
   if (value === null || value === undefined) {

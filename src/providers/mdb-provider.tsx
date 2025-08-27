@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 
-import { Catalog, Driver, driver as mdbDriver } from "millenniumdb-driver";
+import { Catalog, Driver, driver as mdbDriver } from "@millenniumdb/driver";
 import {
   createContext,
   useContext,

@@ -2,6 +2,7 @@ declare global {
   interface Window {
     ENV: {
       MDB_URL: string;
+      SEARCH_PROPERTIES: string[];
     };
   }
 }

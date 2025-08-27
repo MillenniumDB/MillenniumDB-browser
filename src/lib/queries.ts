@@ -1,4 +1,4 @@
-import { GraphNode as MDBGraphNode, type Driver } from "millenniumdb-driver";
+import { GraphNode as MDBGraphNode, type Driver } from "@millenniumdb/driver";
 import type { GraphNode, GraphLink } from "@/hooks/use-graph-data";
 import { getNodeDisplayName } from "@/utils/graph-format";
 import type { NodeConfig } from "@/routes/graph-explorer";
