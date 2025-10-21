@@ -28,12 +28,12 @@ declare module "@tanstack/react-router" {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <CustomMantineProvider>
-      <Notifications position="top-center" autoClose={3000} />
-      <MDBProvider>
-        <RouterProvider router={router} />
-      </MDBProvider>
-    </CustomMantineProvider>
-  </StrictMode>,
+  // <StrictMode>
+  <CustomMantineProvider>
+    <Notifications position="top-center" autoClose={3000} />
+    <MDBProvider>
+      <RouterProvider router={router} />
+    </MDBProvider>
+  </CustomMantineProvider>,
+  // </StrictMode>,
 );
