@@ -1,2 +1,4 @@
 /* Override for react-force-graph default cursor style. */
-.clickable { cursor: unset !important }
+.clickable {
+  cursor: unset !important;
+}

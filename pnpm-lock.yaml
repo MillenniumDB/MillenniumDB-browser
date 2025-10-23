@@ -30,8 +30,8 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3
       '@millenniumdb/graph-explorer':
-        specifier: 0.0.0-alpha.11
-        version: 0.0.0-alpha.11(@mantine/core@8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.1.3(react@19.1.0))(@tabler/icons-react@3.34.0(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 0.0.0-alpha.12
+        version: 0.0.0-alpha.12(@mantine/core@8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.1.3(react@19.1.0))(@tabler/icons-react@3.34.0(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -573,8 +573,8 @@ packages:
   '@millenniumdb/driver@1.0.3':
     resolution: {integrity: sha512-KEGXU5qPN0zpjEy6C7uhC3fyxsrzexjv7o2rUboG9O6EJmLJS9P010UJHdIsYq1CAXrlKKR6T77Yv03k4eCweQ==}
 
-  '@millenniumdb/graph-explorer@0.0.0-alpha.11':
-    resolution: {integrity: sha512-Chm+Kr4naLuLZH/SvG0lpCpdy9Qayl+1F7/f044tKEYQDhBP75N8XJPdgN/eoK2JmrcyMzewswyyy/xEtYHsLg==}
+  '@millenniumdb/graph-explorer@0.0.0-alpha.12':
+    resolution: {integrity: sha512-+7zMJxdp0HPVocVGlNygL3sx7se9IHAvdjwwoj996jRY58ovsQfhAyI21l4iNQNijY4JSEG7i/bchGJ8icF3wQ==}
     peerDependencies:
       '@mantine/core': ^8.2.4
       '@mantine/hooks': ^8.2.5
@@ -2564,7 +2564,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@millenniumdb/graph-explorer@0.0.0-alpha.11(@mantine/core@8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.1.3(react@19.1.0))(@tabler/icons-react@3.34.0(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@millenniumdb/graph-explorer@0.0.0-alpha.12(@mantine/core@8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.1.3(react@19.1.0))(@tabler/icons-react@3.34.0(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@mantine/core': 8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@mantine/hooks': 8.1.3(react@19.1.0)

@@ -2,7 +2,7 @@ import classes from "./index.module.css";
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useMDB } from "@/providers/mdb-provider";
-import { Box, Text } from "@mantine/core";
+import { Box, LoadingOverlay, Text } from "@mantine/core";
 import {
   MQLGraphExplorer,
   SPARQLGraphExplorer,
@@ -34,6 +34,14 @@ function GraphExplorerPage() {
     }),
     [driver],
   );
+
+  if (modelId === null) {
+    return (
+      <Box className={classes.root} pos="relative">
+        <LoadingOverlay visible />
+      </Box>
+    );
+  }
 
   let content: ReactNode;
   switch (modelId) {
