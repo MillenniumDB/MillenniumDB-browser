@@ -20,14 +20,14 @@ export function MDBValueToString(value: unknown): string {
 
   // nodes
   if (value instanceof GraphNode) {
-    return value.id;
+    return value.toString();
   } else if (value instanceof GraphAnon) {
-    return value.id;
+    return value.toString();
   }
 
   // edge
   if (value instanceof GraphEdge) {
-    return value.id;
+    return value.toString();
   }
 
   // iri
