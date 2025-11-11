@@ -14,12 +14,15 @@ export type GraphNode = NodeObject<{
   labels?: string[];
 }>;
 
-export type GraphLink = LinkObject<GraphNode, {
-  id: LinkId;
-  name: string;
-  source: NodeId;
-  target: NodeId;
-}>;
+export type GraphLink = LinkObject<
+  GraphNode,
+  {
+    id: LinkId;
+    name: string;
+    source: NodeId;
+    target: NodeId;
+  }
+>;
 
 type UseGraphDataOptions = {
   initialGraphData?: GraphData<GraphNode, GraphLink>;
@@ -46,12 +49,6 @@ export function useGraphData({
       nodes: Array.from(nodeMap.current.values()),
       links: Array.from(linkMap.current.values()),
     });
-    console.log(
-      {
-        nodes: Array.from(nodeMap.current.values()),
-        links: Array.from(linkMap.current.values()),
-      }
-    )
   }, []);
 
   // clear all the data structures
@@ -129,15 +126,12 @@ export function useGraphData({
     return Array.from(nodeMap.current.keys());
   }, []);
 
-  const updateNodeName = useCallback(
-    (id: NodeId, name: string) => {
-      const node = nodeMap.current.get(id);
-      if (node) {
-        node.name = name;
-      }
-    },
-    [],
-  );
+  const updateNodeName = useCallback((id: NodeId, name: string) => {
+    const node = nodeMap.current.get(id);
+    if (node) {
+      node.name = name;
+    }
+  }, []);
 
   // Initialize data structures with initial graph data
   initialGraphData.nodes.forEach((node) => addNode(node));

@@ -1,6 +1,5 @@
 import classes from "./mdb-cell-renderer.module.css";
 
-import type { CustomCellRendererProps } from "ag-grid-react";
 import {
   DateTime,
   Decimal,
@@ -14,8 +13,14 @@ import {
   GraphEdge,
   GraphPath,
 } from "@millenniumdb/driver";
+import type { JSX } from "react";
+import React from "react";
 
-const renderJsx = (value: unknown) => {
+export const MDBCellRenderer = React.memo(({ value }: { value: unknown }) => {
+  return renderJsxInternal(value);
+});
+
+const renderJsxInternal = (value: unknown): JSX.Element | null => {
   if (value === null || value === undefined) {
     return <span className={classes.null}>{"NULL"}</span>;
   }
@@ -96,26 +101,47 @@ const renderJsx = (value: unknown) => {
     return <span className={classes.numeric}>{`${value}`}</span>;
   }
 
+  // tensor
+  if (value instanceof Float32Array || value instanceof Float64Array) {
+    return <span className={classes.numeric}>{`[${value.join(" ")}]`}</span>;
+  }
+
   // array
   if (Array.isArray(value)) {
+    if (value.length === 0) return <span>{"[]"}</span>;
     return (
       <span>
-        <span className={classes.function}>{"List"}</span>
-        <span>{`<${value.length}>`}</span>
+        {"["}
+        {value.map((v, idx) => (
+          <React.Fragment key={idx}>
+            {idx > 0 && <span>{", "}</span>}
+            <MDBCellRenderer value={v} />
+          </React.Fragment>
+        ))}
+        {"]"}
       </span>
     );
   }
 
-  // fallback
-  const object = value as object;
-  return (
-    <span>
-      <span className={classes.function}>{"Dict"}</span>
-      <span>{`<${Object.keys(object).length}>`}</span>
-    </span>
-  );
-};
+  // object fallback
+  if (typeof value === "object") {
+    const entries = Object.entries(value);
+    if (entries.length === 0) return <span>{"{}"}</span>;
 
-export function MDBCellRenderer({ value }: CustomCellRendererProps) {
-  return renderJsx(value);
-}
+    return (
+      <span>
+        {"{"}
+        {entries.map(([k, v], idx) => (
+          <React.Fragment key={k}>
+            {idx > 0 && <span>{", "}</span>}
+            <span>{`${k}:`}</span>
+            <MDBCellRenderer value={v} />
+          </React.Fragment>
+        ))}
+        {"}"}
+      </span>
+    );
+  }
+
+  return null;
+};
