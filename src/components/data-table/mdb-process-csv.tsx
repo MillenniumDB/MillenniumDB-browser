@@ -90,14 +90,28 @@ export function MDBValueToString(value: unknown): string {
     return value.toString();
   }
 
+  // tensor
+  if (value instanceof Float32Array || value instanceof Float64Array) {
+    return `[${value.join(" ")}]`;
+  }
+
   // array
   if (Array.isArray(value)) {
-    return `[${value}]`;
+    if (value.length === 0) return "[]";
+    const elements = value.map((v) => MDBValueToString(v));
+    return `[${elements.join(", ")}]`;
+  }
+
+  // object
+  if (typeof value === "object") {
+    const entries = Object.entries(value);
+    if (entries.length === 0) return "{}";
+    const parts = entries.map(([k, v]) => `${k}: ${MDBValueToString(v)}`);
+    return `{${parts.join(", ")}}`;
   }
 
   // fallback
-  const object = value as object;
-  return JSON.stringify(object);
+  return String(value);
 }
 
 export function MDBProcessCsv(params: ProcessCellForExportParams): string {

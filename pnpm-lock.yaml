@@ -27,8 +27,8 @@ importers:
         specifier: ^8.1.3
         version: 8.1.3(@mantine/core@8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.1.3(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@millenniumdb/driver':
-        specifier: 1.1.1-patch.1
-        version: 1.1.1-patch.1
+        specifier: 1.1.2
+        version: 1.1.2
       '@millenniumdb/graph-explorer':
         specifier: 0.0.0-alpha.12
         version: 0.0.0-alpha.12(@mantine/core@8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@mantine/hooks@8.1.3(react@19.1.0))(@tabler/icons-react@3.34.0(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -570,11 +570,8 @@ packages:
     peerDependencies:
       react: ^18.x || ^19.x
 
-  '@millenniumdb/driver@1.1.1':
-    resolution: {integrity: sha512-RQM5hWwBI78hjPol3/MaX/BEGSGXf5FnL0qjqGOp1INBSf+LKI28SSHAfa88hH3A8Xnw8e7fovWw+K0QEPqm4g==}
-
-  '@millenniumdb/driver@1.1.1-patch.1':
-    resolution: {integrity: sha512-5liTfXRFcX9d4/2h2J5zWlbTrg5CxkF10hZBPvjaOikFrYAWEIBkp9xwEd5jYWUS0FRP2EcuOpWUk6HjnEReag==}
+  '@millenniumdb/driver@1.1.2':
+    resolution: {integrity: sha512-W0iRReFlfE1WVTGZJuDs5JX2JVRTQvTY2DMNEXXkxlqQjRls/GfSUu5ro3Jl/yTA/ZgqblhCAM2QLh2kkeSsLg==}
 
   '@millenniumdb/graph-explorer@0.0.0-alpha.12':
     resolution: {integrity: sha512-+7zMJxdp0HPVocVGlNygL3sx7se9IHAvdjwwoj996jRY58ovsQfhAyI21l4iNQNijY4JSEG7i/bchGJ8icF3wQ==}
@@ -2549,15 +2546,7 @@ snapshots:
     dependencies:
       react: 19.1.0
 
-  '@millenniumdb/driver@1.1.1':
-    dependencies:
-      tslib: 2.8.1
-      ws: 8.18.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@millenniumdb/driver@1.1.1-patch.1':
+  '@millenniumdb/driver@1.1.2':
     dependencies:
       tslib: 2.8.1
       ws: 8.18.3
@@ -2569,7 +2558,7 @@ snapshots:
     dependencies:
       '@mantine/core': 8.1.3(@mantine/hooks@8.1.3(react@19.1.0))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@mantine/hooks': 8.1.3(react@19.1.0)
-      '@millenniumdb/driver': 1.1.1
+      '@millenniumdb/driver': 1.1.2
       '@tabler/icons-react': 3.34.0(react@19.1.0)
       clsx: 2.1.1
       lodash: 4.17.21

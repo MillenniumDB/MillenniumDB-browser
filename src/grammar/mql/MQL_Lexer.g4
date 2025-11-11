@@ -1,6 +1,8 @@
 lexer grammar MQL_Lexer;
 
-channels { WS_CHANNEL }
+channels {
+    WS_CHANNEL
+}
 
 // KEYWORDS
 K_ACYCLIC: A C Y C L I C;
@@ -20,11 +22,15 @@ K_CREATE: C R E A T E;
 K_DELETE: D E L E T E;
 K_DESCRIBE: D E S C R I B E;
 K_DESC: D E S C;
+K_DETACH: D E T A C H;
 K_DIMENSIONS: D I M E N S I O N S;
 K_DISTINCT: D I S T I N C T;
 K_EDGE: E D G E;
+K_EDIT_DISTANCE: E D I T '_' D I S T A N C E;
 K_EUCLIDEAN_DISTANCE: E U C L I D E A N '_' D I S T A N C E;
 K_FROM: F R O M;
+K_HAVING: H A V I N G;
+K_IDENTITY: I D E N T I T Y;
 K_INCOMING: I N C O M I N G;
 K_INDEX: I N D E X;
 K_INSERT: I N S E R T;
@@ -35,7 +41,6 @@ K_FALSE: 'false';
 K_FLOAT: F L O A T;
 K_GROUP: G R O U P;
 K_GROUPS: G R O U P S;
-K_IDENTITY: I D E N T I T Y;
 K_LABELS: L A B E L S;
 K_LABEL: L A B E L;
 K_LET: L E T;
@@ -44,6 +49,7 @@ K_MANHATTAN_DISTANCE: M A N H A T T A N '_' D I S T A N C E;
 K_MATCH: M A T C H;
 K_MAX: M A X;
 K_MIN: M I N;
+K_NORMALIZE: N O R M A L I Z E;
 K_OBJECTS: O B J E C T S;
 K_OFFSET: O F F S E T;
 K_OPTIONAL: O P T I O N A L;
@@ -51,18 +57,22 @@ K_ORDER: O R D E R;
 K_OR: O R;
 K_OUTGOING: O U T G O I N G;
 K_PREFIX: P R E F I X;
-K_PROPERTIES: P R O P E R T I E S;
 K_PROPERTY: P R O P E R T Y;
+K_PROPERTIES: P R O P E R T I E S;
 K_NOT: N O T;
 K_NULL: N U L L;
 K_SHORTEST: S H O R T E S T;
 K_SHOW: S H O W;
 K_SIMPLE: S I M P L E;
-K_TEXT_SEARCH: T E X T '_' S E A R C H;
-K_REGEX: R E G E X;
-K_RETURN: R E T U R N;
-K_SUM: S U M;
 K_STRING: S T R I N G;
+K_STR: S T R;
+K_TEXT_SEARCH: T E X T '_' S E A R C H;
+K_TYPE: T Y P E;
+K_REGEX: R E G E X;
+K_REMOVE: R E M O V E;
+K_RETURN: R E T U R N;
+K_SET: S E T;
+K_SUM: S U M;
 K_TRUE: 'true';
 K_TRAILS: T R A I L S;
 K_VALUES: V A L U E S;
@@ -70,7 +80,6 @@ K_WALKS: W A L K S;
 K_WITH: W I T H;
 K_WHERE: W H E R E;
 K_YIELD: Y I E L D;
-
 
 // Special cases: true and false are not a valid identifier
 TRUE_PROP: ':' 'true';
@@ -87,48 +96,49 @@ VARIABLE: '?' [A-Za-z] [A-Za-z0-9_]*;
 STRING: '"' ( ~'"' | '\\"')* '"';
 
 UNSIGNED_INTEGER: DIGIT+;
-UNSIGNED_FLOAT: DIGIT+ '.' DIGIT*
-              | '.' DIGIT+;
-UNSIGNED_SCIENTIFIC_NOTATION: DIGIT+ '.' DIGIT* EXPONENT
-                            | '.' DIGIT+ EXPONENT
-                            | DIGIT+ EXPONENT;
+UNSIGNED_FLOAT: DIGIT+ '.' DIGIT* | '.' DIGIT+;
+UNSIGNED_SCIENTIFIC_NOTATION:
+    DIGIT+ '.' DIGIT* EXPONENT
+    | '.' DIGIT+ EXPONENT
+    | DIGIT+ EXPONENT;
 
 NAME: [A-Za-z] [A-Za-z0-9_]*;
 
 // SYMBOLS
-LEQ:                                 '<=';
-GEQ:                                 '>=';
-EQ:                                  '==';
-NEQ:                                 '!=';
+LEQ: '<=';
+GEQ: '>=';
+EQ: '==';
+NEQ: '!=';
 
-LT:                                  '<';
-GT:                                  '>';
-SINGLE_EQ:                           '=';
-PATH_SEQUENCE:                       '/';
-PATH_ALTERNATIVE:                    '|';
-PATH_NEGATION:                       '^';
-STAR:                                '*';
-PERCENT:                             '%';
-QUESTION_MARK:                       '?';
-PLUS:                                '+';
-MINUS:                               '-';
-L_PAR:                               '(';
-R_PAR:                               ')';
-LCURLY_BRACKET:                      '{';
-RCURLY_BRACKET:                      '}';
-LSQUARE_BRACKET:                     '[';
-RSQUARE_BRACKET:                     ']';
-COMMA:                               ',';
-COLON:                               ':';
+LT: '<';
+GT: '>';
+SINGLE_EQ: '=';
+PATH_SEQUENCE: '/';
+PATH_ALTERNATIVE: '|';
+PATH_NEGATION: '^';
+STAR: '*';
+PERCENT: '%';
+QUESTION_MARK: '?';
+PLUS: '+';
+MINUS: '-';
+L_PAR: '(';
+R_PAR: ')';
+LCURLY_BRACKET: '{';
+RCURLY_BRACKET: '}';
+LSQUARE_BRACKET: '[';
+RSQUARE_BRACKET: ']';
+COMMA: ',';
+COLON: ':';
 
 WHITE_SPACE: [ \t\r\n]+ -> channel(WS_CHANNEL);
-SINGLE_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> channel(HIDDEN);
+SINGLE_LINE_COMMENT:
+    '//' ~[\r\n]* (('\r'? '\n') | EOF) -> channel(HIDDEN);
 
-UNRECOGNIZED: . ;
+UNRECOGNIZED: .;
 
 fragment DIGIT: [0-9];
 
-fragment EXPONENT : ('e'|'E') ('+' | '-')? DIGIT+;
+fragment EXPONENT: ('e' | 'E') ('+' | '-')? DIGIT+;
 
 fragment A: [aA];
 fragment B: [bB];

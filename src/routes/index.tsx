@@ -66,8 +66,9 @@ function Index() {
     setColumnDefs(
       variables.map((varName, idx) => ({
         colId: idx.toString(),
-        cellRenderer: (props: CustomCellRendererProps) =>
-          MDBCellRenderer(props),
+        cellRenderer: (props: CustomCellRendererProps) => (
+          <MDBCellRenderer {...props} />
+        ),
         field: varName,
         headerName: varName,
         cellDataType: false,
