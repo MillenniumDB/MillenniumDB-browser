@@ -38,6 +38,8 @@ function Index() {
   const editorRef = useRef<{ editor: editor.IStandaloneCodeEditor }>(null);
   const gridRef = useRef<AgGridReact>(null);
 
+  const startupQuery = new URLSearchParams(window.location.search).get("q") ?? "";
+
   const sessionRef = useRef<Session | null>(null);
   const resultRef = useRef<Result | null>(null);
   const recordsRef = useRef<object[]>([]);
@@ -238,6 +240,7 @@ function Index() {
             <Box className={classes.innerPane}>
               <Editor
                 ref={editorRef}
+                startupQuery={startupQuery}
                 onRun={handleRun}
                 onStop={handleStop}
                 onMount={handleMount}

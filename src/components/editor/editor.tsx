@@ -18,6 +18,7 @@ import ReactMonacoEditor, {
 import type { editor } from "monaco-editor";
 import {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -26,6 +27,7 @@ import {
 import EditorHeader from "./editor-header";
 
 type EditorProps = {
+  startupQuery?: string;
   isRunning: boolean;
   isRunDisabled: boolean;
   onRun: () => void;
@@ -34,7 +36,10 @@ type EditorProps = {
 };
 
 const Editor = forwardRef(
-  ({ onRun, onStop, onMount, isRunning, isRunDisabled }: EditorProps, ref) => {
+  (
+    { startupQuery, onRun, onStop, onMount, isRunning, isRunDisabled }: EditorProps,
+    ref,
+  ) => {
     const { catalog } = useMDB();
 
     const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
@@ -55,6 +60,7 @@ const Editor = forwardRef(
     });
 
     const [activeFileId, setActiveFileId] = useState<string | undefined>();
+    const hasInitializedStartupQuery = useRef(false);
     const activeFile = useMemo<FileDef | undefined>(() => {
       return activeFileId ? files[activeFileId] : undefined;
     }, [files, activeFileId]);
@@ -164,6 +170,18 @@ const Editor = forwardRef(
           return "plaintext";
       }
     }, [catalog]);
+
+    useEffect(() => {
+      if (hasInitializedStartupQuery.current) return;
+      hasInitializedStartupQuery.current = true;
+
+      if (!startupQuery?.trim()) return;
+      if (activeFileId !== undefined) return;
+
+      const id = createFile({ content: startupQuery });
+      openFile(id);
+      setActiveFileId(id);
+    }, [startupQuery, activeFileId, createFile, openFile]);
 
     return (
       <Box className={classes.root}>
